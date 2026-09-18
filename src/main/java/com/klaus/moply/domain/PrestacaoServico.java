@@ -30,13 +30,12 @@ public class PrestacaoServico {
         return valorHora.multiply(horasContratadas);
     }
 
-    public BigDecimal calcularValorIndividualPorColaborador() {
-        return valorHora.multiply(horasContratadas).divide(BigDecimal.valueOf(numeroDeColaboradores), 2,
-                RoundingMode.HALF_UP);
-    }
-
     public BigDecimal calcularHorasIndividuaisPorColaborador() {
         return horasContratadas.divide(BigDecimal.valueOf(numeroDeColaboradores), 2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal calcularValorIndividualPorColaborador() {
+        return calcularHorasIndividuaisPorColaborador().multiply(valorHora);
     }
 
     public void alterarCliente(String cliente) {
