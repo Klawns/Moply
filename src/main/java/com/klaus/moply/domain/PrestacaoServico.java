@@ -2,6 +2,7 @@ package com.klaus.moply.domain;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -16,14 +17,16 @@ public class PrestacaoServico {
     private BigDecimal horasContratadas;
     private BigDecimal valorHora;
     private Integer numeroDeColaboradores;
+    private LocalDate dataDoServico;
 
     public PrestacaoServico(UUID id, String cliente, BigDecimal horasContratadas, BigDecimal valorHora,
-            Integer numeroDeColaboradores) {
+            Integer numeroDeColaboradores, LocalDate dataDoServico) {
         this.id = id;
         this.cliente = cliente;
         this.horasContratadas = horasContratadas;
         this.valorHora = valorHora;
         this.numeroDeColaboradores = numeroDeColaboradores;
+        this.dataDoServico = dataDoServico;
     }
 
     public BigDecimal calcularValorTotal() {
@@ -53,6 +56,10 @@ public class PrestacaoServico {
     public void alterarNumeroDeColaboradores(Integer numeroDeColaboradores) {
         this.numeroDeColaboradores = Objects.requireNonNull(numeroDeColaboradores,
                 "Número de colaboradores não pode ser nulo.");
+    }
+
+    public void alterarDataDoServico(LocalDate dataDoServico) {
+        this.dataDoServico = Objects.requireNonNull(dataDoServico, "Data do serviço não pode ser nula.");
     }
 
 }
