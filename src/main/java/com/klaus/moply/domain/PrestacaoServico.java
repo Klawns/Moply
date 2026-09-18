@@ -19,9 +19,8 @@ public class PrestacaoServico {
     private Integer numeroDeColaboradores;
     private LocalDate dataDoServico;
 
-    public PrestacaoServico(UUID id, String cliente, BigDecimal horasContratadas, BigDecimal valorHora,
+    public PrestacaoServico(String cliente, BigDecimal horasContratadas, BigDecimal valorHora,
             Integer numeroDeColaboradores, LocalDate dataDoServico) {
-        this.id = id;
         this.cliente = cliente;
         this.horasContratadas = horasContratadas;
         this.valorHora = valorHora;
