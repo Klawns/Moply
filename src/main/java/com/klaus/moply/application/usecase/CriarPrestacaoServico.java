@@ -27,9 +27,13 @@ public class CriarPrestacaoServico {
 
         return PrestacaoServicoOutput.builder()
                 .id(prestacaoServico.getId())
+                .cliente(prestacaoServico.getCliente())
+                .horasTotais(prestacaoServico.getHorasContratadas())
                 .valorTotal(calcularValorTotal.execute(prestacaoServico))
                 .horasIndividuais(calcularHorasIndividuais.execute(prestacaoServico))
                 .valorIndividual(calcularValorIndividual.execute(prestacaoServico))
-                .build();
+                .data(prestacaoServico.getDataDoServico())
+                .quantidadeColaboradores(prestacaoServico.getNumeroDeColaboradores())
+                .build();   
     }
 }
