@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.klaus.moply.domain.factory.PrestacaoServicoFactory;
+import com.klaus.moply.factory.PrestacaoServicoFactory;
 
 public class CalculosPrestacaoServicoTest {
     @Test
