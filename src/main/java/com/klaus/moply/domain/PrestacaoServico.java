@@ -28,6 +28,27 @@ public class PrestacaoServico {
         this.dataDoServico = dataDoServico;
     }
 
+        public static PrestacaoServico reconstruir(
+            UUID id,
+            String cliente,
+            BigDecimal horasContratadas,
+            BigDecimal valorHora,
+            Integer numeroDeColaboradores,
+            LocalDate dataDoServico) {
+
+        PrestacaoServico prestacao = new PrestacaoServico(
+                cliente,
+                horasContratadas,
+                valorHora,
+                numeroDeColaboradores,
+                dataDoServico
+        );
+
+        prestacao.id = id;
+
+        return prestacao;
+    }
+
     public BigDecimal calcularValorTotal() {
         return valorHora.multiply(horasContratadas).setScale(2, RoundingMode.HALF_UP);
     }
