@@ -6,8 +6,7 @@ import java.util.UUID;
 
 import lombok.Builder;
 
-@Builder 
+@Builder
 public record PrestacaoServicoOutput(UUID id, String cliente, BigDecimal horasTotais, BigDecimal valorTotal,
-        BigDecimal horasIndividuais, BigDecimal valorIndividual, LocalDate data, int quantidadeColaboradores) {
-
+                BigDecimal horasIndividuais, BigDecimal valorIndividual, LocalDate data, int quantidadeColaboradores) {
 }
