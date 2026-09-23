@@ -1,5 +1,7 @@
 package com.klaus.moply.application.usecase;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Service;
 
 import com.klaus.moply.application.dto.CriarPrestacaoServicoCommand;
@@ -11,12 +13,9 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
-public class CriarPrestacaoServico {
+public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoCommand, PrestacaoServicoOutput> {
 
     private final PrestacaoServicoRepository repo;
-    private final CalcularValorTotal calcularValorTotal;
-    private final CalcularHorasIndividuais calcularHorasIndividuais;
-    private final CalcularValorIndividual calcularValorIndividual;
 
     public PrestacaoServicoOutput execute(CriarPrestacaoServicoCommand command) {
         PrestacaoServico prestacaoServico = new PrestacaoServico(
@@ -26,15 +25,19 @@ public class CriarPrestacaoServico {
                 command.quantidadeColaboradores(),
                 command.data());
 
+        BigDecimal total = prestacaoServico.calcularValorTotal();
+        BigDecimal horasInd = prestacaoServico.calcularHorasIndividuaisPorColaborador();
+        BigDecimal valorInd = prestacaoServico.calcularValorIndividualPorColaborador();
+
         prestacaoServico = repo.salvar(prestacaoServico);
 
         return PrestacaoServicoOutput.builder()
                 .id(prestacaoServico.getId())
                 .cliente(prestacaoServico.getCliente())
                 .horasContratadas(prestacaoServico.getHorasContratadas())
-                .valorTotal(calcularValorTotal.execute(prestacaoServico))
-                .horasIndividuais(calcularHorasIndividuais.execute(prestacaoServico))
-                .valorIndividual(calcularValorIndividual.execute(prestacaoServico))
+                .valorTotal(total)
+                .horasIndividuais(horasInd)
+                .valorIndividual(valorInd)
                 .data(prestacaoServico.getDataDoServico())
                 .quantidadeColaboradores(prestacaoServico.getNumeroDeColaboradores())
                 .build();
