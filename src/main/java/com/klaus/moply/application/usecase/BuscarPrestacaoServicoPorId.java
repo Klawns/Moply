@@ -2,8 +2,6 @@ package com.klaus.moply.application.usecase;
 
 import java.util.UUID;
 
-import org.springframework.stereotype.Service;
-
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.exception.PrestacaoServicoNotFoundException;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
@@ -11,7 +9,6 @@ import com.klaus.moply.domain.PrestacaoServico;
 
 import lombok.RequiredArgsConstructor;
 
-@Service
 @RequiredArgsConstructor
 public class BuscarPrestacaoServicoPorId implements Usecase<UUID, PrestacaoServicoOutput> {
     private final PrestacaoServicoRepository repo;

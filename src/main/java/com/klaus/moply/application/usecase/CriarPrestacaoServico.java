@@ -1,7 +1,5 @@
 package com.klaus.moply.application.usecase;
 
-import org.springframework.stereotype.Service;
-
 import com.klaus.moply.application.dto.CriarPrestacaoServicoCommand;
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
@@ -10,7 +8,6 @@ import com.klaus.moply.domain.PrestacaoServico;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-@Service
 public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoCommand, PrestacaoServicoOutput> {
 
     private final PrestacaoServicoRepository repo;
