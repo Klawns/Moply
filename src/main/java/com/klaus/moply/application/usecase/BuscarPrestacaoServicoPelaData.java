@@ -3,16 +3,21 @@ package com.klaus.moply.application.usecase;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
+import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
-import com.klaus.moply.domain.PrestacaoServico;
 
 import lombok.RequiredArgsConstructor;
 
+@Service
 @RequiredArgsConstructor
 public class BuscarPrestacaoServicoPelaData {
     private final PrestacaoServicoRepository repo;
 
-    public List<PrestacaoServico> execute(LocalDate data) {
-        return repo.buscarTodos(data);
+    public List<PrestacaoServicoOutput> execute(LocalDate data) {
+        return repo.buscarTodos(data).stream()
+                .map(PrestacaoServicoOutput::fromDomain)
+                .toList();
     }
 }
