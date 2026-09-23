@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
 import com.klaus.moply.application.usecase.BuscarPrestacaoServicoPorId;
 import com.klaus.moply.domain.PrestacaoServico;
@@ -33,10 +34,10 @@ public class BuscarPrestacaoServicoPorIdTest {
 
     @Test
     void deveBuscarPrestacaoServicoPorId() {
-
         UUID id = UUID.randomUUID();
 
-        PrestacaoServico prestacao = new PrestacaoServico(
+        PrestacaoServico prestacao = PrestacaoServico.reconstruir(
+                id,
                 "João",
                 new BigDecimal("4.00"),
                 new BigDecimal("11.50"),
@@ -46,10 +47,20 @@ public class BuscarPrestacaoServicoPorIdTest {
         when(repo.buscarPorId(id))
                 .thenReturn(Optional.of(prestacao));
 
-        PrestacaoServico result = useCase.execute(id);
+        PrestacaoServicoOutput result = useCase.execute(id);
 
         assertNotNull(result);
-        assertEquals(prestacao, result);
+
+        assertEquals(id, result.id());
+        assertEquals("João", result.cliente());
+        assertEquals(new BigDecimal("4.00"), result.horasContratadas());
+        assertEquals(new BigDecimal("11.50"), result.valorHora());
+        assertEquals(2, result.quantidadeColaboradores());
+        assertEquals(LocalDate.of(2026, 9, 21), result.data());
+
+        assertEquals(new BigDecimal("46.00"), result.valorTotal());
+        assertEquals(new BigDecimal("2.00"), result.horasIndividuais());
+        assertEquals(new BigDecimal("23.00"), result.valorIndividual());
 
         verify(repo).buscarPorId(id);
     }
