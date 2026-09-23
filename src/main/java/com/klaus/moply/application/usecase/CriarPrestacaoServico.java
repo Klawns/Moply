@@ -1,7 +1,5 @@
 package com.klaus.moply.application.usecase;
 
-import java.math.BigDecimal;
-
 import org.springframework.stereotype.Service;
 
 import com.klaus.moply.application.dto.CriarPrestacaoServicoCommand;
@@ -25,19 +23,15 @@ public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoComma
                 command.quantidadeColaboradores(),
                 command.data());
 
-        BigDecimal total = prestacaoServico.calcularValorTotal();
-        BigDecimal horasInd = prestacaoServico.calcularHorasIndividuaisPorColaborador();
-        BigDecimal valorInd = prestacaoServico.calcularValorIndividualPorColaborador();
-
         prestacaoServico = repo.salvar(prestacaoServico);
 
         return PrestacaoServicoOutput.builder()
                 .id(prestacaoServico.getId())
                 .cliente(prestacaoServico.getCliente())
                 .horasContratadas(prestacaoServico.getHorasContratadas())
-                .valorTotal(total)
-                .horasIndividuais(horasInd)
-                .valorIndividual(valorInd)
+                .valorTotal(prestacaoServico.calcularValorTotal())
+                .horasIndividuais(prestacaoServico.calcularHorasIndividuaisPorColaborador())
+                .valorIndividual(prestacaoServico.calcularValorIndividualPorColaborador())
                 .data(prestacaoServico.getDataDoServico())
                 .quantidadeColaboradores(prestacaoServico.getNumeroDeColaboradores())
                 .build();
