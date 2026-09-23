@@ -15,23 +15,23 @@ import org.junit.jupiter.api.Test;
 
 import com.klaus.moply.application.exception.PrestacaoServicoNotFoundException;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
-import com.klaus.moply.application.usecase.DeletePrestacaoServico;
+import com.klaus.moply.application.usecase.DeletarPrestacaoServico;
 import com.klaus.moply.domain.PrestacaoServico;
 import com.klaus.moply.factory.PrestacaoServicoFactory;
 
 public class DeletePrestacaoServicoTest {
     private PrestacaoServicoRepository repo;
-    private DeletePrestacaoServico useCase;
+    private DeletarPrestacaoServico useCase;
 
     @BeforeEach
     void setUp() {
         repo = mock(PrestacaoServicoRepository.class);
 
-        useCase = new DeletePrestacaoServico(repo);
+        useCase = new DeletarPrestacaoServico(repo);
     }
 
     @Test
-    @DisplayName("Deve deletar corretamente uma prestação de serviço pelo ID")
+    @DisplayName("Deve deletar corretamente uma prestação de serviço pelo ID.")
     void shouldDeletePrestacaoServicoById() {
         PrestacaoServico prestacaoServico = PrestacaoServicoFactory.createPrestacaoServico();
 
