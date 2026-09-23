@@ -5,16 +5,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 
 public interface PrestacaoServicoRepository {
-    PrestacaoServico salvar(PrestacaoServico prestacaoServico);
+    OrderService salvar(OrderService prestacaoServico);
 
-    Optional<PrestacaoServico> buscarPorId(UUID id);
+    Optional<OrderService> buscarPorId(UUID id);
 
-    List<PrestacaoServico> buscarPorCliente(String cliente);
+    List<OrderService> buscarPorCliente(String cliente);
 
-    List<PrestacaoServico> buscarTodos(LocalDate dataDoDia);
+    List<OrderService> buscarTodos(LocalDate dataDoDia);
 
     void deletarPorId(UUID id);
 

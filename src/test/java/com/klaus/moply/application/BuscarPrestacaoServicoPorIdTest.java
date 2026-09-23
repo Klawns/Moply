@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
 import com.klaus.moply.application.usecase.BuscarPrestacaoServicoPorId;
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 
 public class BuscarPrestacaoServicoPorIdTest {
 
@@ -36,7 +36,7 @@ public class BuscarPrestacaoServicoPorIdTest {
     void deveBuscarPrestacaoServicoPorId() {
         UUID id = UUID.randomUUID();
 
-        PrestacaoServico prestacao = PrestacaoServico.reconstruir(
+        OrderService prestacao = OrderService.reconstruir(
                 id,
                 "João",
                 new BigDecimal("4.00"),

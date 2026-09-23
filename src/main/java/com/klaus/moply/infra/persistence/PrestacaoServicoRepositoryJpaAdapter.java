@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,12 +19,12 @@ public class PrestacaoServicoRepositoryJpaAdapter implements PrestacaoServicoRep
     private final PrestacaoServicoJpaRepository repo;
 
     @Override
-    public PrestacaoServico salvar(PrestacaoServico prestacaoServico) {
+    public OrderService salvar(OrderService prestacaoServico) {
         PrestacaoServicoEntity entity = new PrestacaoServicoEntity();
 
         entity.setId(prestacaoServico.getId());
 
-        entity.setCliente(prestacaoServico.getCliente());
+        entity.setCliente(prestacaoServico.getCustomer());
         entity.setHorasContratadas(prestacaoServico.getHorasContratadas());
         entity.setValorHora(prestacaoServico.getValorHora());
         entity.setNumeroDeColaboradores(prestacaoServico.getNumeroDeColaboradores());
@@ -36,13 +36,13 @@ public class PrestacaoServicoRepositoryJpaAdapter implements PrestacaoServicoRep
     }
 
     @Override
-    public Optional<PrestacaoServico> buscarPorId(UUID id) {
+    public Optional<OrderService> buscarPorId(UUID id) {
         return repo.findById(id)
                 .map(this::toDomain);
     }
 
     @Override
-    public List<PrestacaoServico> buscarPorCliente(String cliente) {
+    public List<OrderService> buscarPorCliente(String cliente) {
         return repo.findAllByCliente(cliente)
                 .stream()
                 .map(this::toDomain)
@@ -50,7 +50,7 @@ public class PrestacaoServicoRepositoryJpaAdapter implements PrestacaoServicoRep
     }
 
     @Override
-    public List<PrestacaoServico> buscarTodos(LocalDate dataDoDia) {
+    public List<OrderService> buscarTodos(LocalDate dataDoDia) {
         return repo.findAllByDataDoServico(dataDoDia)
                 .stream()
                 .map(this::toDomain)
@@ -62,9 +62,9 @@ public class PrestacaoServicoRepositoryJpaAdapter implements PrestacaoServicoRep
         repo.deleteById(id);
     }
 
-    private PrestacaoServico toDomain(PrestacaoServicoEntity entity) {
+    private OrderService toDomain(PrestacaoServicoEntity entity) {
 
-        return PrestacaoServico.reconstruir(
+        return OrderService.reconstruir(
                 entity.getId(),
                 entity.getCliente(),
                 entity.getHorasContratadas(),

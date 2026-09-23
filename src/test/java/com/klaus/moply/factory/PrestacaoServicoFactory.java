@@ -3,11 +3,11 @@ package com.klaus.moply.factory;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 
 public class PrestacaoServicoFactory {
-    public static PrestacaoServico createPrestacaoServico() {
-        return new PrestacaoServico(
+    public static OrderService createPrestacaoServico() {
+        return new OrderService(
                 "Cliente Teste",
                 new BigDecimal(4.00),
                 new BigDecimal(11.50),

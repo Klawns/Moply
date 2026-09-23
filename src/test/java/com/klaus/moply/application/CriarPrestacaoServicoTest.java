@@ -19,7 +19,7 @@ import com.klaus.moply.application.dto.CriarPrestacaoServicoInput;
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
 import com.klaus.moply.application.usecase.CriarPrestacaoServico;
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 
 public class CriarPrestacaoServicoTest {
         private PrestacaoServicoRepository repo;
@@ -45,12 +45,12 @@ public class CriarPrestacaoServicoTest {
 
                 UUID idGerado = UUID.randomUUID();
 
-                when(repo.salvar(any(PrestacaoServico.class)))
+                when(repo.salvar(any(OrderService.class)))
                                 .thenAnswer(invocation -> {
-                                        PrestacaoServico dominioPassado = invocation.getArgument(0);
-                                        return PrestacaoServico.reconstruir(
+                                        OrderService dominioPassado = invocation.getArgument(0);
+                                        return OrderService.reconstruir(
                                                         idGerado,
-                                                        dominioPassado.getCliente(),
+                                                        dominioPassado.getCustomer(),
                                                         dominioPassado.getHorasContratadas(),
                                                         dominioPassado.getValorHora(),
                                                         dominioPassado.getNumeroDeColaboradores(),
@@ -70,7 +70,7 @@ public class CriarPrestacaoServicoTest {
                 assertEquals(new BigDecimal("2.00"), output.horasIndividuais());
                 assertEquals(new BigDecimal("23.00"), output.valorIndividual());
 
-                verify(repo).salvar(any(PrestacaoServico.class));
+                verify(repo).salvar(any(OrderService.class));
         }
 
 }

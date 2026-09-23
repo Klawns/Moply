@@ -3,7 +3,7 @@ package com.klaus.moply.application.usecase;
 import com.klaus.moply.application.dto.CriarPrestacaoServicoInput;
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,7 +13,7 @@ public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoInput
     private final PrestacaoServicoRepository repo;
 
     public PrestacaoServicoOutput execute(CriarPrestacaoServicoInput input) {
-        PrestacaoServico prestacaoServico = new PrestacaoServico(
+        OrderService prestacaoServico = new OrderService(
                 input.cliente(),
                 input.horasContratadas(),
                 input.valorHora(),
@@ -24,7 +24,7 @@ public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoInput
 
         return PrestacaoServicoOutput.builder()
                 .id(prestacaoServico.getId())
-                .cliente(prestacaoServico.getCliente())
+                .cliente(prestacaoServico.getCustomer())
                 .horasContratadas(prestacaoServico.getHorasContratadas())
                 .valorTotal(prestacaoServico.calcularValorTotal())
                 .horasIndividuais(prestacaoServico.calcularHorasIndividuaisPorColaborador())

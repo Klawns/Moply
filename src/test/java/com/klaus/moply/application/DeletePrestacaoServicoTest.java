@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import com.klaus.moply.application.exception.PrestacaoServicoNotFoundException;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
 import com.klaus.moply.application.usecase.DeletarPrestacaoServico;
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 import com.klaus.moply.factory.PrestacaoServicoFactory;
 
 public class DeletePrestacaoServicoTest {
@@ -33,7 +33,7 @@ public class DeletePrestacaoServicoTest {
     @Test
     @DisplayName("Deve deletar corretamente uma prestação de serviço pelo ID.")
     void shouldDeletePrestacaoServicoById() {
-        PrestacaoServico prestacaoServico = PrestacaoServicoFactory.createPrestacaoServico();
+        OrderService prestacaoServico = PrestacaoServicoFactory.createPrestacaoServico();
 
         UUID id = prestacaoServico.getId();
 

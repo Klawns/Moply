@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.klaus.moply.domain.PrestacaoServico;
+import com.klaus.moply.domain.entity.OrderService;
 
 import lombok.Builder;
 
@@ -20,10 +20,10 @@ public record PrestacaoServicoOutput(
                 BigDecimal horasIndividuais,
                 BigDecimal valorIndividual) {
 
-        public static PrestacaoServicoOutput fromDomain(PrestacaoServico prestacaoServico) {
+        public static PrestacaoServicoOutput fromDomain(OrderService prestacaoServico) {
                 return PrestacaoServicoOutput.builder()
                                 .id(prestacaoServico.getId())
-                                .cliente(prestacaoServico.getCliente())
+                                .cliente(prestacaoServico.getCustomer())
                                 .horasContratadas(prestacaoServico.getHorasContratadas())
                                 .valorHora(prestacaoServico.getValorHora())
                                 .quantidadeColaboradores(prestacaoServico.getNumeroDeColaboradores())
