@@ -15,9 +15,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tb_prestaocao_servico")
+@Table(name = "tb_prestacao_servico")
 @Getter
-@Setter 
+@Setter
 @NoArgsConstructor
 public class PrestacaoServicoEntity {
     @Id
@@ -30,7 +30,7 @@ public class PrestacaoServicoEntity {
     @Column(nullable = false, name = "horas_contratadas")
     private BigDecimal horasContratadas;
 
-    @Column(nullable = false, name = "valor_da_hora")
+    @Column(nullable = false, name = "valor_hora")
     private BigDecimal valorHora;
 
     @Column(nullable = false, name = "numero_de_colaboradores")
