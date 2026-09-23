@@ -15,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.klaus.moply.application.dto.CriarPrestacaoServicoCommand;
+import com.klaus.moply.application.dto.CriarPrestacaoServicoInput;
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
 import com.klaus.moply.application.usecase.CriarPrestacaoServico;
@@ -36,7 +36,7 @@ public class CriarPrestacaoServicoTest {
         @Test
         @DisplayName("Deve criar uma prestação.")
         void shouldCreatePrestacaoServico() {
-                var command = new CriarPrestacaoServicoCommand(
+                var command = new CriarPrestacaoServicoInput(
                                 "João",
                                 new BigDecimal("4.00"),
                                 new BigDecimal("11.50"),

@@ -1,6 +1,6 @@
 package com.klaus.moply.application.usecase;
 
-import com.klaus.moply.application.dto.CriarPrestacaoServicoCommand;
+import com.klaus.moply.application.dto.CriarPrestacaoServicoInput;
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.ports.PrestacaoServicoRepository;
 import com.klaus.moply.domain.PrestacaoServico;
@@ -8,11 +8,11 @@ import com.klaus.moply.domain.PrestacaoServico;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoCommand, PrestacaoServicoOutput> {
+public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoInput, PrestacaoServicoOutput> {
 
     private final PrestacaoServicoRepository repo;
 
-    public PrestacaoServicoOutput execute(CriarPrestacaoServicoCommand command) {
+    public PrestacaoServicoOutput execute(CriarPrestacaoServicoInput command) {
         PrestacaoServico prestacaoServico = new PrestacaoServico(
                 command.cliente(),
                 command.horasContratadas(),

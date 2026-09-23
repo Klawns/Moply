@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.klaus.moply.application.dto.CriarPrestacaoServicoCommand;
+import com.klaus.moply.application.dto.CriarPrestacaoServicoInput;
 import com.klaus.moply.application.dto.PrestacaoServicoOutput;
 import com.klaus.moply.application.usecase.BuscarPrestacaoServicoPelaData;
 import com.klaus.moply.application.usecase.BuscarPrestacaoServicoPeloCliente;
@@ -42,7 +42,7 @@ public class PrestacaoServiceController {
     public ResponseEntity<PrestacaoServicoResponse> criarPrestacaoServico(
             @RequestBody @Valid CriarPrestacaoServicoRequest request) {
 
-        CriarPrestacaoServicoCommand command = CriarPrestacaoServicoCommand.builder()
+        CriarPrestacaoServicoInput command = CriarPrestacaoServicoInput.builder()
                 .cliente(request.cliente())
                 .horasContratadas(request.horasContratadas())
                 .valorHora(request.valorHora())
