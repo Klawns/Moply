@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class BuscarPrestacaoServicoPelaData {
+public class BuscarPrestacaoServicoPelaData implements Usecase<LocalDate, List<PrestacaoServicoOutput>> {
     private final PrestacaoServicoRepository repo;
 
     public List<PrestacaoServicoOutput> execute(LocalDate data) {

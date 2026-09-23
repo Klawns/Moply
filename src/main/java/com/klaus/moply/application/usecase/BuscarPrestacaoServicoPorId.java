@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class BuscarPrestacaoServicoPorId {
+public class BuscarPrestacaoServicoPorId implements Usecase<UUID, PrestacaoServicoOutput> {
     private final PrestacaoServicoRepository repo;
 
     public PrestacaoServicoOutput execute(UUID id) {

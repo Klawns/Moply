@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class BuscarPrestacaoServicoPeloCliente {
+public class BuscarPrestacaoServicoPeloCliente implements Usecase<String, List<PrestacaoServicoOutput>> {
 
     private final PrestacaoServicoRepository repo;
 
