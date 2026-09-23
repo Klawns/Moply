@@ -28,7 +28,7 @@ public class PrestacaoServico {
         this.dataDoServico = dataDoServico;
     }
 
-        public static PrestacaoServico reconstruir(
+    public static PrestacaoServico reconstruir(
             UUID id,
             String cliente,
             BigDecimal horasContratadas,
@@ -41,8 +41,7 @@ public class PrestacaoServico {
                 horasContratadas,
                 valorHora,
                 numeroDeColaboradores,
-                dataDoServico
-        );
+                dataDoServico);
 
         prestacao.id = id;
 
