@@ -12,13 +12,13 @@ public class CriarPrestacaoServico implements Usecase<CriarPrestacaoServicoInput
 
     private final PrestacaoServicoRepository repo;
 
-    public PrestacaoServicoOutput execute(CriarPrestacaoServicoInput command) {
+    public PrestacaoServicoOutput execute(CriarPrestacaoServicoInput input) {
         PrestacaoServico prestacaoServico = new PrestacaoServico(
-                command.cliente(),
-                command.horasContratadas(),
-                command.valorHora(),
-                command.quantidadeColaboradores(),
-                command.data());
+                input.cliente(),
+                input.horasContratadas(),
+                input.valorHora(),
+                input.quantidadeColaboradores(),
+                input.data());
 
         prestacaoServico = repo.salvar(prestacaoServico);
 
