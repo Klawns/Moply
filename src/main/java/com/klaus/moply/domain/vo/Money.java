@@ -10,6 +10,7 @@ public record Money(BigDecimal value) {
         if (value == null || value.compareTo(BigDecimal.ZERO) == 0) {
             throw new DomainException("Value cant ben equals null or zero.");
         }
+        value = value.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     public Money multiply(BigDecimal multiplier) {
