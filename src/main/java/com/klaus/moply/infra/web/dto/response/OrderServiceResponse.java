@@ -13,9 +13,9 @@ public record OrderServiceResponse(
                 UUID id,
                 String customer,
                 BigDecimal totalHours,
-                OrderServiceCalculation calculation,
+                int employeeCount,
                 LocalDate serviceDate,
-                int employeeCount) {
+                OrderServiceCalculation calculation) {
 
         public static OrderServiceResponse from(
                         OrderServiceOutput output) {
@@ -29,8 +29,8 @@ public record OrderServiceResponse(
                                 output.id(),
                                 output.customer(),
                                 output.contractedHours(),
-                                calculation,
+                                output.employeeCount(),
                                 output.serviceDate(),
-                                output.employeeCount());
+                                calculation);
         }
 }
