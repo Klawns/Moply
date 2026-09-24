@@ -14,9 +14,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.klaus.moply.application.dto.CreateOrderServiceInput;
 import com.klaus.moply.application.ports.OrderServiceRepository;
 import com.klaus.moply.application.usecase.CreateOrderService;
+import com.klaus.moply.application.usecase.dto.CreateOrderServiceInput;
 import com.klaus.moply.domain.entity.OrderService;
 
 public class CreateOrderServiceTest {

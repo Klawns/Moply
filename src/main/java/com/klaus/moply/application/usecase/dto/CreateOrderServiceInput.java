@@ -1,4 +1,4 @@
-package com.klaus.moply.application.dto;
+package com.klaus.moply.application.usecase.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -14,9 +14,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.klaus.moply.application.dto.OrderServiceOutput;
 import com.klaus.moply.application.ports.OrderServiceRepository;
 import com.klaus.moply.application.usecase.FindOrderServiceById;
+import com.klaus.moply.application.usecase.dto.OrderServiceOutput;
 import com.klaus.moply.domain.entity.OrderService;
 
 public class FindOrderServiceByIdTest {

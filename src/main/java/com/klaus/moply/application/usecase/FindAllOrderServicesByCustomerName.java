@@ -2,8 +2,8 @@ package com.klaus.moply.application.usecase;
 
 import java.util.List;
 
-import com.klaus.moply.application.dto.OrderServiceOutput;
 import com.klaus.moply.application.ports.OrderServiceRepository;
+import com.klaus.moply.application.usecase.dto.OrderServiceOutput;
 import com.klaus.moply.domain.vo.Customer;
 
 import lombok.RequiredArgsConstructor;

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.klaus.moply.application.dto.OrderServiceOutput;
+import com.klaus.moply.application.usecase.dto.OrderServiceOutput;
 
 import lombok.Builder;
 
