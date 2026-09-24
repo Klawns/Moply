@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.klaus.moply.domain.exception.DomainException;
 import com.klaus.moply.domain.vo.Customer;
+import com.klaus.moply.domain.vo.DurationHours;
 import com.klaus.moply.domain.vo.Money;
 
 import lombok.Getter;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class OrderService {
     private UUID id;
     private Customer customer;
-    private BigDecimal contractedHours;
+    private DurationHours contractedHours;
     private Money hourlyRate;
     private Integer employeeCount;
     private LocalDate serviceDate;
@@ -26,7 +27,7 @@ public class OrderService {
             Integer employeeCount, LocalDate serviceDate) {
         this.id = id;
         this.customer = new Customer(customerName);
-        this.contractedHours = contractedHours;
+        this.contractedHours = new DurationHours(contractedHours);
         this.hourlyRate = new Money(hourlyRate);
         this.employeeCount = employeeCount;
         this.serviceDate = Objects.requireNonNull(serviceDate, "Service date cannot be null.");
@@ -55,16 +56,16 @@ public class OrderService {
     }
 
     public Money CalculateTotalValue() {
-        return hourlyRate.multiply(contractedHours);
+        return hourlyRate.multiply(contractedHours.value());
     }
 
-    public BigDecimal calculateIndividualHoursPerEmployee() {
-        return contractedHours.divide(BigDecimal.valueOf(employeeCount));
+    public DurationHours calculateIndividualHoursPerEmployee() {
+        return contractedHours.divide(employeeCount);
     }
 
     public Money calculateIndividualPaymentPerEmployee() {
-        BigDecimal individualHours = calculateIndividualHoursPerEmployee();
-        return hourlyRate.multiply(individualHours);
+        DurationHours individualHours = calculateIndividualHoursPerEmployee();
+        return hourlyRate.multiply(individualHours.value());
     }
 
     public void changeCustomer(String customerName) {
@@ -72,11 +73,7 @@ public class OrderService {
     }
 
     public void changeContractedHours(BigDecimal contractedHours) {
-        if (contractedHours == null || contractedHours.compareTo(BigDecimal.ZERO) == 0) {
-            throw new DomainException("Contracted Hours cant be empty or zero.");
-        }
-
-        this.contractedHours = contractedHours;
+        this.contractedHours = new DurationHours(contractedHours);
     }
 
     public void changeHourlyRate(BigDecimal hourlyRate) {
