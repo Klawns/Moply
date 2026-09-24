@@ -8,7 +8,7 @@ import com.klaus.moply.domain.entity.OrderService;
 
 public class OrderServiceFactory {
     public static OrderService createOrderService() {
-        return OrderService.reconstruir(
+        return OrderService.restore(
                 UUID.randomUUID(),
                 "Cliente Teste",
                 new BigDecimal(4.00),

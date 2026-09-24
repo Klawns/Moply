@@ -2,9 +2,9 @@ package com.klaus.moply.application.exception;
 
 import java.util.UUID;
 
-public class PrestacaoServicoNotFoundException extends RuntimeException {
+public class OrderServiceNotFoundException extends RuntimeException {
 
-    public PrestacaoServicoNotFoundException(UUID id) {
+    public OrderServiceNotFoundException(UUID id) {
         super("Prestação de serviço não encontrada: " + id);
     }
 }
