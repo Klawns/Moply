@@ -23,7 +23,7 @@ import com.klaus.moply.application.usecase.FindAllOrderServicesByCustomerName;
 import com.klaus.moply.application.usecase.FindOrderServiceById;
 import com.klaus.moply.application.usecase.FindOrderServiceByServiceDate;
 import com.klaus.moply.domain.vo.Customer;
-import com.klaus.moply.infra.web.dto.request.CriarPrestacaoServicoRequest;
+import com.klaus.moply.infra.web.dto.request.CreateOrderServiceRequest;
 import com.klaus.moply.infra.web.dto.response.OrderServiceResponse;
 
 import jakarta.validation.Valid;
@@ -40,20 +40,18 @@ public class OrderServiceController {
     private final DeleteOrderService delete;
 
     @PostMapping
-    public ResponseEntity<OrderServiceResponse> create(
-            @RequestBody @Valid CriarPrestacaoServicoRequest request) {
+    public ResponseEntity<UUID> create(
+            @RequestBody @Valid CreateOrderServiceRequest request) {
 
         CreateOrderServiceInput input = CreateOrderServiceInput.builder()
-                .customer(request.cliente())
-                .contractedHours(request.horasContratadas())
-                .HourlyPrice(request.valorHora())
-                .employeeCount(request.quantidadeColaboradores())
-                .serviceDate(request.data())
+                .customer(request.customer())
+                .contractedHours(request.contractedHours())
+                .HourlyPrice(request.hourlyRate())
+                .employeeCount(request.employeeCount())
+                .serviceDate(request.serviceDate())
                 .build();
 
-        var order = create.execute(input);
-
-        var response = OrderServiceResponse.from(order);
+        UUID response = create.execute(input);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

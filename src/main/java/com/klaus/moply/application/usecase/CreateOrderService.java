@@ -1,18 +1,19 @@
 package com.klaus.moply.application.usecase;
 
+import java.util.UUID;
+
 import com.klaus.moply.application.dto.CreateOrderServiceInput;
-import com.klaus.moply.application.dto.OrderServiceOutput;
 import com.klaus.moply.application.ports.OrderServiceRepository;
 import com.klaus.moply.domain.entity.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class CreateOrderService implements Usecase<CreateOrderServiceInput, OrderServiceOutput> {
+public class CreateOrderService implements Usecase<CreateOrderServiceInput, UUID> {
 
     private final OrderServiceRepository repo;
 
-    public OrderServiceOutput execute(CreateOrderServiceInput input) {
+    public UUID execute(CreateOrderServiceInput input) {
         OrderService orderService = OrderService.create(
                 input.customer(),
                 input.contractedHours(),
@@ -22,15 +23,6 @@ public class CreateOrderService implements Usecase<CreateOrderServiceInput, Orde
 
         orderService = repo.save(orderService);
 
-        return OrderServiceOutput.builder()
-                .id(orderService.getId())
-                .customer(orderService.getCustomer().name())
-                .contractedHours(orderService.getContractedHours().value())
-                .totalAmount(orderService.CalculateTotalAmount().value())
-                .individualHour(orderService.calculateIndividualHoursPerEmployee().value())
-                .individualAmount(orderService.calculateIndividualPaymentPerEmployee().value())
-                .serviceDate(orderService.getServiceDate())
-                .employeeCount(orderService.getEmployeeCount())
-                .build();
+        return orderService.getId();
     }
 }
