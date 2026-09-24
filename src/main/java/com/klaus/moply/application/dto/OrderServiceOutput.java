@@ -16,9 +16,9 @@ public record OrderServiceOutput(
                 BigDecimal hourlyPrice,
                 int employeeCount,
                 LocalDate serviceDate,
-                BigDecimal totalValue,
+                BigDecimal totalAmount,
                 BigDecimal individualHour,
-                BigDecimal individualPaymentValue) {
+                BigDecimal individualAmount) {
 
         public static OrderServiceOutput fromDomain(OrderService orderService) {
                 return OrderServiceOutput.builder()
@@ -28,9 +28,9 @@ public record OrderServiceOutput(
                                 .hourlyPrice(orderService.getHourlyRate().value())
                                 .employeeCount(orderService.getEmployeeCount())
                                 .serviceDate(orderService.getServiceDate())
-                                .totalValue(orderService.CalculateTotalValue().value())
+                                .totalAmount(orderService.CalculateTotalAmount().value())
                                 .individualHour(orderService.calculateIndividualHoursPerEmployee().value())
-                                .individualPaymentValue(orderService.calculateIndividualPaymentPerEmployee().value())
+                                .individualAmount(orderService.calculateIndividualPaymentPerEmployee().value())
                                 .build();
         }
 }

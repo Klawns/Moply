@@ -26,9 +26,9 @@ public class CreateOrderService implements Usecase<CreateOrderServiceInput, Orde
                 .id(orderService.getId())
                 .customer(orderService.getCustomer().name())
                 .contractedHours(orderService.getContractedHours().value())
-                .totalValue(orderService.CalculateTotalValue().value())
+                .totalAmount(orderService.CalculateTotalAmount().value())
                 .individualHour(orderService.calculateIndividualHoursPerEmployee().value())
-                .individualPaymentValue(orderService.calculateIndividualPaymentPerEmployee().value())
+                .individualAmount(orderService.calculateIndividualPaymentPerEmployee().value())
                 .serviceDate(orderService.getServiceDate())
                 .employeeCount(orderService.getEmployeeCount())
                 .build();

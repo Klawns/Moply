@@ -55,7 +55,7 @@ public class OrderService {
         return new OrderService(id, customer, contractedHours, hourlyRate, employeeCount, serviceDate);
     }
 
-    public Money CalculateTotalValue() {
+    public Money CalculateTotalAmount() {
         return hourlyRate.multiply(contractedHours.value());
     }
 
