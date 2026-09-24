@@ -13,36 +13,36 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.klaus.moply.application.exception.PrestacaoServicoNotFoundException;
-import com.klaus.moply.application.ports.PrestacaoServicoRepository;
-import com.klaus.moply.application.usecase.DeletarPrestacaoServico;
+import com.klaus.moply.application.exception.OrderServiceNotFoundException;
+import com.klaus.moply.application.ports.OrderServiceRepository;
+import com.klaus.moply.application.usecase.DeleteOrderService;
 import com.klaus.moply.domain.entity.OrderService;
-import com.klaus.moply.factory.PrestacaoServicoFactory;
+import com.klaus.moply.factory.OrderServiceFactory;
 
-public class DeletePrestacaoServicoTest {
-    private PrestacaoServicoRepository repo;
-    private DeletarPrestacaoServico useCase;
+public class DeleteOrderServiceTest {
+    private OrderServiceRepository repo;
+    private DeleteOrderService useCase;
 
     @BeforeEach
     void setUp() {
-        repo = mock(PrestacaoServicoRepository.class);
+        repo = mock(OrderServiceRepository.class);
 
-        useCase = new DeletarPrestacaoServico(repo);
+        useCase = new DeleteOrderService(repo);
     }
 
     @Test
     @DisplayName("Deve deletar corretamente uma prestação de serviço pelo ID.")
     void shouldDeletePrestacaoServicoById() {
-        OrderService prestacaoServico = PrestacaoServicoFactory.createPrestacaoServico();
+        OrderService prestacaoServico = OrderServiceFactory.createOrderService();
 
         UUID id = prestacaoServico.getId();
 
-        when(repo.buscarPorId(id))
+        when(repo.findById(id))
                 .thenReturn(Optional.of(prestacaoServico));
 
         useCase.execute(id);
 
-        verify(repo).deletarPorId(id);
+        verify(repo).deleteById(id);
 
     }
 
@@ -52,13 +52,13 @@ public class DeletePrestacaoServicoTest {
 
         UUID id = UUID.randomUUID();
 
-        when(repo.buscarPorId(id))
+        when(repo.findById(id))
                 .thenReturn(Optional.empty());
 
         assertThrows(
-                PrestacaoServicoNotFoundException.class,
+                OrderServiceNotFoundException.class,
                 () -> useCase.execute(id));
 
-        verify(repo, never()).deletarPorId(id);
+        verify(repo, never()).deleteById(id);
     }
 }

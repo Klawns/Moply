@@ -17,7 +17,7 @@ public class CalculosPrestacaoServicoTest {
     @DisplayName("Deve calcular o valor total de uma prestação de serviço.")
     public void shouldCalculateTotalValue() {
         OrderService orderService = OrderServiceFactory.createOrderService();
-        Money valorTotal = orderService.CalculateTotalValue();
+        Money valorTotal = orderService.CalculateTotalAmount();
         assertEquals(new BigDecimal("46.00"), valorTotal.value());
     }
 
