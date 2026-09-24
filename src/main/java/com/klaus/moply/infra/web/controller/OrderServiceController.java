@@ -1,4 +1,4 @@
-package com.klaus.moply.infra.web;
+package com.klaus.moply.infra.web.controller;
 
 import java.time.LocalDate;
 import java.util.List;
