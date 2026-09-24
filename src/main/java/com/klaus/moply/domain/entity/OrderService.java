@@ -43,7 +43,7 @@ public class OrderService {
         return new OrderService(null, customer, contractedHours, hourlyRate, employeeCount, serviceDate);
     }
 
-    public static OrderService reconstruir(
+    public static OrderService restore(
             UUID id,
             String customer,
             BigDecimal contractedHours,
