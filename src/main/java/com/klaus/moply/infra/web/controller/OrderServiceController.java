@@ -87,8 +87,8 @@ public class OrderServiceController {
     }
 
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        delete.execute(id);
+    public ResponseEntity<Void> delete(@PathVariable UUID orderId) {
+        delete.execute(orderId);
 
         return ResponseEntity.noContent().build();
     }
