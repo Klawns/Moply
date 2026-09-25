@@ -11,13 +11,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tb_order_service")
+@Table(
+    name = "tb_order_service", 
+    indexes = {
+        @Index(name = "idx_service_date", columnList = "service_date")
+    })
 @Getter
 @Setter
 @NoArgsConstructor
