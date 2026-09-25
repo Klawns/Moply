@@ -3,6 +3,7 @@ package com.klaus.moply.infra.web.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -28,6 +29,25 @@ public class ControllerExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(problemDetail);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ProblemDetail> handleValidation(
+            MethodArgumentNotValidException exception) {
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+
+        problem.setTitle("Erro de validação");
+
+        problem.setDetail(
+                exception.getBindingResult()
+                        .getFieldErrors()
+                        .stream()
+                        .map(error -> error.getDefaultMessage())
+                        .findFirst()
+                        .orElse("Dados inválidos."));
+
+        return ResponseEntity.badRequest().body(problem);
     }
 
     @ExceptionHandler(Exception.class)
