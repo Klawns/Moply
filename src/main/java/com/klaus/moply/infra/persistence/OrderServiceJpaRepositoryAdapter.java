@@ -27,14 +27,14 @@ public class OrderServiceJpaRepositoryAdapter implements OrderServiceRepository 
     @Override
     public Optional<OrderService> findById(UUID id) {
         return repo.findById(id)
-                .map(OrderServiceEntity::toDomain);
+                .map(entity -> entity.toDomain());
     }
 
     @Override
     public List<OrderService> findByCustomerName(String customer) {
         return repo.findAllByCustomer(customer)
                 .stream()
-                .map(OrderServiceEntity::toDomain)
+                .map(entity -> entity.toDomain())
                 .toList();
     }
 
@@ -42,7 +42,7 @@ public class OrderServiceJpaRepositoryAdapter implements OrderServiceRepository 
     public List<OrderService> findAllByServiceDate(LocalDate serviceDate) {
         return repo.findAllByServiceDate(serviceDate)
                 .stream()
-                .map(OrderServiceEntity::toDomain)
+                .map(entity -> entity.toDomain())
                 .toList();
     }
 
