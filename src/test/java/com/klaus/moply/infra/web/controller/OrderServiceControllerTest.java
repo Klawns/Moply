@@ -33,135 +33,125 @@ import com.klaus.moply.domain.vo.Customer;
 @WebMvcTest(OrderServiceController.class)
 class OrderServiceControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+	@Autowired
+	private MockMvc mockMvc;
 
-        @MockitoBean
-        private CreateOrderService create;
+	@MockitoBean
+	private CreateOrderService create;
 
-        @MockitoBean
-        private FindOrderServiceByServiceDate findByServiceDate;
+	@MockitoBean
+	private FindOrderServiceByServiceDate findByServiceDate;
 
-        @MockitoBean
-        private FindAllOrderServicesByCustomerName findByCustomer;
+	@MockitoBean
+	private FindAllOrderServicesByCustomerName findByCustomer;
 
-        @MockitoBean
-        private FindOrderServiceById findById;
+	@MockitoBean
+	private FindOrderServiceById findById;
 
-        @MockitoBean
-        private DeleteOrderService delete;
+	@MockitoBean
+	private DeleteOrderService delete;
 
-        private static final String BASE_URL = "/api/v1/order-services";
+	private static final String BASE_URL = "/api/v1/order-services";
 
-        private static final UUID ORDER_SERVICE_ID = UUID.randomUUID();
-        private static final LocalDate SERVICE_DATE = LocalDate.of(2026, 9, 25);
+	private static final UUID ORDER_SERVICE_ID = UUID.randomUUID();
 
-        @Test
-        void shouldCreateOrderService() throws Exception {
+	private static final LocalDate SERVICE_DATE = LocalDate.of(2026, 9, 25);
 
-                when(create.execute(any(CreateOrderServiceInput.class)))
-                                .thenReturn(ORDER_SERVICE_ID);
+	@Test
+	void shouldCreateOrderService() throws Exception {
 
-                mockMvc.perform(post(BASE_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(createOrderServiceJson()))
-                                .andExpect(status().isCreated());
+		when(create.execute(any(CreateOrderServiceInput.class))).thenReturn(ORDER_SERVICE_ID);
 
-                verify(create).execute(any(CreateOrderServiceInput.class));
-        }
+		mockMvc.perform(post(BASE_URL).contentType(MediaType.APPLICATION_JSON).content(createOrderServiceJson()))
+				.andExpect(status().isCreated());
 
-        @Test
-        void shouldFindOrderServiceById() throws Exception {
+		verify(create).execute(any(CreateOrderServiceInput.class));
+	}
 
-                when(findById.execute(ORDER_SERVICE_ID))
-                                .thenReturn(orderServiceOutput());
+	@Test
+	void shouldFindOrderServiceById() throws Exception {
 
-                mockMvc.perform(get(BASE_URL + "/{orderId}", ORDER_SERVICE_ID))
-                                .andExpect(status().isOk());
+		when(findById.execute(ORDER_SERVICE_ID)).thenReturn(orderServiceOutput());
 
-                verify(findById).execute(ORDER_SERVICE_ID);
-        }
+		mockMvc.perform(get(BASE_URL + "/{orderId}", ORDER_SERVICE_ID)).andExpect(status().isOk());
 
-        @Test
-        void shouldDeleteOrderService() throws Exception {
+		verify(findById).execute(ORDER_SERVICE_ID);
+	}
 
-                mockMvc.perform(delete(BASE_URL + "/{orderId}", ORDER_SERVICE_ID))
-                                .andExpect(status().isNoContent());
+	@Test
+	void shouldDeleteOrderService() throws Exception {
 
-                verify(delete).execute(ORDER_SERVICE_ID);
-        }
+		mockMvc.perform(delete(BASE_URL + "/{orderId}", ORDER_SERVICE_ID)).andExpect(status().isNoContent());
 
-        @Test
-        void shouldFindByServiceDate() throws Exception {
+		verify(delete).execute(ORDER_SERVICE_ID);
+	}
 
-                when(findByServiceDate.execute(SERVICE_DATE))
-                                .thenReturn(List.of());
+	@Test
+	void shouldFindByServiceDate() throws Exception {
 
-                mockMvc.perform(get(BASE_URL)
-                                .param("serviceDate", SERVICE_DATE.toString()))
-                                .andExpect(status().isOk());
+		when(findByServiceDate.execute(SERVICE_DATE)).thenReturn(List.of());
 
-                verify(findByServiceDate).execute(SERVICE_DATE);
-        }
+		mockMvc.perform(get(BASE_URL).param("serviceDate", SERVICE_DATE.toString())).andExpect(status().isOk());
 
-        @Test
-        void shouldFindByCustomer() throws Exception {
+		verify(findByServiceDate).execute(SERVICE_DATE);
+	}
 
-                when(findByCustomer.execute(any(Customer.class)))
-                                .thenReturn(List.of());
+	@Test
+	void shouldFindByCustomer() throws Exception {
 
-                mockMvc.perform(get(BASE_URL)
-                                .param("serviceDate", SERVICE_DATE.toString())
-                                .param("customer", "João"))
-                                .andExpect(status().isOk());
+		when(findByCustomer.execute(any(Customer.class))).thenReturn(List.of());
 
-                verify(findByCustomer).execute(any(Customer.class));
-        }
+		mockMvc.perform(get(BASE_URL).param("serviceDate", SERVICE_DATE.toString()).param("customer", "João"))
+				.andExpect(status().isOk());
 
-        @Test
-        void shouldReturnBadRequestWhenCustomerIsInvalid() throws Exception {
+		verify(findByCustomer).execute(any(Customer.class));
+	}
 
-                mockMvc.perform(post(BASE_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(createOrderServiceJsonWithInvalidCustomer()))
-                                .andDo(print())
-                                .andExpect(status().isBadRequest());
-        }
+	@Test
+	void shouldReturnBadRequestWhenCustomerIsInvalid() throws Exception {
 
-        private OrderServiceOutput orderServiceOutput() {
-                return OrderServiceOutput.builder()
-                                .customer("João")
-                                .contractedHours(new BigDecimal("4.00"))
-                                .hourlyPrice(new BigDecimal("11.50"))
-                                .employeeCount(2)
-                                .serviceDate(SERVICE_DATE)
-                                .totalAmount(new BigDecimal("46.00"))
-                                .individualHour(new BigDecimal("2.00"))
-                                .individualAmount(new BigDecimal("23.00"))
-                                .build();
-        }
+		mockMvc
+				.perform(post(BASE_URL).contentType(MediaType.APPLICATION_JSON)
+						.content(createOrderServiceJsonWithInvalidCustomer()))
+				.andDo(print())
+				.andExpect(status().isBadRequest());
+	}
 
-        private String createOrderServiceJson() {
-                return """
-                                {
-                                    "customer": "João",
-                                    "contractedHours": 4.00,
-                                    "hourlyRate": 11.50,
-                                    "employeeCount": 2,
-                                    "serviceDate": "%s"
-                                }
-                                """.formatted(SERVICE_DATE);
-        }
+	private OrderServiceOutput orderServiceOutput() {
+		return OrderServiceOutput.builder()
+				.customer("João")
+				.contractedHours(new BigDecimal("4.00"))
+				.hourlyPrice(new BigDecimal("11.50"))
+				.employeeCount(2)
+				.serviceDate(SERVICE_DATE)
+				.totalAmount(new BigDecimal("46.00"))
+				.individualHour(new BigDecimal("2.00"))
+				.individualAmount(new BigDecimal("23.00"))
+				.build();
+	}
 
-        private String createOrderServiceJsonWithInvalidCustomer() {
-                return """
-                                {
-                                    "customer": "",
-                                    "contractedHours": 4.00,
-                                    "hourlyRate": 11.50,
-                                    "employeeCount": 2,
-                                    "serviceDate": "%s"
-                                }
-                                """.formatted(SERVICE_DATE);
-        }
+	private String createOrderServiceJson() {
+		return """
+				{
+				    "customer": "João",
+				    "contractedHours": 4.00,
+				    "hourlyRate": 11.50,
+				    "employeeCount": 2,
+				    "serviceDate": "%s"
+				}
+				""".formatted(SERVICE_DATE);
+	}
+
+	private String createOrderServiceJsonWithInvalidCustomer() {
+		return """
+				{
+				    "customer": "",
+				    "contractedHours": 4.00,
+				    "hourlyRate": 11.50,
+				    "employeeCount": 2,
+				    "serviceDate": "%s"
+				}
+				""".formatted(SERVICE_DATE);
+	}
+
 }

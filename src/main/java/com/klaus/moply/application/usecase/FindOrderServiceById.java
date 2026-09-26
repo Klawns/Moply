@@ -11,12 +11,13 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class FindOrderServiceById implements Usecase<UUID, OrderServiceOutput> {
-    private final OrderServiceRepository repo;
 
-    public OrderServiceOutput execute(UUID id) {
-        OrderService orderService = repo.findById(id)
-                .orElseThrow(() -> new OrderServiceNotFoundException(id));
+	private final OrderServiceRepository repo;
 
-        return OrderServiceOutput.fromDomain(orderService);
-    }
+	public OrderServiceOutput execute(UUID id) {
+		OrderService orderService = repo.findById(id).orElseThrow(() -> new OrderServiceNotFoundException(id));
+
+		return OrderServiceOutput.fromDomain(orderService);
+	}
+
 }

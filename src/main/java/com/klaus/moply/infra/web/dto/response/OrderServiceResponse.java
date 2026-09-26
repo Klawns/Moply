@@ -9,28 +9,15 @@ import com.klaus.moply.application.usecase.dto.OrderServiceOutput;
 import lombok.Builder;
 
 @Builder
-public record OrderServiceResponse(
-                UUID id,
-                String customer,
-                BigDecimal totalHours,
-                int employeeCount,
-                LocalDate serviceDate,
-                OrderServiceCalculation calculation) {
+public record OrderServiceResponse(UUID id, String customer, BigDecimal totalHours, int employeeCount,
+		LocalDate serviceDate, OrderServiceCalculation calculation) {
 
-        public static OrderServiceResponse from(
-                        OrderServiceOutput output) {
+	public static OrderServiceResponse from(OrderServiceOutput output) {
 
-                OrderServiceCalculation calculation = new OrderServiceCalculation(
-                                output.totalAmount(),
-                                output.individualHour(),
-                                output.individualAmount());
+		OrderServiceCalculation calculation = new OrderServiceCalculation(output.totalAmount(), output.individualHour(),
+				output.individualAmount());
 
-                return new OrderServiceResponse(
-                                output.id(),
-                                output.customer(),
-                                output.contractedHours(),
-                                output.employeeCount(),
-                                output.serviceDate(),
-                                calculation);
-        }
+		return new OrderServiceResponse(output.id(), output.customer(), output.contractedHours(),
+				output.employeeCount(), output.serviceDate(), calculation);
+	}
 }

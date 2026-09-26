@@ -16,38 +16,32 @@ import lombok.RequiredArgsConstructor;
 @Repository
 public class OrderServiceJpaRepositoryAdapter implements OrderServiceRepository {
 
-    private final OrderServiceJpaRepository repo;
+	private final OrderServiceJpaRepository repo;
 
-    @Override
-    public OrderService save(OrderService orderService) {
-        OrderServiceEntity entity = OrderServiceEntity.fromDomain(orderService);
-        return repo.save(entity).toDomain();
-    }
+	@Override
+	public OrderService save(OrderService orderService) {
+		OrderServiceEntity entity = OrderServiceEntity.fromDomain(orderService);
+		return repo.save(entity).toDomain();
+	}
 
-    @Override
-    public Optional<OrderService> findById(UUID id) {
-        return repo.findById(id)
-                .map(entity -> entity.toDomain());
-    }
+	@Override
+	public Optional<OrderService> findById(UUID id) {
+		return repo.findById(id).map(entity -> entity.toDomain());
+	}
 
-    @Override
-    public List<OrderService> findByCustomerName(String customer) {
-        return repo.findAllByCustomer(customer)
-                .stream()
-                .map(entity -> entity.toDomain())
-                .toList();
-    }
+	@Override
+	public List<OrderService> findByCustomerName(String customer) {
+		return repo.findAllByCustomer(customer).stream().map(entity -> entity.toDomain()).toList();
+	}
 
-    @Override
-    public List<OrderService> findAllByServiceDate(LocalDate serviceDate) {
-        return repo.findAllByServiceDate(serviceDate)
-                .stream()
-                .map(entity -> entity.toDomain())
-                .toList();
-    }
+	@Override
+	public List<OrderService> findAllByServiceDate(LocalDate serviceDate) {
+		return repo.findAllByServiceDate(serviceDate).stream().map(entity -> entity.toDomain()).toList();
+	}
 
-    @Override
-    public void deleteById(UUID id) {
-        repo.deleteById(id);
-    }
+	@Override
+	public void deleteById(UUID id) {
+		repo.deleteById(id);
+	}
+
 }

@@ -13,51 +13,45 @@ import com.klaus.moply.domain.exception.DomainException;
 @ControllerAdvice
 public class ControllerExceptionHandler {
 
-    @ExceptionHandler(OrderServiceNotFoundException.class)
-    private ResponseEntity<ProblemDetail> handleOrderServiceNotFoundException(OrderServiceNotFoundException e) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problemDetail.setTitle(e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
-    }
+	@ExceptionHandler(OrderServiceNotFoundException.class)
+	private ResponseEntity<ProblemDetail> handleOrderServiceNotFoundException(OrderServiceNotFoundException e) {
+		ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+		problemDetail.setTitle(e.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+	}
 
-    @ExceptionHandler(DomainException.class)
-    private ResponseEntity<ProblemDetail> handleDomainException(DomainException e) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+	@ExceptionHandler(DomainException.class)
+	private ResponseEntity<ProblemDetail> handleDomainException(DomainException e) {
+		ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
 
-        problemDetail.setTitle(e.getMessage());
+		problemDetail.setTitle(e.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(problemDetail);
-    }
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+	}
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ProblemDetail> handleValidation(
-            MethodArgumentNotValidException exception) {
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException exception) {
 
-        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+		ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
 
-        problem.setTitle("Erro de validação");
+		problem.setTitle("Erro de validação");
 
-        problem.setDetail(
-                exception.getBindingResult()
-                        .getFieldErrors()
-                        .stream()
-                        .map(error -> error.getDefaultMessage())
-                        .findFirst()
-                        .orElse("Dados inválidos."));
+		problem.setDetail(exception.getBindingResult()
+				.getFieldErrors()
+				.stream()
+				.map(error -> error.getDefaultMessage())
+				.findFirst()
+				.orElse("Dados inválidos."));
 
-        return ResponseEntity.badRequest().body(problem);
-    }
+		return ResponseEntity.badRequest().body(problem);
+	}
 
-    @ExceptionHandler(Exception.class)
-    private ResponseEntity<ProblemDetail> handleException(Exception e) {
+	@ExceptionHandler(Exception.class)
+	private ResponseEntity<ProblemDetail> handleException(Exception e) {
 
-        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-        problemDetail.setTitle("Ocorreu um erro interno.");
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(problemDetail);
-    }
+		ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+		problemDetail.setTitle("Ocorreu um erro interno.");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+	}
 
 }

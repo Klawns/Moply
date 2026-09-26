@@ -6,28 +6,25 @@ import java.math.RoundingMode;
 import com.klaus.moply.domain.exception.DomainException;
 
 public record DurationHours(BigDecimal value) {
-    public DurationHours {
-        if (value == null) {
-            throw new DomainException("Hours can't be null.");
-        }
+	public DurationHours {
+		if (value == null) {
+			throw new DomainException("Hours can't be null.");
+		}
 
-        if (value.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new DomainException("Hours must be greater than zero.");
-        }
+		if (value.compareTo(BigDecimal.ZERO) <= 0) {
+			throw new DomainException("Hours must be greater than zero.");
+		}
 
-        value = value.setScale(2, RoundingMode.HALF_UP);
-    }
+		value = value.setScale(2, RoundingMode.HALF_UP);
+	}
 
-    public DurationHours divide(Integer divisor) {
-        if (divisor == null || divisor <= 0) {
-            throw new DomainException("Divisor must be greater than zero.");
-        }
+	public DurationHours divide(Integer divisor) {
+		if (divisor == null || divisor <= 0) {
+			throw new DomainException("Divisor must be greater than zero.");
+		}
 
-        BigDecimal result = value.divide(
-                BigDecimal.valueOf(divisor),
-                2,
-                RoundingMode.HALF_UP);
+		BigDecimal result = value.divide(BigDecimal.valueOf(divisor), 2, RoundingMode.HALF_UP);
 
-        return new DurationHours(result);
-    }
+		return new DurationHours(result);
+	}
 }

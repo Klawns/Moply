@@ -20,46 +20,38 @@ import com.klaus.moply.application.usecase.dto.CreateOrderServiceInput;
 import com.klaus.moply.domain.entity.OrderService;
 
 public class CreateOrderServiceTest {
-        private OrderServiceRepository repo;
 
-        private CreateOrderService useCase;
+	private OrderServiceRepository repo;
 
-        @BeforeEach
-        void setUp() {
-                repo = mock(OrderServiceRepository.class);
+	private CreateOrderService useCase;
 
-                useCase = new CreateOrderService(repo);
-        }
+	@BeforeEach
+	void setUp() {
+		repo = mock(OrderServiceRepository.class);
 
-        @Test
-        @DisplayName("Deve criar uma prestação.")
-        void shouldCreatePrestacaoServico() {
-                CreateOrderServiceInput command = new CreateOrderServiceInput(
-                                "João",
-                                new BigDecimal("4.00"),
-                                new BigDecimal("11.50"),
-                                2,
-                                LocalDate.of(2026, 9, 21));
+		useCase = new CreateOrderService(repo);
+	}
 
-                UUID idGerado = UUID.randomUUID();
+	@Test
+	@DisplayName("Deve criar uma prestação.")
+	void shouldCreatePrestacaoServico() {
+		CreateOrderServiceInput command = new CreateOrderServiceInput("João", new BigDecimal("4.00"),
+				new BigDecimal("11.50"), 2, LocalDate.of(2026, 9, 21));
 
-                when(repo.save(any(OrderService.class)))
-                                .thenAnswer(invocation -> {
-                                        OrderService dominioPassado = invocation.getArgument(0);
-                                        return OrderService.restore(
-                                                        idGerado,
-                                                        dominioPassado.getCustomer().name(),
-                                                        dominioPassado.getContractedHours().value(),
-                                                        dominioPassado.getHourlyRate().value(),
-                                                        dominioPassado.getEmployeeCount(),
-                                                        dominioPassado.getServiceDate());
-                                });
+		UUID idGerado = UUID.randomUUID();
 
-                UUID id = useCase.execute(command);
+		when(repo.save(any(OrderService.class))).thenAnswer(invocation -> {
+			OrderService dominioPassado = invocation.getArgument(0);
+			return OrderService.restore(idGerado, dominioPassado.getCustomer().name(),
+					dominioPassado.getContractedHours().value(), dominioPassado.getHourlyRate().value(),
+					dominioPassado.getEmployeeCount(), dominioPassado.getServiceDate());
+		});
 
-                assertEquals(idGerado, id);
+		UUID id = useCase.execute(command);
 
-                verify(repo).save(any(OrderService.class));
-        }
+		assertEquals(idGerado, id);
+
+		verify(repo).save(any(OrderService.class));
+	}
 
 }

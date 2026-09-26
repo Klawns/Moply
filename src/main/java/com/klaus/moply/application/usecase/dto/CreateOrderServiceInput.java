@@ -6,10 +6,6 @@ import java.time.LocalDate;
 import lombok.Builder;
 
 @Builder
-public record CreateOrderServiceInput(
-        String customer,
-        BigDecimal contractedHours,
-        BigDecimal HourlyPrice,
-        Integer employeeCount,
-        LocalDate serviceDate) {
+public record CreateOrderServiceInput(String customer, BigDecimal contractedHours, BigDecimal HourlyPrice,
+		Integer employeeCount, LocalDate serviceDate) {
 }

@@ -20,45 +20,43 @@ import com.klaus.moply.domain.entity.OrderService;
 import com.klaus.moply.factory.OrderServiceFactory;
 
 public class DeleteOrderServiceTest {
-    private OrderServiceRepository repo;
-    private DeleteOrderService useCase;
 
-    @BeforeEach
-    void setUp() {
-        repo = mock(OrderServiceRepository.class);
+	private OrderServiceRepository repo;
 
-        useCase = new DeleteOrderService(repo);
-    }
+	private DeleteOrderService useCase;
 
-    @Test
-    @DisplayName("Deve deletar corretamente uma prestação de serviço pelo ID.")
-    void shouldDeletePrestacaoServicoById() {
-        OrderService prestacaoServico = OrderServiceFactory.createOrderService();
+	@BeforeEach
+	void setUp() {
+		repo = mock(OrderServiceRepository.class);
 
-        UUID id = prestacaoServico.getId();
+		useCase = new DeleteOrderService(repo);
+	}
 
-        when(repo.findById(id))
-                .thenReturn(Optional.of(prestacaoServico));
+	@Test
+	@DisplayName("Deve deletar corretamente uma prestação de serviço pelo ID.")
+	void shouldDeletePrestacaoServicoById() {
+		OrderService prestacaoServico = OrderServiceFactory.createOrderService();
 
-        useCase.execute(id);
+		UUID id = prestacaoServico.getId();
 
-        verify(repo).deleteById(id);
+		when(repo.findById(id)).thenReturn(Optional.of(prestacaoServico));
 
-    }
+		useCase.execute(id);
 
-    @Test
-    @DisplayName("Deve lançar exception quando não existir essa prestação de serviço para ser deletada.")
-    void shouldThrowWhenPrestacaoServicoDoesNotExist() {
+		verify(repo).deleteById(id);
+	}
 
-        UUID id = UUID.randomUUID();
+	@Test
+	@DisplayName("Deve lançar exception quando não existir essa prestação de serviço para ser deletada.")
+	void shouldThrowWhenPrestacaoServicoDoesNotExist() {
 
-        when(repo.findById(id))
-                .thenReturn(Optional.empty());
+		UUID id = UUID.randomUUID();
 
-        assertThrows(
-                OrderServiceNotFoundException.class,
-                () -> useCase.execute(id));
+		when(repo.findById(id)).thenReturn(Optional.empty());
 
-        verify(repo, never()).deleteById(id);
-    }
+		assertThrows(OrderServiceNotFoundException.class, () -> useCase.execute(id));
+
+		verify(repo, never()).deleteById(id);
+	}
+
 }

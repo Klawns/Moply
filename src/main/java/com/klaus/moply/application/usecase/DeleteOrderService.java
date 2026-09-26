@@ -11,16 +11,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DeleteOrderService implements Usecase<UUID, Void> {
 
-    private final OrderServiceRepository repo;
+	private final OrderServiceRepository repo;
 
-    @Override
-    public Void execute(UUID id) {
+	@Override
+	public Void execute(UUID id) {
 
-        OrderService orderService = repo.findById(id)
-                .orElseThrow(() -> new OrderServiceNotFoundException(id));
+		OrderService orderService = repo.findById(id).orElseThrow(() -> new OrderServiceNotFoundException(id));
 
-        repo.deleteById(orderService.getId());
+		repo.deleteById(orderService.getId());
 
-        return null;
-    }
+		return null;
+	}
+
 }

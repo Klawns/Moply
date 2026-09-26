@@ -33,64 +33,63 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("api/v1/order-services")
 @RequiredArgsConstructor
 public class OrderServiceController {
-    private final CreateOrderService create;
-    private final FindOrderServiceByServiceDate findByServiceDate;
-    private final FindAllOrderServicesByCustomerName findByCustomer;
-    private final FindOrderServiceById findById;
-    private final DeleteOrderService delete;
 
-    @PostMapping
-    public ResponseEntity<UUID> create(
-            @RequestBody @Valid CreateOrderServiceRequest request) {
+	private final CreateOrderService create;
 
-        CreateOrderServiceInput input = CreateOrderServiceInput.builder()
-                .customer(request.customer())
-                .contractedHours(request.contractedHours())
-                .HourlyPrice(request.hourlyRate())
-                .employeeCount(request.employeeCount())
-                .serviceDate(request.serviceDate())
-                .build();
+	private final FindOrderServiceByServiceDate findByServiceDate;
 
-        UUID response = create.execute(input);
+	private final FindAllOrderServicesByCustomerName findByCustomer;
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+	private final FindOrderServiceById findById;
 
-    @GetMapping
-    public ResponseEntity<List<OrderServiceResponse>> list(
-            @RequestParam LocalDate serviceDate,
-            @RequestParam(required = false) String customer) {
+	private final DeleteOrderService delete;
 
-        List<OrderServiceOutput> orderService;
+	@PostMapping
+	public ResponseEntity<UUID> create(@RequestBody @Valid CreateOrderServiceRequest request) {
 
-        if (customer != null) {
-            orderService = findByCustomer.execute(new Customer(customer));
-        } else {
-            orderService = findByServiceDate.execute(serviceDate);
-        }
+		CreateOrderServiceInput input = CreateOrderServiceInput.builder()
+				.customer(request.customer())
+				.contractedHours(request.contractedHours())
+				.HourlyPrice(request.hourlyRate())
+				.employeeCount(request.employeeCount())
+				.serviceDate(request.serviceDate())
+				.build();
 
-        List<OrderServiceResponse> response = orderService.stream()
-                .map(OrderServiceResponse::from)
-                .toList();
+		UUID response = create.execute(input);
 
-        return ResponseEntity.ok(response);
-    }
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	}
 
-    @GetMapping("/{orderId}")
-    public ResponseEntity<OrderServiceResponse> findById(
-            @PathVariable UUID orderId) {
+	@GetMapping
+	public ResponseEntity<List<OrderServiceResponse>> list(@RequestParam LocalDate serviceDate,
+			@RequestParam(required = false) String customer) {
 
-        OrderServiceOutput output = findById.execute(orderId);
+		List<OrderServiceOutput> orderService;
 
-        return ResponseEntity.ok(
-                OrderServiceResponse.from(output));
-    }
+		if (customer != null) {
+			orderService = findByCustomer.execute(new Customer(customer));
+		} else {
+			orderService = findByServiceDate.execute(serviceDate);
+		}
 
-    @DeleteMapping("/{orderId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID orderId) {
-        delete.execute(orderId);
+		List<OrderServiceResponse> response = orderService.stream().map(OrderServiceResponse::from).toList();
 
-        return ResponseEntity.noContent().build();
-    }
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping("/{orderId}")
+	public ResponseEntity<OrderServiceResponse> findById(@PathVariable UUID orderId) {
+
+		OrderServiceOutput output = findById.execute(orderId);
+
+		return ResponseEntity.ok(OrderServiceResponse.from(output));
+	}
+
+	@DeleteMapping("/{orderId}")
+	public ResponseEntity<Void> delete(@PathVariable UUID orderId) {
+		delete.execute(orderId);
+
+		return ResponseEntity.noContent().build();
+	}
 
 }

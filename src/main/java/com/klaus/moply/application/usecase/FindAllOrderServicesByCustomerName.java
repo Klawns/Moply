@@ -11,11 +11,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FindAllOrderServicesByCustomerName implements Usecase<Customer, List<OrderServiceOutput>> {
 
-    private final OrderServiceRepository repo;
+	private final OrderServiceRepository repo;
 
-    public List<OrderServiceOutput> execute(Customer customer) {
-        return repo.findByCustomerName(customer.name()).stream()
-                .map(OrderServiceOutput::fromDomain)
-                .toList();
-    }
+	public List<OrderServiceOutput> execute(Customer customer) {
+		return repo.findByCustomerName(customer.name()).stream().map(OrderServiceOutput::fromDomain).toList();
+	}
+
 }

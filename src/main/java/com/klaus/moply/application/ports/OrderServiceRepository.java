@@ -8,14 +8,15 @@ import java.util.UUID;
 import com.klaus.moply.domain.entity.OrderService;
 
 public interface OrderServiceRepository {
-    OrderService save(OrderService prestacaoServico);
 
-    Optional<OrderService> findById(UUID id);
+	OrderService save(OrderService prestacaoServico);
 
-    List<OrderService> findByCustomerName(String cliente);
+	Optional<OrderService> findById(UUID id);
 
-    List<OrderService> findAllByServiceDate(LocalDate serviceDate);
+	List<OrderService> findByCustomerName(String cliente);
 
-    void deleteById(UUID id);
+	List<OrderService> findAllByServiceDate(LocalDate serviceDate);
+
+	void deleteById(UUID id);
 
 }

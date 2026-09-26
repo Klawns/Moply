@@ -11,18 +11,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateOrderService implements Usecase<CreateOrderServiceInput, UUID> {
 
-    private final OrderServiceRepository repo;
+	private final OrderServiceRepository repo;
 
-    public UUID execute(CreateOrderServiceInput input) {
-        OrderService orderService = OrderService.create(
-                input.customer(),
-                input.contractedHours(),
-                input.HourlyPrice(),
-                input.employeeCount(),
-                input.serviceDate());
+	public UUID execute(CreateOrderServiceInput input) {
+		OrderService orderService = OrderService.create(input.customer(), input.contractedHours(), input.HourlyPrice(),
+				input.employeeCount(), input.serviceDate());
 
-        orderService = repo.save(orderService);
+		orderService = repo.save(orderService);
 
-        return orderService.getId();
-    }
+		return orderService.getId();
+	}
+
 }

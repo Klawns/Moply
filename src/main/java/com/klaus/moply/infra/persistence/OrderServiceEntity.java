@@ -18,65 +18,57 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(
-    name = "tb_order_service", 
-    indexes = {
-        @Index(name = "idx_service_date", columnList = "service_date")
-    })
+@Table(name = "tb_order_service", indexes = { @Index(name = "idx_service_date", columnList = "service_date") })
 @Getter
 @Setter
 @NoArgsConstructor
 public class OrderServiceEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
 
-    @Column(nullable = false, name = "customer")
-    private String customer;
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	private UUID id;
 
-    @Column(nullable = false, name = "contracted_hours")
-    private BigDecimal contractedHours;
+	@Column(nullable = false, name = "customer")
+	private String customer;
 
-    @Column(nullable = false, name = "hourly_rate")
-    private BigDecimal hourlyRate;
+	@Column(nullable = false, name = "contracted_hours")
+	private BigDecimal contractedHours;
 
-    @Column(nullable = false, name = "employee_count")
-    private Integer employeeCount;
-    
-    @Column(nullable = false, name = "service_date")
-    private LocalDate serviceDate;
+	@Column(nullable = false, name = "hourly_rate")
+	private BigDecimal hourlyRate;
 
-    public OrderServiceEntity(UUID id, String customer, BigDecimal contractedHours, BigDecimal hourlyRate,
-            Integer employeeCount, LocalDate serviceDate) {
-        this.customer = customer;
-        this.contractedHours = contractedHours;
-        this.hourlyRate = hourlyRate;
-        this.employeeCount = employeeCount;
-        this.serviceDate = serviceDate;
-    }
+	@Column(nullable = false, name = "employee_count")
+	private Integer employeeCount;
 
-    public static OrderServiceEntity fromDomain(OrderService orderService) {
+	@Column(nullable = false, name = "service_date")
+	private LocalDate serviceDate;
 
-        OrderServiceEntity entity = new OrderServiceEntity();
+	public OrderServiceEntity(UUID id, String customer, BigDecimal contractedHours, BigDecimal hourlyRate,
+			Integer employeeCount, LocalDate serviceDate) {
+		this.customer = customer;
+		this.contractedHours = contractedHours;
+		this.hourlyRate = hourlyRate;
+		this.employeeCount = employeeCount;
+		this.serviceDate = serviceDate;
+	}
 
-        entity.id = orderService.getId();
-        entity.customer = orderService.getCustomer().name();
-        entity.contractedHours = orderService.getContractedHours().value();
-        entity.hourlyRate = orderService.getHourlyRate().value();
-        entity.employeeCount = orderService.getEmployeeCount();
-        entity.serviceDate = orderService.getServiceDate();
+	public static OrderServiceEntity fromDomain(OrderService orderService) {
 
-        return entity;
-    }
+		OrderServiceEntity entity = new OrderServiceEntity();
 
-    public OrderService toDomain() {
+		entity.id = orderService.getId();
+		entity.customer = orderService.getCustomer().name();
+		entity.contractedHours = orderService.getContractedHours().value();
+		entity.hourlyRate = orderService.getHourlyRate().value();
+		entity.employeeCount = orderService.getEmployeeCount();
+		entity.serviceDate = orderService.getServiceDate();
 
-        return OrderService.restore(
-                id,
-                customer,
-                contractedHours,
-                hourlyRate,
-                employeeCount,
-                serviceDate);
-    }
+		return entity;
+	}
+
+	public OrderService toDomain() {
+
+		return OrderService.restore(id, customer, contractedHours, hourlyRate, employeeCount, serviceDate);
+	}
+
 }
