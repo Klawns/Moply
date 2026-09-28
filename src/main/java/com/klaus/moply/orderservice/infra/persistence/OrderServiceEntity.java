@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.orderservice.domain.entity.OrderService;
 
 import jakarta.persistence.Column;
@@ -13,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,8 +30,8 @@ public class OrderServiceEntity {
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
 
-	@Column(nullable = false, name = "customer")
-	private String customer;
+	@Column(name = "customer_id", nullable = false)
+	private UUID customerId;
 
 	@Column(nullable = false, name = "contracted_hours")
 	private BigDecimal contractedHours;
@@ -43,9 +45,10 @@ public class OrderServiceEntity {
 	@Column(nullable = false, name = "service_date")
 	private LocalDate serviceDate;
 
-	public OrderServiceEntity(UUID id, String customer, BigDecimal contractedHours, BigDecimal hourlyRate,
+	public OrderServiceEntity(UUID id, UUID customerId, BigDecimal contractedHours, BigDecimal hourlyRate,
 			Integer employeeCount, LocalDate serviceDate) {
-		this.customer = customer;
+		this.id = id;
+		this.customerId = customerId;
 		this.contractedHours = contractedHours;
 		this.hourlyRate = hourlyRate;
 		this.employeeCount = employeeCount;
@@ -57,7 +60,7 @@ public class OrderServiceEntity {
 		OrderServiceEntity entity = new OrderServiceEntity();
 
 		entity.id = orderService.getId();
-		entity.customer = orderService.getCustomer().name();
+		entity.customerId = orderService.getCustomer().getId();
 		entity.contractedHours = orderService.getContractedHours().value();
 		entity.hourlyRate = orderService.getHourlyRate().value();
 		entity.employeeCount = orderService.getEmployeeCount();
@@ -66,9 +69,9 @@ public class OrderServiceEntity {
 		return entity;
 	}
 
-	public OrderService toDomain() {
+	public OrderService toDomain(Customer registeredCustomer) {
 
-		return OrderService.restore(id, customer, contractedHours, hourlyRate, employeeCount, serviceDate);
+		return OrderService.restore(id, registeredCustomer, contractedHours, hourlyRate, employeeCount, serviceDate);
 	}
 
 }

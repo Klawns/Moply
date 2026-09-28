@@ -5,15 +5,13 @@ import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.klaus.moply.orderservice.domain.exception.DomainException;
-import com.klaus.moply.orderservice.domain.vo.Customer;
+import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.orderservice.domain.vo.DurationHours;
 import com.klaus.moply.orderservice.domain.vo.Money;
+import com.klaus.moply.shared.domain.exception.DomainException;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
 @Getter
 public class OrderService {
 
@@ -29,23 +27,24 @@ public class OrderService {
 
 	private LocalDate serviceDate;
 
-	private OrderService(UUID id, String customerName, BigDecimal contractedHours, BigDecimal hourlyRate,
+	private OrderService(UUID id, Customer customer, BigDecimal contractedHours, BigDecimal hourlyRate,
 			Integer employeeCount, LocalDate serviceDate) {
 		this.id = id;
-		this.customer = new Customer(customerName);
+		validateCustomer(customer);
+		this.customer = customer;
 		this.contractedHours = new DurationHours(contractedHours);
 		this.hourlyRate = new Money(hourlyRate);
 		this.employeeCount = employeeCount;
 		this.serviceDate = Objects.requireNonNull(serviceDate, "Service date cannot be null.");
 	}
 
-	public static OrderService create(String customer, BigDecimal contractedHours, BigDecimal hourlyRate,
+	public static OrderService create(Customer customer, BigDecimal contractedHours, BigDecimal hourlyRate,
 			Integer employeeCount, LocalDate serviceDate) {
 
 		return new OrderService(null, customer, contractedHours, hourlyRate, employeeCount, serviceDate);
 	}
 
-	public static OrderService restore(UUID id, String customer, BigDecimal contractedHours, BigDecimal hourlyRate,
+	public static OrderService restore(UUID id, Customer customer, BigDecimal contractedHours, BigDecimal hourlyRate,
 			Integer employeeCount, LocalDate serviceDate) {
 
 		Objects.requireNonNull(id, "ID is required for reconstruction.");
@@ -65,8 +64,15 @@ public class OrderService {
 		return hourlyRate.multiply(individualHours.value());
 	}
 
-	public void changeCustomer(String customerName) {
-		this.customer = new Customer(customerName);
+	public void changeCustomer(Customer customer) {
+		validateCustomer(customer);
+		this.customer = customer;
+	}
+
+	private static void validateCustomer(Customer customer) {
+		if (customer == null || customer.getId() == null) {
+			throw new DomainException("Um cliente cadastrado é obrigatório.");
+		}
 	}
 
 	public void changeContractedHours(BigDecimal contractedHours) {

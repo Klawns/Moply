@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.customers.domain.vo.CustomerName;
 import com.klaus.moply.orderservice.application.usecase.CreateOrderService;
 import com.klaus.moply.orderservice.application.usecase.DeleteOrderService;
 import com.klaus.moply.orderservice.application.usecase.FindAllOrderServicesByCustomerName;
@@ -22,11 +23,11 @@ import com.klaus.moply.orderservice.application.usecase.FindOrderServiceById;
 import com.klaus.moply.orderservice.application.usecase.FindOrderServiceByServiceDate;
 import com.klaus.moply.orderservice.application.usecase.dto.CreateOrderServiceInput;
 import com.klaus.moply.orderservice.application.usecase.dto.OrderServiceOutput;
-import com.klaus.moply.orderservice.domain.vo.Customer;
 import com.klaus.moply.orderservice.infra.web.dto.request.CreateOrderServiceRequest;
 import com.klaus.moply.orderservice.infra.web.dto.response.OrderServiceResponse;
 
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -48,7 +49,7 @@ public class OrderServiceController {
 	public ResponseEntity<UUID> create(@RequestBody @Valid CreateOrderServiceRequest request) {
 
 		CreateOrderServiceInput input = CreateOrderServiceInput.builder()
-			.customer(request.customer())
+			.customerId(request.customerId())
 			.contractedHours(request.contractedHours())
 			.HourlyPrice(request.hourlyRate())
 			.employeeCount(request.employeeCount())
@@ -67,7 +68,7 @@ public class OrderServiceController {
 		List<OrderServiceOutput> orderService;
 
 		if (customer != null) {
-			orderService = findByCustomer.execute(new Customer(customer));
+			orderService = findByCustomer.execute(new CustomerName(customer));
 		}
 		else {
 			orderService = findByServiceDate.execute(serviceDate);

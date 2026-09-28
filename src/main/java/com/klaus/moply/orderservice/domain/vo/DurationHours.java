@@ -3,7 +3,7 @@ package com.klaus.moply.orderservice.domain.vo;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-import com.klaus.moply.orderservice.domain.exception.DomainException;
+import com.klaus.moply.shared.domain.exception.DomainException;
 
 public record DurationHours(BigDecimal value) {
 	public DurationHours {

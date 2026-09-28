@@ -3,6 +3,7 @@ package com.klaus.moply.orderservice.infra.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.orderservice.application.ports.OrderServiceRepository;
 import com.klaus.moply.orderservice.application.usecase.CreateOrderService;
 import com.klaus.moply.orderservice.application.usecase.DeleteOrderService;
@@ -29,8 +30,8 @@ public class OrderServiceConfig {
 	}
 
 	@Bean
-	public CreateOrderService createOrderService(OrderServiceRepository repository) {
-		return new CreateOrderService(repository);
+	public CreateOrderService createOrderService(OrderServiceRepository repository, CustomerRepository customers) {
+		return new CreateOrderService(repository, customers);
 	}
 
 	@Bean

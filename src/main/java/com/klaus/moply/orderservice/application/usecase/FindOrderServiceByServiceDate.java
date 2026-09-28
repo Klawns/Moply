@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.klaus.moply.orderservice.application.ports.OrderServiceRepository;
 import com.klaus.moply.orderservice.application.usecase.dto.OrderServiceOutput;
+import com.klaus.moply.shared.application.usecase.Usecase;
 
 import lombok.RequiredArgsConstructor;
 
