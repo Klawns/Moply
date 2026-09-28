@@ -1,8 +1,11 @@
 package com.klaus.moply.customers.application.usecase.dto;
 
 import java.util.UUID;
+
+import com.klaus.moply.customers.domain.entities.Customer;
+
 import java.util.List;
-import com.klaus.moply.customers.domain.Customer;
+
 import lombok.Builder;
 
 @Builder

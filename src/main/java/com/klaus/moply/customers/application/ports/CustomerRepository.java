@@ -3,7 +3,8 @@ package com.klaus.moply.customers.application.ports;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
-import com.klaus.moply.customers.domain.Customer;
+
+import com.klaus.moply.customers.domain.entities.Customer;
 
 public interface CustomerRepository {
 

@@ -1,12 +1,13 @@
 package com.klaus.moply.customers.application.usecase;
 
 import com.klaus.moply.customers.application.usecase.dto.AddCustomerLocationInput;
-import com.klaus.moply.customers.domain.CustomerLocation;
-import com.klaus.moply.application.usecase.Usecase;
+import com.klaus.moply.orderservice.application.usecase.Usecase;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.dto.CustomerLocationOutput;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
-import com.klaus.moply.customers.domain.Customer;
+import com.klaus.moply.customers.domain.entities.Customer;
+import com.klaus.moply.customers.domain.entities.CustomerLocation;
+
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

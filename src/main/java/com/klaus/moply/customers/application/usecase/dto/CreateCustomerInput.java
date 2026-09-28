@@ -1,7 +1,9 @@
 package com.klaus.moply.customers.application.usecase.dto;
 
 import java.util.List;
-import com.klaus.moply.domain.exception.DomainException;
+
+import com.klaus.moply.orderservice.domain.exception.DomainException;
+
 import lombok.Builder;
 
 @Builder

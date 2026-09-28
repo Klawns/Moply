@@ -1,6 +1,6 @@
 package com.klaus.moply.customers.domain.vo;
 
-import com.klaus.moply.domain.exception.DomainException;
+import com.klaus.moply.orderservice.domain.exception.DomainException;
 
 public record Email(String value) {
 	public Email {
