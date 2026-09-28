@@ -33,3 +33,7 @@ build/
 .vscode/
 
 .env
+
+src/docs/
+
+AGENTS.md
