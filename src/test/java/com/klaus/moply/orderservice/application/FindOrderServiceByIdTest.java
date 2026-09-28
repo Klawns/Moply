@@ -1,11 +1,5 @@
 package com.klaus.moply.orderservice.application;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -14,10 +8,17 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.orderservice.application.ports.OrderServiceRepository;
 import com.klaus.moply.orderservice.application.usecase.FindOrderServiceById;
 import com.klaus.moply.orderservice.application.usecase.dto.OrderServiceOutput;
 import com.klaus.moply.orderservice.domain.entity.OrderService;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class FindOrderServiceByIdTest {
 
@@ -36,8 +37,8 @@ public class FindOrderServiceByIdTest {
 	void deveBuscarPrestacaoServicoPorId() {
 		UUID id = UUID.randomUUID();
 
-		OrderService orderService = OrderService.restore(id, "João", new BigDecimal("4.00"), new BigDecimal("11.50"), 2,
-				LocalDate.of(2026, 9, 21));
+		OrderService orderService = OrderService.restore(id, Customer.restore(UUID.randomUUID(), "João"),
+				new BigDecimal("4.00"), new BigDecimal("11.50"), 2, LocalDate.of(2026, 9, 21));
 
 		when(repo.findById(id)).thenReturn(Optional.of(orderService));
 
