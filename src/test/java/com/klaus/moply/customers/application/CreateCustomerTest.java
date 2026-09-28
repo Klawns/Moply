@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -21,9 +22,10 @@ import org.mockito.ArgumentCaptor;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.CreateCustomer;
 import com.klaus.moply.customers.application.usecase.dto.CreateCustomerInput;
+import com.klaus.moply.customers.application.usecase.dto.CustomerLocationInput;
 import com.klaus.moply.customers.domain.entities.Customer;
-import com.klaus.moply.orderservice.domain.exception.DomainException;
 import com.klaus.moply.factory.CustomerFactory;
+import com.klaus.moply.shared.domain.exception.DomainException;
 
 class CreateCustomerTest {
 
@@ -34,13 +36,29 @@ class CreateCustomerTest {
 	@Test
 	void shouldSaveNameAndReturnAssignedIdentity() {
 		UUID id = UUID.randomUUID();
-		Customer saved = CustomerFactory.restoreCustomer(id);
+
+		Customer saved = CustomerFactory.restoreCustomerWithContacts(id);
+
 		when(repo.save(any(Customer.class))).thenReturn(saved);
-		assertEquals(id, useCase.execute(new CreateCustomerInput(saved.getName().value())));
+
+		var input = new CreateCustomerInput(
+				saved.getName().value(),
+				saved.getPhone().value(),
+				saved.getEmail().value(),
+				saved.getNotes(),
+				List.of());
+
+		assertEquals(id, useCase.execute(input));
+
 		ArgumentCaptor<Customer> captor = ArgumentCaptor.forClass(Customer.class);
+
 		verify(repo).save(captor.capture());
+
 		assertNull(captor.getValue().getId());
-		assertEquals(saved.getName().value(), captor.getValue().getName().value());
+		assertEquals(
+				saved.getName().value(),
+				captor.getValue().getName().value());
+
 		verifyNoMoreInteractions(repo);
 	}
 
@@ -48,35 +66,77 @@ class CreateCustomerTest {
 	@NullAndEmptySource
 	@ValueSource(strings = { "   ", "\t\n" })
 	void shouldRejectInvalidNameBeforePersistence(String name) {
-		assertThrows(DomainException.class, () -> useCase.execute(new CreateCustomerInput(name)));
+
+		var input = new CreateCustomerInput(
+				name,
+				null,
+				null,
+				null,
+				List.of());
+
+		assertThrows(
+				DomainException.class,
+				() -> useCase.execute(input));
+
 		verifyNoInteractions(repo);
 	}
 
 	@Test
-	void shouldForwardAllFieldsAndReturnSavedIdentity() {
+	void shouldForwardLocationsToCustomer() {
 		UUID id = UUID.randomUUID();
+
+		var input = new CreateCustomerInput(
+				"Maria",
+				null,
+				null,
+				null,
+				List.of(
+						new CustomerLocationInput(
+								"Casa",
+								"Rua A, 123",
+								"Portão azul")));
+
 		when(repo.save(any(Customer.class))).thenAnswer(invocation -> {
 			Customer customer = invocation.getArgument(0);
-			return Customer.restore(id, customer.getName().value(), customer.getPhone().value(),
-					customer.getEmail().value(), customer.getNotes());
+
+			return Customer.restore(
+					id,
+					customer.getName().value(),
+					null,
+					null,
+					null,
+					customer.getLocations());
 		});
-		assertEquals(id, useCase.execute(
-				new CreateCustomerInput("  Maria  ", "  +55 11 1234  ", "  Maria@example.com  ", "  Preferência  ")));
+
+		assertEquals(id, useCase.execute(input));
+
 		ArgumentCaptor<Customer> captor = ArgumentCaptor.forClass(Customer.class);
+
 		verify(repo).save(captor.capture());
+
 		Customer customer = captor.getValue();
-		assertNull(customer.getId());
-		assertEquals("Maria", customer.getName().value());
-		assertEquals("+55 11 1234", customer.getPhone().value());
-		assertEquals("Maria@example.com", customer.getEmail().value());
-		assertEquals("Preferência", customer.getNotes());
+
+		assertEquals(1, customer.getLocations().size());
+		assertEquals("Casa", customer.getLocations().get(0).getName());
+		assertEquals("Rua A, 123", customer.getLocations().get(0).getAddress());
+
 		verifyNoMoreInteractions(repo);
 	}
 
 	@Test
 	void shouldRejectInvalidEmailBeforePersistence() {
-		assertThrows(DomainException.class,
-				() -> useCase.execute(new CreateCustomerInput("Maria", null, "invalido", null)));
+
+		var input = new CreateCustomerInput(
+				"Maria",
+				null,
+				"invalido",
+				null,
+				List.of());
+
+		assertThrows(
+				DomainException.class,
+				() -> useCase.execute(input));
+
 		verifyNoInteractions(repo);
 	}
 
