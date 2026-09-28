@@ -13,7 +13,8 @@ import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundE
 import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.customers.domain.entities.CustomerLocation;
 import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundException;
-import com.klaus.moply.orderservice.domain.exception.DomainException;
+import com.klaus.moply.shared.domain.exception.DomainException;
+
 import org.mockito.ArgumentCaptor;
 
 class CustomerLocationsUsecasesTest {
