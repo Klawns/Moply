@@ -1,7 +1,8 @@
 package com.klaus.moply.customers.domain.exception;
 
 import java.util.UUID;
-import com.klaus.moply.orderservice.domain.exception.DomainException;
+
+import com.klaus.moply.shared.domain.exception.DomainException;
 
 public class CustomerLocationNotFoundException extends DomainException {
 

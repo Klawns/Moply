@@ -3,12 +3,13 @@ package com.klaus.moply.customers.domain.entities;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
-import com.klaus.moply.orderservice.domain.exception.DomainException;
 import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundException;
 import com.klaus.moply.customers.domain.vo.CustomerName;
 import com.klaus.moply.customers.domain.vo.Phone;
+import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.customers.domain.vo.Email;
 
 import lombok.Getter;
@@ -88,27 +89,39 @@ public final class Customer {
 			throw new DomainException("O ID do local é obrigatório.");
 		}
 		return locations.stream()
-			.filter(location -> location.getId().equals(locationId))
-			.findFirst()
-			.orElseThrow(() -> new CustomerLocationNotFoundException(locationId));
+				.filter(location -> Objects.equals(location.getId(), locationId))
+				.findFirst()
+				.orElseThrow(() -> new CustomerLocationNotFoundException(locationId));
 	}
 
 	public Customer updateLocation(UUID locationId, String name, String address, String notes) {
 		CustomerLocation updated = findLocation(locationId).update(name, address, notes);
 		var updatedLocations = locations.stream()
-			.map(location -> location.getId().equals(locationId) ? updated : location)
-			.toList();
+				.map(location -> Objects.equals(location.getId(), locationId) ? updated : location)
+				.toList();
 		return new Customer(id, this.name, phone, email, this.notes, updatedLocations);
 	}
 
-	private static List<CustomerLocation> validateAndCopyLocations(List<CustomerLocation> locations) {
+	private static List<CustomerLocation> validateAndCopyLocations(
+			List<CustomerLocation> locations) {
+
 		if (locations == null || locations.stream().anyMatch(location -> location == null)) {
-			throw new DomainException("A lista de locais não pode ser nula nem conter itens nulos.");
+			throw new DomainException(
+					"A lista de locais não pode ser nula nem conter itens nulos.");
 		}
+
 		var ids = new HashSet<UUID>();
-		if (locations.stream().anyMatch(location -> !ids.add(location.getId()))) {
-			throw new DomainException("Os IDs dos locais devem ser únicos dentro do cliente.");
+
+		boolean hasDuplicateId = locations.stream()
+				.map(CustomerLocation::getId)
+				.filter(id -> id != null)
+				.anyMatch(id -> !ids.add(id));
+
+		if (hasDuplicateId) {
+			throw new DomainException(
+					"Os IDs dos locais devem ser únicos dentro do cliente.");
 		}
+
 		return List.copyOf(locations);
 	}
 
