@@ -1,14 +1,5 @@
 package com.klaus.moply.orderservice.infra.web.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.klaus.moply.customers.domain.vo.CustomerName;
 import com.klaus.moply.orderservice.application.usecase.CreateOrderService;
 import com.klaus.moply.orderservice.application.usecase.DeleteOrderService;
 import com.klaus.moply.orderservice.application.usecase.FindAllOrderServicesByCustomerName;
@@ -28,7 +20,15 @@ import com.klaus.moply.orderservice.application.usecase.FindOrderServiceById;
 import com.klaus.moply.orderservice.application.usecase.FindOrderServiceByServiceDate;
 import com.klaus.moply.orderservice.application.usecase.dto.CreateOrderServiceInput;
 import com.klaus.moply.orderservice.application.usecase.dto.OrderServiceOutput;
-import com.klaus.moply.orderservice.domain.vo.Customer;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(OrderServiceController.class)
 class OrderServiceControllerTest {
@@ -99,12 +99,12 @@ class OrderServiceControllerTest {
 	@Test
 	void shouldFindByCustomer() throws Exception {
 
-		when(findByCustomer.execute(any(Customer.class))).thenReturn(List.of());
+		when(findByCustomer.execute(any(CustomerName.class))).thenReturn(List.of());
 
 		mockMvc.perform(get(BASE_URL).param("serviceDate", SERVICE_DATE.toString()).param("customer", "João"))
 			.andExpect(status().isOk());
 
-		verify(findByCustomer).execute(any(Customer.class));
+		verify(findByCustomer).execute(any(CustomerName.class));
 	}
 
 	@Test
@@ -133,7 +133,7 @@ class OrderServiceControllerTest {
 	private String createOrderServiceJson() {
 		return """
 				{
-				    "customer": "João",
+				    "customerId": "11111111-1111-1111-1111-111111111111",
 				    "contractedHours": 4.00,
 				    "hourlyRate": 11.50,
 				    "employeeCount": 2,
@@ -145,7 +145,7 @@ class OrderServiceControllerTest {
 	private String createOrderServiceJsonWithInvalidCustomer() {
 		return """
 				{
-				    "customer": "",
+				    "customerId": null,
 				    "contractedHours": 4.00,
 				    "hourlyRate": 11.50,
 				    "employeeCount": 2,
