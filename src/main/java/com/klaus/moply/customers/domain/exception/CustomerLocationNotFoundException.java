@@ -1,4 +1,4 @@
-package com.klaus.moply.customers.domain;
+package com.klaus.moply.customers.domain.exception;
 
 import java.util.UUID;
 import com.klaus.moply.domain.exception.DomainException;

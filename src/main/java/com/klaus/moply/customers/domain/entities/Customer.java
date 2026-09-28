@@ -1,4 +1,4 @@
-package com.klaus.moply.customers.domain;
+package com.klaus.moply.customers.domain.entities;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.klaus.moply.domain.exception.DomainException;
+import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundException;
 import com.klaus.moply.customers.domain.vo.CustomerName;
 import com.klaus.moply.customers.domain.vo.Phone;
 import com.klaus.moply.customers.domain.vo.Email;
