@@ -31,6 +31,26 @@
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
+ <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-oauth2-jose</artifactId></dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -161,13 +181,10 @@
 				<version>3.4.1</version>
 
 				<configuration>
-					<preCommit>
-						mvn spring-javaformat:apply &amp;&amp; git add -u
-					</preCommit>
-
-					<prePush>
-						mvn clean verify
-					</prePush>
+					<installHooks>
+						<pre-commit>.githooks/pre-commit</pre-commit>
+						<pre-push>.githooks/pre-push</pre-push>
+					</installHooks>
 				</configuration>
 
 				<executions>

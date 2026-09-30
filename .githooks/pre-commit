@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mapfile -d '' staged_java_files < <(git diff --cached --name-only --diff-filter=ACMR -z -- '*.java')
+if ((${#staged_java_files[@]} == 0)); then
+  exit 0
+fi
+
+# Do not accidentally stage unstaged edits from a partially staged Java file.
+for file in "${staged_java_files[@]}"; do
+  if ! git diff --quiet -- "$file"; then
+    echo "Commit aborted: '$file' has unstaged changes. Stage the whole file before formatting." >&2
+    exit 1
+  fi
+done
+
+includes=$(printf '%s,' "${staged_java_files[@]}")
+includes=${includes%,}
+./mvnw spring-javaformat:apply "-Dspring-javaformat.includes=$includes"
+# Re-stage only Java files that were already in the index; keep other worktree changes untouched.
+git add -- "${staged_java_files[@]}"
