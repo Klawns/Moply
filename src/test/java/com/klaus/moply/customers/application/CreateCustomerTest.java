@@ -1,5 +1,6 @@
 package com.klaus.moply.customers.application;
 
+import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,25 +40,19 @@ class CreateCustomerTest {
 
 		Customer saved = CustomerFactory.restoreCustomerWithContacts(id);
 
-		when(repo.save(any(Customer.class))).thenReturn(saved);
+		when(repo.save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any(Customer.class))).thenReturn(saved);
 
-		var input = new CreateCustomerInput(
-				saved.getName().value(),
-				saved.getPhone().value(),
-				saved.getEmail().value(),
-				saved.getNotes(),
-				List.of());
+		var input = new CreateCustomerInput(saved.getName().value(), saved.getPhone().value(), saved.getEmail().value(),
+				saved.getNotes(), List.of());
 
-		assertEquals(id, useCase.execute(input));
+		assertEquals(id, useCase.execute(context(), input));
 
 		ArgumentCaptor<Customer> captor = ArgumentCaptor.forClass(Customer.class);
 
-		verify(repo).save(captor.capture());
+		verify(repo).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), captor.capture());
 
 		assertNull(captor.getValue().getId());
-		assertEquals(
-				saved.getName().value(),
-				captor.getValue().getName().value());
+		assertEquals(saved.getName().value(), captor.getValue().getName().value());
 
 		verifyNoMoreInteractions(repo);
 	}
@@ -67,16 +62,9 @@ class CreateCustomerTest {
 	@ValueSource(strings = { "   ", "\t\n" })
 	void shouldRejectInvalidNameBeforePersistence(String name) {
 
-		var input = new CreateCustomerInput(
-				name,
-				null,
-				null,
-				null,
-				List.of());
+		var input = new CreateCustomerInput(name, null, null, null, List.of());
 
-		assertThrows(
-				DomainException.class,
-				() -> useCase.execute(input));
+		assertThrows(DomainException.class, () -> useCase.execute(context(), input));
 
 		verifyNoInteractions(repo);
 	}
@@ -85,34 +73,20 @@ class CreateCustomerTest {
 	void shouldForwardLocationsToCustomer() {
 		UUID id = UUID.randomUUID();
 
-		var input = new CreateCustomerInput(
-				"Maria",
-				null,
-				null,
-				null,
-				List.of(
-						new CustomerLocationInput(
-								"Casa",
-								"Rua A, 123",
-								"Portão azul")));
+		var input = new CreateCustomerInput("Maria", null, null, null,
+				List.of(new CustomerLocationInput("Casa", "Rua A, 123", "Portão azul")));
 
-		when(repo.save(any(Customer.class))).thenAnswer(invocation -> {
-			Customer customer = invocation.getArgument(0);
+		when(repo.save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any(Customer.class))).thenAnswer(invocation -> {
+			Customer customer = invocation.getArgument(1);
 
-			return Customer.restore(
-					id,
-					customer.getName().value(),
-					null,
-					null,
-					null,
-					customer.getLocations());
+			return Customer.restore(id, customer.getName().value(), null, null, null, customer.getLocations());
 		});
 
-		assertEquals(id, useCase.execute(input));
+		assertEquals(id, useCase.execute(context(), input));
 
 		ArgumentCaptor<Customer> captor = ArgumentCaptor.forClass(Customer.class);
 
-		verify(repo).save(captor.capture());
+		verify(repo).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), captor.capture());
 
 		Customer customer = captor.getValue();
 
@@ -126,16 +100,9 @@ class CreateCustomerTest {
 	@Test
 	void shouldRejectInvalidEmailBeforePersistence() {
 
-		var input = new CreateCustomerInput(
-				"Maria",
-				null,
-				"invalido",
-				null,
-				List.of());
+		var input = new CreateCustomerInput("Maria", null, "invalido", null, List.of());
 
-		assertThrows(
-				DomainException.class,
-				() -> useCase.execute(input));
+		assertThrows(DomainException.class, () -> useCase.execute(context(), input));
 
 		verifyNoInteractions(repo);
 	}

@@ -7,17 +7,20 @@ import com.klaus.moply.customers.application.usecase.dto.CustomerOutput;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.shared.application.usecase.Usecase;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FindCustomerById implements Usecase<UUID, CustomerOutput> {
+public class FindCustomerById implements Usecase.Contextual<UUID, CustomerOutput> {
 
 	private final CustomerRepository repo;
 
 	@Override
-	public CustomerOutput execute(UUID id) {
-		Customer customer = repo.findById(id).orElseThrow(() -> new CustomerNotFoundException(id));
+	public CustomerOutput execute(Context context, UUID input) {
+		var id = input;
+		Customer customer = repo.findById(context.organizationId(), id)
+			.orElseThrow(() -> new CustomerNotFoundException(id));
 		return CustomerOutput.fromDomain(customer);
 	}
 

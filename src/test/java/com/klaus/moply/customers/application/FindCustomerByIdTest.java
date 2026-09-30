@@ -1,5 +1,6 @@
 package com.klaus.moply.customers.application;
 
+import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Optional;
@@ -22,24 +23,25 @@ class FindCustomerByIdTest {
 	void shouldMapExistingCustomer() {
 		UUID id = UUID.randomUUID();
 		Customer customer = CustomerFactory.restoreCustomer(id);
-		when(repo.findById(id)).thenReturn(Optional.of(customer));
-		CustomerOutput output = useCase.execute(id);
+		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.of(customer));
+		CustomerOutput output = useCase.execute(context(), id);
 		assertEquals(id, output.id());
 		assertEquals(customer.getName().value(), output.name());
 		assertNull(output.phone());
 		assertNull(output.email());
 		assertNull(output.notes());
-		verify(repo).findById(id);
+		verify(repo).findById(ACCOUNT, id);
 		verifyNoMoreInteractions(repo);
 	}
 
 	@Test
 	void shouldThrowWhenCustomerDoesNotExist() {
 		UUID id = UUID.randomUUID();
-		when(repo.findById(id)).thenReturn(Optional.empty());
-		CustomerNotFoundException error = assertThrows(CustomerNotFoundException.class, () -> useCase.execute(id));
+		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.empty());
+		CustomerNotFoundException error = assertThrows(CustomerNotFoundException.class,
+				() -> useCase.execute(context(), id));
 		assertTrue(error.getMessage().contains(id.toString()));
-		verify(repo).findById(id);
+		verify(repo).findById(ACCOUNT, id);
 		verifyNoMoreInteractions(repo);
 	}
 
@@ -47,14 +49,14 @@ class FindCustomerByIdTest {
 	void shouldMapAllOptionalFields() {
 		UUID id = UUID.randomUUID();
 		Customer customer = CustomerFactory.restoreCustomerWithContacts(id);
-		when(repo.findById(id)).thenReturn(Optional.of(customer));
-		CustomerOutput output = useCase.execute(id);
+		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.of(customer));
+		CustomerOutput output = useCase.execute(context(), id);
 		assertEquals(id, output.id());
 		assertEquals(customer.getName().value(), output.name());
 		assertEquals(customer.getPhone().value(), output.phone());
 		assertEquals(customer.getEmail().value(), output.email());
 		assertEquals(customer.getNotes(), output.notes());
-		verify(repo).findById(id);
+		verify(repo).findById(ACCOUNT, id);
 		verifyNoMoreInteractions(repo);
 	}
 

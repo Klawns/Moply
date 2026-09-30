@@ -1,5 +1,6 @@
 package com.klaus.moply.customers.application;
 
+import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Optional;
@@ -22,9 +23,10 @@ class UpdateCustomerTest {
 
 	@Test
 	void shouldUpdateAndClearOptionalFieldsPreservingIdentity() {
-		when(repo.findById(id)).thenReturn(Optional.of(Customer.restore(id, "Maria", "123", "a@b", "nota")));
-		when(repo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-		var output = useCase.execute(new UpdateCustomerInput(id, "  Ana  ", " 456 ", null, " "));
+		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.of(Customer.restore(id, "Maria", "123", "a@b", "nota")));
+		when(repo.save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any()))
+			.thenAnswer(invocation -> invocation.getArgument(1));
+		var output = useCase.execute(context(), new UpdateCustomerInput(id, "  Ana  ", " 456 ", null, " "));
 		assertEquals(id, output.id());
 		assertEquals("Ana", output.name());
 		assertEquals("456", output.phone());
@@ -35,16 +37,16 @@ class UpdateCustomerTest {
 	@Test
 	void shouldRejectMissingCustomerWithoutSaving() {
 		assertThrows(CustomerNotFoundException.class,
-				() -> useCase.execute(new UpdateCustomerInput(id, "Ana", null, null, null)));
-		verify(repo, never()).save(any());
+				() -> useCase.execute(context(), new UpdateCustomerInput(id, "Ana", null, null, null)));
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 	@Test
 	void shouldRejectInvalidUpdateWithoutSaving() {
-		when(repo.findById(id)).thenReturn(Optional.of(Customer.restore(id, "Maria")));
+		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.of(Customer.restore(id, "Maria")));
 		assertThrows(DomainException.class,
-				() -> useCase.execute(new UpdateCustomerInput(id, "Ana", null, "invalid", null)));
-		verify(repo, never()).save(any());
+				() -> useCase.execute(context(), new UpdateCustomerInput(id, "Ana", null, "invalid", null)));
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 }

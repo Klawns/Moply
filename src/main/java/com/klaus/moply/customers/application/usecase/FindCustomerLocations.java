@@ -8,17 +8,19 @@ import com.klaus.moply.customers.application.usecase.dto.CustomerLocationOutput;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.shared.application.usecase.Usecase;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FindCustomerLocations implements Usecase<UUID, List<CustomerLocationOutput>> {
+public class FindCustomerLocations implements Usecase.Contextual<UUID, List<CustomerLocationOutput>> {
 
 	private final CustomerRepository repo;
 
 	@Override
-	public List<CustomerLocationOutput> execute(UUID input) {
-		Customer customer = repo.findById(input).orElseThrow(() -> new CustomerNotFoundException(input));
+	public List<CustomerLocationOutput> execute(Context context, UUID input) {
+		Customer customer = repo.findById(context.organizationId(), input)
+			.orElseThrow(() -> new CustomerNotFoundException(input));
 		return customer.getLocations().stream().map(CustomerLocationOutput::fromDomain).toList();
 	}
 

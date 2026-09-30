@@ -5,17 +5,18 @@ import java.util.List;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.dto.CustomerOutput;
 import com.klaus.moply.shared.application.usecase.Usecase;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FindAllCustomers implements Usecase<Void, List<CustomerOutput>> {
+public class FindAllCustomers implements Usecase.Contextual<Void, List<CustomerOutput>> {
 
 	private final CustomerRepository repo;
 
 	@Override
-	public List<CustomerOutput> execute(Void input) {
-		return repo.findAll().stream().map(CustomerOutput::fromDomain).toList();
+	public List<CustomerOutput> execute(Context context, Void input) {
+		return repo.findAll(context.organizationId()).stream().map(CustomerOutput::fromDomain).toList();
 	}
 
 }

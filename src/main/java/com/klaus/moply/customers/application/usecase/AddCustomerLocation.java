@@ -7,20 +7,22 @@ import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundE
 import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.customers.domain.entities.CustomerLocation;
 import com.klaus.moply.shared.application.usecase.Usecase;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class AddCustomerLocation implements Usecase<AddCustomerLocationInput, CustomerLocationOutput> {
+public class AddCustomerLocation implements Usecase.Contextual<AddCustomerLocationInput, CustomerLocationOutput> {
 
 	private final CustomerRepository repo;
 
 	@Override
-	public CustomerLocationOutput execute(AddCustomerLocationInput input) {
-		Customer customer = repo.findById(input.customerId())
+	public CustomerLocationOutput execute(Context context, AddCustomerLocationInput input) {
+		Customer customer = repo.findById(context.organizationId(), input.customerId())
 			.orElseThrow(() -> new CustomerNotFoundException(input.customerId()));
+
 		CustomerLocation location = CustomerLocation.create(input.name(), input.address(), input.notes());
-		Customer saved = repo.save(customer.addLocation(location));
+		Customer saved = repo.save(context.organizationId(), customer.addLocation(location));
 		return CustomerLocationOutput.fromDomain(saved.findLocation(location.getId()));
 	}
 

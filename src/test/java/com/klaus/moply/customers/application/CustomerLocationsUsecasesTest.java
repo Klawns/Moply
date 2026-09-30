@@ -1,5 +1,6 @@
 package com.klaus.moply.customers.application;
 
+import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.List;
@@ -26,14 +27,14 @@ class CustomerLocationsUsecasesTest {
 	private Customer existingCustomer() {
 		var customer = Customer.restore(id, "Maria", "123", "a@b", "nota",
 				List.of(CustomerLocation.create("Casa", "Rua 1", null)));
-		when(repo.findById(id)).thenReturn(Optional.of(customer));
+		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.of(customer));
 		return customer;
 	}
 
 	@Test
 	void shouldCreateCustomerAndLocationsInOneSave() {
-		when(repo.save(any())).thenAnswer(invocation -> {
-			Customer customer = invocation.getArgument(0);
+		when(repo.save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any())).thenAnswer(invocation -> {
+			Customer customer = invocation.getArgument(1);
 			return Customer.restore(id, customer.getName().value(),
 					customer.getPhone() == null ? null : customer.getPhone().value(),
 					customer.getEmail() == null ? null : customer.getEmail().value(), customer.getNotes(),
@@ -42,9 +43,9 @@ class CustomerLocationsUsecasesTest {
 		var input = new CreateCustomerInput("Maria", null, null, null,
 				List.of(new CustomerLocationInput("Casa", null, null),
 						new CustomerLocationInput("Escritório", "Rua 2", "nota")));
-		assertEquals(id, new CreateCustomer(repo).execute(input));
+		assertEquals(id, new CreateCustomer(repo).execute(context(), input));
 		var captor = ArgumentCaptor.forClass(Customer.class);
-		verify(repo).save(captor.capture());
+		verify(repo).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), captor.capture());
 		var locations = captor.getValue().getLocations();
 		assertEquals(2, locations.size());
 		assertNotEquals(locations.getFirst().getId(), locations.get(1).getId());
@@ -57,18 +58,19 @@ class CustomerLocationsUsecasesTest {
 	void shouldRejectInvalidInitialLocationBeforeSavingCustomer() {
 		var input = new CreateCustomerInput("Maria", null, null, null,
 				List.of(new CustomerLocationInput("Casa", null, null), new CustomerLocationInput(" ", null, null)));
-		assertThrows(DomainException.class, () -> new CreateCustomer(repo).execute(input));
+		assertThrows(DomainException.class, () -> new CreateCustomer(repo).execute(context(), input));
 		verifyNoInteractions(repo);
 	}
 
 	@Test
 	void shouldAddLocationPreservingExistingLocationsAndCustomerFields() {
 		var original = existingCustomer();
-		when(repo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-		var output = new AddCustomerLocation(repo)
-			.execute(new AddCustomerLocationInput(id, " Escritório ", " Rua 2 ", null));
+		when(repo.save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any()))
+			.thenAnswer(invocation -> invocation.getArgument(1));
+		var output = new AddCustomerLocation(repo).execute(context(),
+				new AddCustomerLocationInput(id, " Escritório ", " Rua 2 ", null));
 		var captor = ArgumentCaptor.forClass(Customer.class);
-		verify(repo).save(captor.capture());
+		verify(repo).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), captor.capture());
 		var saved = captor.getValue();
 		assertEquals(id, saved.getId());
 		assertEquals("Maria", saved.getName().value());
@@ -82,18 +84,19 @@ class CustomerLocationsUsecasesTest {
 	@Test
 	void shouldRejectInvalidAddedLocationWithoutSaving() {
 		existingCustomer();
-		assertThrows(DomainException.class,
-				() -> new AddCustomerLocation(repo).execute(new AddCustomerLocationInput(id, " ", null, null)));
-		verify(repo, never()).save(any());
+		assertThrows(DomainException.class, () -> new AddCustomerLocation(repo).execute(context(),
+				new AddCustomerLocationInput(id, " ", null, null)));
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 	@Test
 	void shouldUpdateLocationWithinCustomer() {
 		var customer = existingCustomer();
 		var locationId = customer.getLocations().getFirst().getId();
-		when(repo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-		var output = new UpdateCustomerLocation(repo)
-			.execute(new UpdateCustomerLocationInput(id, locationId, "Nova casa", null, "nova nota"));
+		when(repo.save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any()))
+			.thenAnswer(invocation -> invocation.getArgument(1));
+		var output = new UpdateCustomerLocation(repo).execute(context(),
+				new UpdateCustomerLocationInput(id, locationId, "Nova casa", null, "nova nota"));
 		assertEquals(locationId, output.id());
 		assertEquals("Nova casa", output.name());
 		assertNull(output.address());
@@ -103,9 +106,9 @@ class CustomerLocationsUsecasesTest {
 	@Test
 	void shouldRejectInvalidLocationUpdateWithoutSaving() {
 		var customer = existingCustomer();
-		assertThrows(DomainException.class, () -> new UpdateCustomerLocation(repo)
-			.execute(new UpdateCustomerLocationInput(id, customer.getLocations().getFirst().getId(), " ", null, null)));
-		verify(repo, never()).save(any());
+		assertThrows(DomainException.class, () -> new UpdateCustomerLocation(repo).execute(context(),
+				new UpdateCustomerLocationInput(id, customer.getLocations().getFirst().getId(), " ", null, null)));
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 	@Test
@@ -114,22 +117,22 @@ class CustomerLocationsUsecasesTest {
 		var otherCustomer = Customer.create("Ana").addLocation(CustomerLocation.create("Casa", null, null));
 		UUID otherLocationId = otherCustomer.getLocations().getFirst().getId();
 		assertThrows(CustomerLocationNotFoundException.class, () -> new FindCustomerLocationById(repo)
-			.execute(new FindCustomerLocationByIdInput(id, otherLocationId)));
-		assertThrows(CustomerLocationNotFoundException.class, () -> new UpdateCustomerLocation(repo)
-			.execute(new UpdateCustomerLocationInput(id, otherLocationId, "Casa", null, null)));
-		verify(repo, never()).save(any());
+			.execute(context(), new FindCustomerLocationByIdInput(id, otherLocationId)));
+		assertThrows(CustomerLocationNotFoundException.class, () -> new UpdateCustomerLocation(repo).execute(context(),
+				new UpdateCustomerLocationInput(id, otherLocationId, "Casa", null, null)));
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 	@Test
 	void shouldRejectAllLocationOperationsForMissingCustomer() {
-		assertThrows(CustomerNotFoundException.class,
-				() -> new AddCustomerLocation(repo).execute(new AddCustomerLocationInput(id, "Casa", null, null)));
-		assertThrows(CustomerNotFoundException.class, () -> new UpdateCustomerLocation(repo)
-			.execute(new UpdateCustomerLocationInput(id, UUID.randomUUID(), "Casa", null, null)));
-		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocationById(repo)
-			.execute(new FindCustomerLocationByIdInput(id, UUID.randomUUID())));
-		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocations(repo).execute(id));
-		verify(repo, never()).save(any());
+		assertThrows(CustomerNotFoundException.class, () -> new AddCustomerLocation(repo).execute(context(),
+				new AddCustomerLocationInput(id, "Casa", null, null)));
+		assertThrows(CustomerNotFoundException.class, () -> new UpdateCustomerLocation(repo).execute(context(),
+				new UpdateCustomerLocationInput(id, UUID.randomUUID(), "Casa", null, null)));
+		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocationById(repo).execute(context(),
+				new FindCustomerLocationByIdInput(id, UUID.randomUUID())));
+		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocations(repo).execute(context(), id));
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 	@Test
@@ -137,37 +140,38 @@ class CustomerLocationsUsecasesTest {
 		var customer = existingCustomer();
 		var location = customer.getLocations().getFirst();
 		var expected = CustomerLocationOutput.fromDomain(location);
-		assertEquals(expected,
-				new FindCustomerLocationById(repo).execute(new FindCustomerLocationByIdInput(id, location.getId())));
-		assertEquals(List.of(expected), new FindCustomerLocations(repo).execute(id));
-		assertEquals(List.of(expected), new FindCustomerById(repo).execute(id).locations());
-		when(repo.findAll()).thenReturn(List.of(customer));
-		assertEquals(List.of(expected), new FindAllCustomers(repo).execute(null).getFirst().locations());
-		verify(repo, never()).save(any());
+		assertEquals(expected, new FindCustomerLocationById(repo).execute(context(),
+				new FindCustomerLocationByIdInput(id, location.getId())));
+		assertEquals(List.of(expected), new FindCustomerLocations(repo).execute(context(), id));
+		assertEquals(List.of(expected), new FindCustomerById(repo).execute(context(), id).locations());
+		when(repo.findAll(ACCOUNT)).thenReturn(List.of(customer));
+		assertEquals(List.of(expected), new FindAllCustomers(repo).execute(context(), null).getFirst().locations());
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 	@Test
 	void shouldReturnEmptyLocationsForCustomerWithoutLocations() {
-		when(repo.findById(id)).thenReturn(Optional.of(Customer.restore(id, "Maria")));
-		assertTrue(new FindCustomerLocations(repo).execute(id).isEmpty());
+		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.of(Customer.restore(id, "Maria")));
+		assertTrue(new FindCustomerLocations(repo).execute(context(), id).isEmpty());
 	}
 
 	@Test
 	void shouldPreserveLocationsWhenUpdatingCustomer() {
 		var customer = existingCustomer();
-		when(repo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-		var output = new UpdateCustomer(repo).execute(new UpdateCustomerInput(id, "Ana", null, null, null));
+		when(repo.save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any()))
+			.thenAnswer(invocation -> invocation.getArgument(1));
+		var output = new UpdateCustomer(repo).execute(context(), new UpdateCustomerInput(id, "Ana", null, null, null));
 		assertEquals(customer.getLocations().getFirst().getId(), output.locations().getFirst().id());
 	}
 
 	@Test
 	void shouldRejectNullLocationIdWithoutSaving() {
 		existingCustomer();
-		assertThrowsExactly(DomainException.class,
-				() -> new FindCustomerLocationById(repo).execute(new FindCustomerLocationByIdInput(id, null)));
-		assertThrowsExactly(DomainException.class, () -> new UpdateCustomerLocation(repo)
-			.execute(new UpdateCustomerLocationInput(id, null, "Casa", null, null)));
-		verify(repo, never()).save(any());
+		assertThrowsExactly(DomainException.class, () -> new FindCustomerLocationById(repo).execute(context(),
+				new FindCustomerLocationByIdInput(id, null)));
+		assertThrowsExactly(DomainException.class, () -> new UpdateCustomerLocation(repo).execute(context(),
+				new UpdateCustomerLocationInput(id, null, "Casa", null, null)));
+		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 }
