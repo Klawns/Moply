@@ -24,9 +24,19 @@ public class CustomerLocationEntity {
 	@Id
 	private UUID id;
 
+	@Column(name = "organization_id", nullable = false, updatable = false)
+	private UUID organizationId;
+
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "customer_id", nullable = false)
+	@jakarta.persistence.JoinColumns({
+			@JoinColumn(name = "organization_id", referencedColumnName = "organization_id", nullable = false,
+					insertable = false, updatable = false),
+			@JoinColumn(name = "customer_id", referencedColumnName = "id", nullable = false, insertable = false,
+					updatable = false) })
 	private CustomerEntity customer;
+
+	@Column(name = "customer_id", nullable = false, updatable = false)
+	private UUID customerId;
 
 	@Column(nullable = false, columnDefinition = "text")
 	private String name;
@@ -40,6 +50,8 @@ public class CustomerLocationEntity {
 	public CustomerLocationEntity(UUID id, CustomerEntity customer) {
 		this.id = id;
 		this.customer = customer;
+		this.customerId = customer.getId();
+		this.organizationId = customer.getOrganizationId();
 	}
 
 	public void update(CustomerLocation location) {

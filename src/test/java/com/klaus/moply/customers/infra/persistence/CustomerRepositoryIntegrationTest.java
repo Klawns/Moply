@@ -1,5 +1,6 @@
 package com.klaus.moply.customers.infra.persistence;
 
+import static com.klaus.moply.factory.AccountFixture.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,37 +39,38 @@ class CustomerRepositoryIntegrationTest {
 	void shouldPersistFullAggregateAndPreserveIdentitiesOnUpdate() {
 		var home = CustomerLocation.create("Casa", null, null);
 		var office = CustomerLocation.create("Escritório", "Rua A", "Portaria");
-		var saved = repo.save(Customer.create("Maria", "123", "a@b", "Notas", List.of(home, office)));
+		var saved = repo.save(ACCOUNT, Customer.create("Maria", "123", "a@b", "Notas", List.of(home, office)));
 		assertNotNull(saved.getId());
 		entityManager.clear();
-		var loaded = repo.findById(saved.getId()).orElseThrow();
+		var loaded = repo.findById(ACCOUNT, saved.getId()).orElseThrow();
 		assertEquals("123", loaded.getPhone().value());
 		assertEquals("a@b", loaded.getEmail().value());
 		assertEquals("Notas", loaded.getNotes());
 		assertNull(loaded.findLocation(home.getId()).getAddress());
-		var updated = repo.save(loaded.update("Maria Silva", "456", null, null)
+		var updated = repo.save(ACCOUNT, loaded.update("Maria Silva", "456", null, null)
 			.updateLocation(home.getId(), "Casa nova", "Rua B", null));
 		entityManager.clear();
-		var result = repo.findById(saved.getId()).orElseThrow();
+		var result = repo.findById(ACCOUNT, saved.getId()).orElseThrow();
 		assertEquals(saved.getId(), updated.getId());
 		assertEquals("Maria Silva", result.getName().value());
 		assertEquals(2, result.getLocations().size());
 		assertEquals("Casa nova", result.findLocation(home.getId()).getName());
 		assertEquals("Rua A", result.findLocation(office.getId()).getAddress());
-		assertEquals(1, repo.findAll().size());
+		assertEquals(1, repo.findAll(ACCOUNT).size());
 	}
 
 	@Test
 	void shouldAllowHomonymsAndSaveAdditionalLocations() {
-		var first = repo.save(Customer.create("Maria"));
-		var second = repo.save(Customer.create("Maria"));
+		var first = repo.save(ACCOUNT, Customer.create("Maria"));
+		var second = repo.save(ACCOUNT, Customer.create("Maria"));
 		assertNotEquals(first.getId(), second.getId());
 		var location = CustomerLocation.create("Casa", null, null);
-		repo.save(first.addLocation(location));
+		repo.save(ACCOUNT, first.addLocation(location));
 		entityManager.clear();
-		assertEquals(location.getId(), repo.findById(first.getId()).orElseThrow().getLocations().getFirst().getId());
-		assertTrue(repo.findById(second.getId()).orElseThrow().getLocations().isEmpty());
-		assertEquals(2, repo.findAll().size());
+		assertEquals(location.getId(),
+				repo.findById(ACCOUNT, first.getId()).orElseThrow().getLocations().getFirst().getId());
+		assertTrue(repo.findById(ACCOUNT, second.getId()).orElseThrow().getLocations().isEmpty());
+		assertEquals(2, repo.findAll(ACCOUNT).size());
 	}
 
 	@Test
@@ -79,16 +81,16 @@ class CustomerRepositoryIntegrationTest {
 		UUID secondId = null;
 		try {
 			var location = CustomerLocation.create("Casa", null, null);
-			var first = repo.save(Customer.create("Primeiro").addLocation(location));
+			var first = repo.save(ACCOUNT, Customer.create("Primeiro").addLocation(location));
 			firstId = first.getId();
-			var second = repo.save(Customer.create("Segundo"));
+			var second = repo.save(ACCOUNT, Customer.create("Segundo"));
 			secondId = second.getId();
-			assertThrows(RuntimeException.class, () -> transaction
-				.execute(status -> repo.save(second.update("Alterado", null, null, null).addLocation(location))));
-			assertEquals("Segundo", repo.findById(second.getId()).orElseThrow().getName().value());
-			assertTrue(repo.findById(second.getId()).orElseThrow().getLocations().isEmpty());
+			assertThrows(RuntimeException.class, () -> transaction.execute(
+					status -> repo.save(ACCOUNT, second.update("Alterado", null, null, null).addLocation(location))));
+			assertEquals("Segundo", repo.findById(ACCOUNT, second.getId()).orElseThrow().getName().value());
+			assertTrue(repo.findById(ACCOUNT, second.getId()).orElseThrow().getLocations().isEmpty());
 			assertEquals(location.getId(),
-					repo.findById(first.getId()).orElseThrow().getLocations().getFirst().getId());
+					repo.findById(ACCOUNT, first.getId()).orElseThrow().getLocations().getFirst().getId());
 		}
 		finally {
 			UUID cleanupFirst = firstId;

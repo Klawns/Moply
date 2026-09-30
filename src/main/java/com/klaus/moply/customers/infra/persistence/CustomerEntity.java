@@ -16,13 +16,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "tb_customer")
+@Table(name = "tb_customer",
+		uniqueConstraints = @jakarta.persistence.UniqueConstraint(columnNames = { "organization_id", "id" }))
 @Getter
 @NoArgsConstructor
 public class CustomerEntity {
 
 	@Id
 	private UUID id;
+
+	@Column(name = "organization_id", nullable = false, updatable = false)
+	private UUID organizationId;
+
+	@jakarta.persistence.Version
+	private long version;
 
 	@Column(nullable = false, columnDefinition = "text")
 	private String name;
@@ -39,7 +46,8 @@ public class CustomerEntity {
 	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<CustomerLocationEntity> locations = new ArrayList<>();
 
-	public CustomerEntity(UUID id) {
+	public CustomerEntity(UUID id, UUID organizationId) {
+		this.organizationId = organizationId;
 		this.id = id;
 	}
 
@@ -52,9 +60,9 @@ public class CustomerEntity {
 		locations.removeIf(location -> !retainedIds.contains(location.getId()));
 		for (var location : customer.getLocations()) {
 			var entity = locations.stream()
-					.filter(existing -> existing.getId().equals(location.getId()))
-					.findFirst()
-					.orElse(null);
+				.filter(existing -> existing.getId().equals(location.getId()))
+				.findFirst()
+				.orElse(null);
 			if (entity == null) {
 				entity = new CustomerLocationEntity(location.getId(), this);
 				locations.add(entity);
@@ -64,8 +72,9 @@ public class CustomerEntity {
 	}
 
 	public Customer toDomain() {
-		return Customer.restore(id, name, phone, email, notes,
-				locations.stream().map(CustomerLocationEntity::toDomain).toList());
+		return Customer
+			.restore(id, name, phone, email, notes, locations.stream().map(CustomerLocationEntity::toDomain).toList())
+			.withPersistence(organizationId, version);
 	}
 
 }
