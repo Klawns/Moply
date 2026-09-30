@@ -36,8 +36,8 @@ class RegisterAccountTest {
 	@Test
 	void shouldRejectInvalidPasswordsBeforeEncodingOrPersistence() {
 		for (String password : new String[] { null, "", "short", " ".repeat(12), "a".repeat(73), "é".repeat(37) }) {
-			assertThrows(DomainException.class,
-					() -> usecase.execute(new RegisterAccount.Input("Empresa", "UTC", "a@b", password)));
+			var input = new RegisterAccount.Input("Empresa", "UTC", "a@b", password);
+			assertThrows(DomainException.class, () -> usecase.execute(input));
 		}
 		verifyNoInteractions(passwords, registration);
 	}
