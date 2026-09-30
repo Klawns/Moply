@@ -28,14 +28,9 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import com.jayway.jsonpath.JsonPath;
 import com.klaus.moply.accounts.application.exception.AccountConflictException;
@@ -45,6 +40,7 @@ import com.klaus.moply.accounts.domain.vo.LoginEmail;
 import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.auth.infra.security.JwtCookieService;
+import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 
 import jakarta.servlet.http.Cookie;
 
@@ -52,20 +48,7 @@ import jakarta.servlet.http.Cookie;
 		"spring.jpa.hibernate.ddl-auto=validate" })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Testcontainers
-class AccountApiIntegrationTest {
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
-
-	@DynamicPropertySource
-	static void database(DynamicPropertyRegistry properties) {
-		properties.add("spring.datasource.url", postgres::getJdbcUrl);
-		properties.add("spring.datasource.username", postgres::getUsername);
-		properties.add("spring.datasource.password", postgres::getPassword);
-		properties.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-		properties.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
-	}
+class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Autowired
 	MockMvc mvc;

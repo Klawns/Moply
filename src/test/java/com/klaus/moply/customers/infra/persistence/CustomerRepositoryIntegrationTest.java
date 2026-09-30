@@ -21,7 +21,7 @@ import jakarta.persistence.EntityManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest
+@DataJpaTest(showSql = false)
 @ActiveProfiles("test")
 @Import(CustomerJpaRepositoryAdapter.class)
 class CustomerRepositoryIntegrationTest {

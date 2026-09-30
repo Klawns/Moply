@@ -53,6 +53,9 @@ class CreateCustomerTest {
 
 		assertNull(captor.getValue().getId());
 		assertEquals(saved.getName().value(), captor.getValue().getName().value());
+		assertEquals(saved.getPhone(), captor.getValue().getPhone());
+		assertEquals(saved.getEmail(), captor.getValue().getEmail());
+		assertEquals(saved.getNotes(), captor.getValue().getNotes());
 
 		verifyNoMoreInteractions(repo);
 	}

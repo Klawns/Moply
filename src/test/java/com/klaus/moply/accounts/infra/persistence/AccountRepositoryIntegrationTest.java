@@ -5,15 +5,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.springframework.context.annotation.Import;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.klaus.moply.accounts.application.exception.AccountConflictException;
 import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
@@ -24,26 +22,20 @@ import com.klaus.moply.accounts.domain.entities.AppUser;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.LoginEmail;
 import com.klaus.moply.accounts.domain.vo.Organization;
+import com.klaus.moply.accounts.infra.persistence.adapters.AccountRegistrationJpaAdapter;
+import com.klaus.moply.accounts.infra.persistence.adapters.AppUserJpaRepositoryAdapter;
+import com.klaus.moply.accounts.infra.persistence.adapters.OrganizationJpaRepositoryAdapter;
+import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(properties = { "spring.jpa.open-in-view=false", "spring.flyway.enabled=true",
-		"spring.jpa.hibernate.ddl-auto=validate" })
+@DataJpaTest(showSql = false, properties = { "spring.flyway.enabled=true", "spring.jpa.hibernate.ddl-auto=validate" })
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
+@Import({ AccountRegistrationJpaAdapter.class, AppUserJpaRepositoryAdapter.class,
+		OrganizationJpaRepositoryAdapter.class })
 @ActiveProfiles("test")
-@Testcontainers
-class AccountRepositoryIntegrationTest {
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
-
-	@DynamicPropertySource
-	static void database(DynamicPropertyRegistry properties) {
-		properties.add("spring.datasource.url", postgres::getJdbcUrl);
-		properties.add("spring.datasource.username", postgres::getUsername);
-		properties.add("spring.datasource.password", postgres::getPassword);
-		properties.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-		properties.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
-	}
+class AccountRepositoryIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Autowired
 	AccountRegistration registration;
@@ -110,9 +102,8 @@ class AccountRepositoryIntegrationTest {
 		var organization = Organization.create("Empresa", "UTC");
 		var other = Organization.create("Other", "UTC");
 
-		var failure = assertThrows(InvalidDataAccessApiUsageException.class,
+		assertThrows(IllegalArgumentException.class,
 				() -> registration.register(organization, manager(other, "owner@example.com")));
-		assertInstanceOf(IllegalArgumentException.class, failure.getCause());
 		assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM tb_organization", Integer.class));
 		assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM tb_app_user", Integer.class));
 	}

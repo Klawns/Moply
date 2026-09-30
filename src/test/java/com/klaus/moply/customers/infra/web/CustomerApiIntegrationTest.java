@@ -207,7 +207,8 @@ class CustomerApiIntegrationTest {
 			.content(
 					"""
 							{"customerId":"invalid","contractedHours":4,"hourlyRate":10,"participantIds":["%s"],"serviceDate":"2026-09-28"}
-							"""))
+							"""
+						.formatted(participant())))
 			.andExpect(status().isBadRequest());
 		assertTrue(customers.findAll(ACCOUNT).isEmpty());
 	}

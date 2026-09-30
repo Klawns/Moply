@@ -9,14 +9,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.testcontainers.junit.jupiter.*;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import com.klaus.moply.factory.PostgresTestDatabase;
 
-@Testcontainers
 class WorkOrderMigrationTest {
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
 
 	DriverManagerDataSource source;
 
@@ -27,6 +22,7 @@ class WorkOrderMigrationTest {
 	@BeforeEach
 	void setup() {
 		schema = "work_" + UUID.randomUUID().toString().replace("-", "");
+		var postgres = PostgresTestDatabase.POSTGRES;
 		jdbc = new JdbcTemplate(
 				new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()));
 		jdbc.execute("CREATE SCHEMA " + schema);

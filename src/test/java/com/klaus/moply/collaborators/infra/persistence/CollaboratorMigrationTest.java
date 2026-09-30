@@ -8,16 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import com.klaus.moply.factory.PostgresTestDatabase;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Testcontainers
 class CollaboratorMigrationTest {
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
 
 	private DriverManagerDataSource source;
 
@@ -28,6 +22,7 @@ class CollaboratorMigrationTest {
 	@BeforeEach
 	void setup() {
 		schema = "collaborators_" + UUID.randomUUID().toString().replace("-", "");
+		var postgres = PostgresTestDatabase.POSTGRES;
 		jdbc = new JdbcTemplate(
 				new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()));
 		jdbc.execute("CREATE SCHEMA " + schema);

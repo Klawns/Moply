@@ -13,8 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.testcontainers.junit.jupiter.*;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -30,25 +28,13 @@ import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.application.usecase.*;
 import com.klaus.moply.workorders.domain.entity.*;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 
 @SpringBootTest(properties = { "spring.jpa.open-in-view=false", "spring.flyway.enabled=true",
 		"spring.jpa.hibernate.ddl-auto=validate" })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Testcontainers
-class WorkOrderIntegrationTest {
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
-
-	@DynamicPropertySource
-	static void database(DynamicPropertyRegistry p) {
-		p.add("spring.datasource.url", postgres::getJdbcUrl);
-		p.add("spring.datasource.username", postgres::getUsername);
-		p.add("spring.datasource.password", postgres::getPassword);
-		p.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-		p.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
-	}
+class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Autowired
 	WorkOrderRepository orders;
@@ -95,6 +81,7 @@ class WorkOrderIntegrationTest {
 		jdbc.update("DELETE FROM tb_customer_location");
 		jdbc.update("DELETE FROM tb_customer");
 		jdbc.update("DELETE FROM tb_collaborator");
+		jdbc.update("DELETE FROM tb_app_user");
 		jdbc.update("DELETE FROM tb_organization");
 	}
 

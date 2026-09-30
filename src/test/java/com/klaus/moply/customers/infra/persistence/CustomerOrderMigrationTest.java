@@ -15,17 +15,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import com.klaus.moply.factory.PostgresTestDatabase;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Testcontainers
 class CustomerOrderMigrationTest {
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
 
 	private DriverManagerDataSource dataSource;
 
@@ -36,6 +30,7 @@ class CustomerOrderMigrationTest {
 	@BeforeEach
 	void createIsolatedSchema() {
 		schema = "migration_" + UUID.randomUUID().toString().replace("-", "");
+		var postgres = PostgresTestDatabase.POSTGRES;
 		dataSource = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
 		jdbc = new JdbcTemplate(dataSource);
 		jdbc.execute("CREATE SCHEMA " + schema);

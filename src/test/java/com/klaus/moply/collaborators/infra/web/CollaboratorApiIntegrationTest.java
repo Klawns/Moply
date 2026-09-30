@@ -1,61 +1,56 @@
 package com.klaus.moply.collaborators.infra.web;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+
 import com.jayway.jsonpath.JsonPath;
 import com.klaus.moply.auth.infra.security.JwtCookieService;
-import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.application.usecase.FindEligibleCollaborators;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
 import com.klaus.moply.factory.CollaboratorFactory;
+import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+
 import jakarta.servlet.http.Cookie;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties = { "spring.jpa.open-in-view=false", "spring.flyway.enabled=true",
 		"spring.jpa.hibernate.ddl-auto=validate" })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Testcontainers
-class CollaboratorApiIntegrationTest {
+class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	private static final String BASE = "/api/v1/collaborators";
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
-
-	@DynamicPropertySource
-	static void database(DynamicPropertyRegistry properties) {
-		properties.add("spring.datasource.url", postgres::getJdbcUrl);
-		properties.add("spring.datasource.username", postgres::getUsername);
-		properties.add("spring.datasource.password", postgres::getPassword);
-		properties.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-		properties.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
-	}
 
 	@Autowired
 	MockMvc mvc;
@@ -85,45 +80,45 @@ class CollaboratorApiIntegrationTest {
 		var homonym = create(owner, "{\"name\":\"Maria\"}");
 		assertNotEquals(id, homonym);
 		mvc.perform(get(BASE + "/" + id).cookie(owner.auth()))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.name").value("Maria"))
-			.andExpect(jsonPath("$.phone").value("+44 (0) 123"))
-			.andExpect(jsonPath("$.active").value(true))
-			.andExpect(jsonPath("$.email").doesNotExist())
-			.andExpect(jsonPath("$.password").doesNotExist())
-			.andExpect(jsonPath("$.userId").doesNotExist())
-			.andExpect(jsonPath("$.passwordHash").doesNotExist());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.name").value("Maria"))
+				.andExpect(jsonPath("$.phone").value("+44 (0) 123"))
+				.andExpect(jsonPath("$.active").value(true))
+				.andExpect(jsonPath("$.email").doesNotExist())
+				.andExpect(jsonPath("$.password").doesNotExist())
+				.andExpect(jsonPath("$.userId").doesNotExist())
+				.andExpect(jsonPath("$.passwordHash").doesNotExist());
 		mvc.perform(mutation(put(BASE + "/" + id), owner).content("{\"name\":\"Ana\",\"phone\":\" \"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(id.toString()))
-			.andExpect(jsonPath("$.phone").doesNotExist());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(id.toString()))
+				.andExpect(jsonPath("$.phone").doesNotExist());
 		for (int i = 0; i < 2; i++)
 			mvc.perform(mutation(post(BASE + "/" + id + "/deactivate"), owner)).andExpect(status().isNoContent());
 		mvc.perform(get(BASE + "/" + id).cookie(owner.auth()))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.name").value("Ana"))
-			.andExpect(jsonPath("$.active").value(false));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.name").value("Ana"))
+				.andExpect(jsonPath("$.active").value(false));
 		mvc.perform(mutation(put(BASE + "/" + id), owner).content("{\"name\":\"Changed\"}"))
-			.andExpect(status().isConflict())
-			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+				.andExpect(status().isConflict())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
 		mvc.perform(get(BASE).cookie(owner.auth()))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(2));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(2));
 		mvc.perform(get(BASE).param("active", "true").cookie(owner.auth()))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(1))
-			.andExpect(jsonPath("$[0].id").value(homonym.toString()));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(1))
+				.andExpect(jsonPath("$[0].id").value(homonym.toString()));
 		mvc.perform(get(BASE).param("active", "false").cookie(owner.auth()))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(1))
-			.andExpect(jsonPath("$[0].id").value(id.toString()));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(1))
+				.andExpect(jsonPath("$[0].id").value(id.toString()));
 		assertEquals(homonym, eligible.execute(new Context(owner.id()), null).getFirst().id());
 		assertEquals(usersBefore, jdbc.queryForList("SELECT * FROM tb_app_user"));
 		var csrf = csrf(null);
 		mvc.perform(post("/api/v1/auth/login").cookie(csrf.cookie())
-			.header(csrf.header(), csrf.value())
-			.param("email", "collaborator@example.com")
-			.param("password", "not-a-login")).andExpect(status().isUnauthorized());
+				.header(csrf.header(), csrf.value())
+				.param("email", "collaborator@example.com")
+				.param("password", "not-a-login")).andExpect(status().isUnauthorized());
 		mvc.perform(delete(BASE + "/" + homonym).cookie(owner.auth())).andExpect(status().isForbidden());
 		assertEquals(2, repo.findAll(owner.id(), null).size());
 	}
@@ -136,19 +131,19 @@ class CollaboratorApiIntegrationTest {
 		var cb = create(b, "{\"name\":\"Maria\"}");
 		for (String filter : new String[] { "", "?active=true" }) {
 			mvc.perform(get(BASE + filter).cookie(a.auth()))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(1))
-				.andExpect(jsonPath("$[0].id").value(ca.toString()));
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.length()").value(1))
+					.andExpect(jsonPath("$[0].id").value(ca.toString()));
 		}
 		for (UUID id : new UUID[] { cb, UUID.randomUUID() }) {
 			mvc.perform(get(BASE + "/" + id).cookie(a.auth())).andExpect(status().isNotFound());
 			mvc.perform(mutation(put(BASE + "/" + id), a).content("{\"name\":\"Changed\"}"))
-				.andExpect(status().isNotFound());
+					.andExpect(status().isNotFound());
 			mvc.perform(mutation(post(BASE + "/" + id + "/deactivate"), a)).andExpect(status().isNotFound());
 		}
 		mvc.perform(
 				mutation(put(BASE + "/" + ca), a).content("{\"name\":\"Ana\",\"organizationId\":\"" + b.id() + "\"}"))
-			.andExpect(status().isOk());
+				.andExpect(status().isOk());
 		assertEquals(a.id(), repo.findById(a.id(), ca).orElseThrow().getOrganizationId());
 		assertTrue(repo.findById(b.id(), ca).isEmpty());
 		var foreign = repo.findById(b.id(), cb).orElseThrow();
@@ -167,27 +162,27 @@ class CollaboratorApiIntegrationTest {
 		mvc.perform(get(BASE)).andExpect(status().isUnauthorized());
 		mvc.perform(get(BASE + "/" + id)).andExpect(status().isUnauthorized());
 		mvc.perform(get(BASE).header("Authorization", "Bearer " + owner.auth().getValue()))
-			.andExpect(status().isUnauthorized());
+				.andExpect(status().isUnauthorized());
 		for (var mutation : new MockHttpServletRequestBuilder[] { post(BASE), put(BASE + "/" + id),
 				post(BASE + "/" + id + "/deactivate") }) {
 			mvc.perform(
 					mutation.cookie(owner.auth()).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Ana\"}"))
-				.andExpect(status().isForbidden());
+					.andExpect(status().isForbidden());
 		}
 		for (var mutation : new MockHttpServletRequestBuilder[] { post(BASE), put(BASE + "/" + id),
 				post(BASE + "/" + id + "/deactivate") }) {
 			mvc.perform(mutation.cookie(owner.auth(), owner.csrf().cookie())
-				.header(owner.csrf().header(), "invalid")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Ana\"}")).andExpect(status().isForbidden());
+					.header(owner.csrf().header(), "invalid")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"name\":\"Ana\"}")).andExpect(status().isForbidden());
 		}
 		var anonymous = csrf(null);
 		for (var mutation : new MockHttpServletRequestBuilder[] { post(BASE), put(BASE + "/" + id),
 				post(BASE + "/" + id + "/deactivate") }) {
 			mvc.perform(mutation.cookie(anonymous.cookie())
-				.header(anonymous.header(), anonymous.value())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Ana\"}")).andExpect(status().isUnauthorized());
+					.header(anonymous.header(), anonymous.value())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"name\":\"Ana\"}")).andExpect(status().isUnauthorized());
 		}
 		for (String body : new String[] { "{}", "{\"name\":null}", "{\"name\":\" \"}", "{\"name\":\"\\t\\n\"}", "{" }) {
 			mvc.perform(mutation(post(BASE), owner).content(body)).andExpect(status().isBadRequest());
@@ -245,16 +240,15 @@ class CollaboratorApiIntegrationTest {
 		try {
 			repo.save(account, deactivate ? snapshot.deactivate() : snapshot.update("Ana", "123"));
 			return true;
-		}
-		catch (OptimisticLockingFailureException exception) {
+		} catch (OptimisticLockingFailureException exception) {
 			return false;
 		}
 	}
 
 	private MockHttpServletRequestBuilder mutation(MockHttpServletRequestBuilder request, Owner owner) {
 		return request.cookie(owner.auth(), owner.csrf().cookie())
-			.header(owner.csrf().header(), owner.csrf().value())
-			.contentType(MediaType.APPLICATION_JSON);
+				.header(owner.csrf().header(), owner.csrf().value())
+				.contentType(MediaType.APPLICATION_JSON);
 	}
 
 	private UUID create(Owner owner, String body) throws Exception {
@@ -267,20 +261,20 @@ class CollaboratorApiIntegrationTest {
 	private Owner account(String email) throws Exception {
 		var csrf = csrf(null);
 		var signup = mvc
-			.perform(post("/api/v1/accounts").cookie(csrf.cookie())
-				.header(csrf.header(), csrf.value())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Account\",\"timezone\":\"Europe/London\",\"email\":\"" + email
-						+ "\",\"password\":\"long-test-password\"}"))
-			.andExpect(status().isCreated())
-			.andReturn();
+				.perform(post("/api/v1/accounts").cookie(csrf.cookie())
+						.header(csrf.header(), csrf.value())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"name\":\"Account\",\"timezone\":\"Europe/London\",\"email\":\"" + email
+								+ "\",\"password\":\"long-test-password\"}"))
+				.andExpect(status().isCreated())
+				.andReturn();
 		var login = mvc
-			.perform(post("/api/v1/auth/login").cookie(csrf.cookie())
-				.header(csrf.header(), csrf.value())
-				.param("email", email)
-				.param("password", "long-test-password"))
-			.andExpect(status().isNoContent())
-			.andReturn();
+				.perform(post("/api/v1/auth/login").cookie(csrf.cookie())
+						.header(csrf.header(), csrf.value())
+						.param("email", email)
+						.param("password", "long-test-password"))
+				.andExpect(status().isNoContent())
+				.andReturn();
 		var auth = login.getResponse().getCookie(JwtCookieService.COOKIE);
 		String id = JsonPath.read(signup.getResponse().getContentAsString(), "$.organizationId");
 		return new Owner(UUID.fromString(id), auth, csrf(auth));

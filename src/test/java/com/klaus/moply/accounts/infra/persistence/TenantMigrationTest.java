@@ -5,15 +5,10 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.junit.jupiter.*;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import com.klaus.moply.factory.PostgresTestDatabase;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Testcontainers
 class TenantMigrationTest {
-
-	@Container
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17.6-bookworm");
 
 	private DriverManagerDataSource source;
 
@@ -23,6 +18,7 @@ class TenantMigrationTest {
 
 	@BeforeEach
 	void setup() {
+		var postgres = PostgresTestDatabase.POSTGRES;
 		source = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
 		jdbc = new JdbcTemplate(source);
 		schema = "tenant_" + UUID.randomUUID().toString().replace("-", "");
