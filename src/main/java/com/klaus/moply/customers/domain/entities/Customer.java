@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundException;
 import com.klaus.moply.customers.domain.vo.CustomerName;
-import com.klaus.moply.customers.domain.vo.Phone;
+import com.klaus.moply.shared.domain.vo.Phone;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.customers.domain.vo.Email;
 
@@ -18,6 +18,10 @@ import lombok.Getter;
 public final class Customer {
 
 	private final UUID id;
+
+	private final UUID organizationId;
+
+	private final long version;
 
 	private final CustomerName name;
 
@@ -29,9 +33,11 @@ public final class Customer {
 
 	private final List<CustomerLocation> locations;
 
-	private Customer(UUID id, CustomerName name, Phone phone, Email email, String notes,
-			List<CustomerLocation> locations) {
+	private Customer(UUID organizationId, long version, UUID id, CustomerName name, Phone phone, Email email,
+			String notes, List<CustomerLocation> locations) {
 		this.id = id;
+		this.organizationId = organizationId;
+		this.version = version;
 		this.name = name;
 		this.phone = phone;
 		this.email = email;
@@ -56,14 +62,14 @@ public final class Customer {
 	}
 
 	public Customer update(String name, String phone, String email, String notes) {
-		return new Customer(id, new CustomerName(name), Phone.ofNullable(phone), Email.ofNullable(email), notes,
-				locations);
+		return new Customer(organizationId, version, id, new CustomerName(name), Phone.ofNullable(phone),
+				Email.ofNullable(email), notes, locations);
 	}
 
 	public static Customer create(String name, String phone, String email, String notes,
 			List<CustomerLocation> locations) {
-		return new Customer(null, new CustomerName(name), Phone.ofNullable(phone), Email.ofNullable(email), notes,
-				locations);
+		return new Customer(null, 0, null, new CustomerName(name), Phone.ofNullable(phone), Email.ofNullable(email),
+				notes, locations);
 	}
 
 	public static Customer restore(UUID id, String name, String phone, String email, String notes,
@@ -71,8 +77,12 @@ public final class Customer {
 		if (id == null) {
 			throw new DomainException("O ID do cliente é obrigatório para reconstituição.");
 		}
-		return new Customer(id, new CustomerName(name), Phone.ofNullable(phone), Email.ofNullable(email), notes,
-				locations);
+		return new Customer(null, 0, id, new CustomerName(name), Phone.ofNullable(phone), Email.ofNullable(email),
+				notes, locations);
+	}
+
+	public Customer withPersistence(UUID organizationId, long version) {
+		return new Customer(Objects.requireNonNull(organizationId), version, id, name, phone, email, notes, locations);
 	}
 
 	public Customer addLocation(CustomerLocation location) {
@@ -81,7 +91,7 @@ public final class Customer {
 		}
 		var updated = new ArrayList<>(locations);
 		updated.add(location);
-		return new Customer(id, name, phone, email, notes, updated);
+		return new Customer(organizationId, version, id, name, phone, email, notes, updated);
 	}
 
 	public CustomerLocation findLocation(UUID locationId) {
@@ -89,37 +99,34 @@ public final class Customer {
 			throw new DomainException("O ID do local é obrigatório.");
 		}
 		return locations.stream()
-				.filter(location -> Objects.equals(location.getId(), locationId))
-				.findFirst()
-				.orElseThrow(() -> new CustomerLocationNotFoundException(locationId));
+			.filter(location -> Objects.equals(location.getId(), locationId))
+			.findFirst()
+			.orElseThrow(() -> new CustomerLocationNotFoundException(locationId));
 	}
 
 	public Customer updateLocation(UUID locationId, String name, String address, String notes) {
 		CustomerLocation updated = findLocation(locationId).update(name, address, notes);
 		var updatedLocations = locations.stream()
-				.map(location -> Objects.equals(location.getId(), locationId) ? updated : location)
-				.toList();
-		return new Customer(id, this.name, phone, email, this.notes, updatedLocations);
+			.map(location -> Objects.equals(location.getId(), locationId) ? updated : location)
+			.toList();
+		return new Customer(organizationId, version, id, this.name, phone, email, this.notes, updatedLocations);
 	}
 
-	private static List<CustomerLocation> validateAndCopyLocations(
-			List<CustomerLocation> locations) {
+	private static List<CustomerLocation> validateAndCopyLocations(List<CustomerLocation> locations) {
 
 		if (locations == null || locations.stream().anyMatch(location -> location == null)) {
-			throw new DomainException(
-					"A lista de locais não pode ser nula nem conter itens nulos.");
+			throw new DomainException("A lista de locais não pode ser nula nem conter itens nulos.");
 		}
 
 		var ids = new HashSet<UUID>();
 
 		boolean hasDuplicateId = locations.stream()
-				.map(CustomerLocation::getId)
-				.filter(id -> id != null)
-				.anyMatch(id -> !ids.add(id));
+			.map(CustomerLocation::getId)
+			.filter(id -> id != null)
+			.anyMatch(id -> !ids.add(id));
 
 		if (hasDuplicateId) {
-			throw new DomainException(
-					"Os IDs dos locais devem ser únicos dentro do cliente.");
+			throw new DomainException("Os IDs dos locais devem ser únicos dentro do cliente.");
 		}
 
 		return List.copyOf(locations);
