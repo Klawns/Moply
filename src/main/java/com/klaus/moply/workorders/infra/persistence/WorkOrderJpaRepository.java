@@ -16,6 +16,9 @@ import jakarta.persistence.LockModeType;
 
 public interface WorkOrderJpaRepository extends JpaRepository<WorkOrderEntity, UUID> {
 
+	@Query("select w.occurrenceDate from WorkOrderEntity w where w.organizationId = :account and w.recurrenceSeriesId = :series and w.occurrenceDate >= :from and w.occurrenceDate < :until")
+	List<LocalDate> findOccurrenceDates(UUID account, UUID series, LocalDate from, LocalDate until);
+
 	// Lock the root only: an outer fetch join of assignments cannot be locked on
 	// PostgreSQL.
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -37,5 +40,11 @@ public interface WorkOrderJpaRepository extends JpaRepository<WorkOrderEntity, U
 			""")
 	List<WorkOrderEntity> findAllByFilters(UUID organizationId, LocalDate from, LocalDate to, UUID customerId,
 			WorkOrderStatus status);
+
+	@EntityGraph(attributePaths = "assignments")
+	@Query("select distinct w from WorkOrderEntity w join w.assignments a "
+			+ "where w.organizationId = :organizationId and a.collaboratorId = :collaboratorId "
+			+ "order by w.serviceDate, w.id")
+	List<WorkOrderEntity> findAllByCollaborator(UUID organizationId, UUID collaboratorId);
 
 }

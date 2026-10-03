@@ -44,6 +44,12 @@ public class WorkOrderEntity {
 	@Column(name = "organization_id", nullable = false, updatable = false)
 	private UUID organizationId;
 
+	@Column(name = "recurrence_series_id")
+	private UUID recurrenceSeriesId;
+
+	@Column(name = "occurrence_date")
+	private LocalDate occurrenceDate;
+
 	@Column(name = "customer_id", nullable = false)
 	private UUID customerId;
 
@@ -100,6 +106,10 @@ public class WorkOrderEntity {
 		e.totalAmount = work.totalAmount().value();
 		e.allocationPolicyVersion = work.allocationPolicyVersion();
 		e.status = work.status();
+		if (work.occurrence() != null) {
+			e.recurrenceSeriesId = work.occurrence().seriesId();
+			e.occurrenceDate = work.occurrence().originalDate();
+		}
 		for (var a : work.assignments())
 			e.assignments.add(WorkAssignmentEntity.from(e, a));
 		return e;
@@ -109,7 +119,9 @@ public class WorkOrderEntity {
 		return new WorkOrder(id, customerId, customerLocationId, serviceDate, startTime, description,
 				new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode, new Money(totalAmount),
 				allocationPolicyVersion, status, version,
-				assignments.stream().map(WorkAssignmentEntity::toDomain).toList());
+				assignments.stream().map(WorkAssignmentEntity::toDomain).toList(),
+				recurrenceSeriesId == null ? null : new com.klaus.moply.workorders.domain.vo.OccurrenceIdentity(
+						recurrenceSeriesId, occurrenceDate));
 	}
 
 }
