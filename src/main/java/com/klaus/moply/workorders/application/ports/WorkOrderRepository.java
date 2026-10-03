@@ -1,6 +1,6 @@
 package com.klaus.moply.workorders.application.ports;
 
-import java.time.LocalDate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,10 +14,12 @@ public interface WorkOrderRepository {
 
 	Optional<WorkOrder> findById(UUID organizationId, UUID id);
 
-	default List<WorkOrder> findAll(UUID organizationId, LocalDate from, LocalDate to, UUID customerId) {
-		return findAll(organizationId, from, to, customerId, null);
+	List<WorkOrder> findAllByCollaborator(UUID organizationId, UUID collaboratorId);
+
+	default List<WorkOrder> findAll(UUID organizationId, WorkOrderDateRange dateRange, UUID customerId) {
+		return findAll(organizationId, dateRange, customerId, null);
 	}
 
-	List<WorkOrder> findAll(UUID organizationId, LocalDate from, LocalDate to, UUID customerId, WorkOrderStatus status);
+	List<WorkOrder> findAll(UUID organizationId, WorkOrderDateRange dateRange, UUID customerId, WorkOrderStatus status);
 
 }

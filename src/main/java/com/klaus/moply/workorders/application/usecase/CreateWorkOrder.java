@@ -34,22 +34,20 @@ public class CreateWorkOrder implements Usecase.Contextual<CreateWorkOrderInput,
 
 	@Override
 	public WorkOrderOutput execute(Usecase.Context context, CreateWorkOrderInput input) {
+		var workOrder = prepare(context, input);
+		var saved = repo.save(context.organizationId(), workOrder);
+		return WorkOrderOutput.from(saved,
+				findCustomer(context.organizationId(), input.customerId()).getName().value());
+	}
+
+	/** Validates the complete creation contract without persisting a work order. */
+	public WorkOrder prepare(Usecase.Context context, CreateWorkOrderInput input) {
 		validateInput(input);
-
 		var organizationId = context.organizationId();
-
-		var organization = findOrganization(organizationId);
-		var status = resolveInitialStatus(input, organization);
-
-		var workOrder = createWorkOrder(input, status);
-		var customer = findCustomer(organizationId, input.customerId());
-
-		validateCustomerLocation(customer, input.customerLocationId());
-		validateCollaborators(organizationId, workOrder);
-
-		var savedWorkOrder = repo.save(organizationId, workOrder);
-
-		return WorkOrderOutput.from(savedWorkOrder, customer.getName().value());
+		var work = createWorkOrder(input, resolveInitialStatus(input, findOrganization(organizationId)));
+		validateCustomerLocation(findCustomer(organizationId, input.customerId()), input.customerLocationId());
+		validateCollaborators(organizationId, work);
+		return work;
 	}
 
 	private void validateInput(CreateWorkOrderInput input) {

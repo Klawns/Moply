@@ -12,7 +12,7 @@ import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 public record WorkOrderOutput(UUID id, UUID customerId, String customer, UUID customerLocationId, LocalDate serviceDate,
 		LocalTime startTime, String description, BigDecimal contractedHours, BigDecimal hourlyRate, String currencyCode,
 		BigDecimal totalAmount, int allocationPolicyVersion, WorkOrderStatus status, long version, int participantCount,
-		List<AssignmentOutput> assignments) {
+		List<AssignmentOutput> assignments, UUID recurrenceSeriesId, LocalDate occurrenceDate) {
 	public record AssignmentOutput(UUID collaboratorId, int inclusionPosition, BigDecimal allocatedAmount) {
 	}
 
@@ -24,6 +24,8 @@ public record WorkOrderOutput(UUID id, UUID customerId, String customer, UUID cu
 					.stream()
 					.map(a -> new AssignmentOutput(a.collaboratorId(), a.inclusionPosition(),
 							a.allocatedAmount().value()))
-					.toList());
+					.toList(),
+				w.occurrence() == null ? null : w.occurrence().seriesId(),
+				w.occurrence() == null ? null : w.occurrence().originalDate());
 	}
 }
