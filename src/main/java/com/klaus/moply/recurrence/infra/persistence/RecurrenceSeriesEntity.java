@@ -1,0 +1,107 @@
+package com.klaus.moply.recurrence.infra.persistence;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import jakarta.persistence.*;
+
+import com.klaus.moply.recurrence.domain.*;
+import com.klaus.moply.recurrence.domain.vo.RecurrenceParticipants;
+import com.klaus.moply.recurrence.domain.vo.RecurrencePeriod;
+import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "tb_recurrence_series")
+@Getter
+@NoArgsConstructor
+public class RecurrenceSeriesEntity {
+
+	@Id
+	private UUID id;
+
+	@Column(name = "organization_id", nullable = false)
+	private UUID organizationId;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 20)
+	private Frequency frequency;
+
+	@Column(name = "starts_on", nullable = false)
+	private LocalDate startsOn;
+
+	@Column(name = "ends_on")
+	private LocalDate endsOn;
+
+	@Column(name = "customer_id", nullable = false)
+	private UUID customerId;
+
+	@Column(name = "customer_location_id")
+	private UUID customerLocationId;
+
+	@Column(name = "start_time")
+	private LocalTime startTime;
+
+	@Column(columnDefinition = "text")
+	private String description;
+
+	@Column(name = "contracted_hours", nullable = false, columnDefinition = "numeric")
+	private BigDecimal contractedHours;
+
+	@Column(name = "hourly_rate", nullable = false, columnDefinition = "numeric")
+	private BigDecimal hourlyRate;
+
+	@Column(name = "currency_code", nullable = false, length = 3)
+	private String currencyCode;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "initial_status", nullable = false, length = 20)
+	private WorkOrderStatus initialStatus;
+
+	@Version
+	private Long version;
+
+	@OneToMany(mappedBy = "series", cascade = CascadeType.ALL)
+	@OrderBy("inclusionPosition ASC")
+	private List<RecurrenceMemberEntity> members = new ArrayList<>();
+
+	public static RecurrenceSeriesEntity from(RecurrenceSeries s) {
+		var e = new RecurrenceSeriesEntity();
+		var t = s.getTemplate();
+		e.id = s.getId();
+		e.organizationId = s.getOrganizationId();
+		e.frequency = s.getFrequency();
+		e.startsOn = s.getPeriod().startsOn();
+		e.endsOn = s.getPeriod().endsOn();
+		e.customerId = t.customerId();
+		e.customerLocationId = t.customerLocationId();
+		e.startTime = t.startTime();
+		e.description = t.description();
+		e.contractedHours = t.contractedHours().value();
+		e.hourlyRate = t.hourlyRate().value();
+		e.currencyCode = t.currencyCode();
+		e.initialStatus = t.initialStatus();
+		for (int i = 0; i < t.participants().ids().size(); i++) {
+			e.members.add(new RecurrenceMemberEntity(e, t.participants().ids().get(i), i));
+		}
+		return e;
+	}
+
+	public RecurrenceSeries toDomain() {
+		return RecurrenceSeries.restore(id, organizationId, frequency, new RecurrencePeriod(startsOn, endsOn),
+				new WorkTemplate(customerId, customerLocationId, startTime, description,
+						new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
+						new RecurrenceParticipants(
+								members.stream().map(RecurrenceMemberEntity::getCollaboratorId).toList()),
+						initialStatus));
+	}
+
+}
