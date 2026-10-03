@@ -19,11 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.workflows.application.CancelWorkOrder;
+import com.klaus.moply.workflows.application.RescheduleWorkOrder;
 import com.klaus.moply.workorders.application.usecase.CompleteWorkOrder;
 import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrders;
-import com.klaus.moply.workorders.application.usecase.RescheduleWorkOrder;
 import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
 import com.klaus.moply.workorders.application.usecase.dto.WorkOrderOutput;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
@@ -50,6 +50,9 @@ public class WorkOrderController {
 	public record RescheduleRequest(LocalDate serviceDate, LocalTime startTime) {
 	}
 
+	public record CancelRequest(Boolean confirmNoMoneyReceived, String reason) {
+	}
+
 	@PostMapping("/{id}/complete")
 	public ResponseEntity<Void> complete(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
 		complete.execute(new Context(principal.getOrganizationId()), id);
@@ -65,8 +68,12 @@ public class WorkOrderController {
 	}
 
 	@PostMapping("/{id}/cancel")
-	public ResponseEntity<Void> cancel(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
-		cancel.execute(new Context(principal.getOrganizationId()), id);
+	public ResponseEntity<Void> cancel(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
+			@RequestBody(required = false) CancelRequest request) {
+		var confirmed = request != null && Boolean.TRUE.equals(request.confirmNoMoneyReceived());
+		var reason = request == null ? null : request.reason();
+		var input = new CancelWorkOrder.Input(id, principal.getUserId(), confirmed, reason);
+		cancel.execute(new Context(principal.getOrganizationId()), input);
 		return ResponseEntity.noContent().build();
 	}
 
