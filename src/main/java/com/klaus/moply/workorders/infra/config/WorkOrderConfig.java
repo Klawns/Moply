@@ -14,7 +14,6 @@ import com.klaus.moply.workorders.application.usecase.CompleteWorkOrder;
 import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrders;
-import com.klaus.moply.workorders.application.usecase.RescheduleWorkOrder;
 
 @Configuration
 public class WorkOrderConfig {
@@ -38,12 +37,6 @@ public class WorkOrderConfig {
 	@Bean
 	CompleteWorkOrder completeWorkOrder(WorkOrderOperations operations) {
 		return new CompleteWorkOrder(operations);
-	}
-
-	@Bean
-	RescheduleWorkOrder rescheduleWorkOrder(WorkOrderOperations operations, OrganizationRepository accounts,
-			Clock clock) {
-		return new RescheduleWorkOrder(operations, accounts, clock);
 	}
 
 }
