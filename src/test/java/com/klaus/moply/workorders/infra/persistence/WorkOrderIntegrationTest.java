@@ -1,34 +1,66 @@
 package com.klaus.moply.workorders.infra.persistence;
 
+import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import java.math.BigDecimal;
-import java.time.*;
-import java.util.*;
-import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.context.*;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.http.MediaType;
 import org.springframework.dao.DataIntegrityViolationException;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
-import com.klaus.moply.accounts.domain.entities.*;
+import com.klaus.moply.accounts.domain.entities.AppUser;
+import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.LoginEmail;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
-import com.klaus.moply.customers.domain.entities.*;
-import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
-import com.klaus.moply.workorders.application.usecase.*;
-import com.klaus.moply.workorders.domain.entity.*;
-import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.customers.domain.entities.Customer;
+import com.klaus.moply.customers.domain.entities.CustomerLocation;
 import com.klaus.moply.factory.PostgresSpringIntegrationTest;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
+import com.klaus.moply.workorders.application.usecase.CompleteWorkOrder;
+import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
+import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
+import com.klaus.moply.workflows.application.RescheduleWorkOrder;
+import com.klaus.moply.workorders.domain.entity.WorkAssignment;
+import com.klaus.moply.workorders.domain.entity.WorkOrder;
+import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 
 @SpringBootTest(properties = { "spring.jpa.open-in-view=false", "spring.flyway.enabled=true",
 		"spring.jpa.hibernate.ddl-auto=validate" })
@@ -76,6 +108,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@AfterEach
 	void cleanup() {
+		jdbc.update("DELETE FROM tb_collaborator_payment");
+		jdbc.update("DELETE FROM tb_customer_payment");
 		jdbc.update("DELETE FROM tb_work_assignment");
 		jdbc.update("DELETE FROM tb_order_service");
 		jdbc.update("DELETE FROM tb_customer_location");
@@ -161,12 +195,12 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		var c = orders.save(account, work(date.plusDays(1), customer, "1", "10"));
 		orders.save(account, work(date.plusDays(2), customer, "1", "10"));
 		orders.save(account, work(date, otherCustomer, "1", "10"));
-		var list = orders.findAll(account, date, date.plusDays(1), customer);
+		var list = orders.findAll(account, new WorkOrderDateRange(date, date.plusDays(1)), customer);
 		assertEquals(3, list.size());
 		assertEquals(c.id(), list.getLast().id());
 		assertEquals(List.of(a.id(), b.id()).stream().sorted(Comparator.comparing(UUID::toString)).toList(),
 				list.subList(0, 2).stream().map(WorkOrder::id).toList());
-		assertTrue(orders.findAll(foreignAccount, null, null, null).isEmpty());
+		assertTrue(orders.findAll(foreignAccount, new WorkOrderDateRange(null, null), null).isEmpty());
 		assertTrue(orders.findById(foreignAccount, a.id()).isEmpty());
 	}
 
@@ -214,7 +248,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.length()").value(1));
 		mvc.perform(
-				get("/api/v1/work-orders").with(user(principal)).param("from", "2026-09-29").param("to", "2026-09-28"))
+				get("/api/v1/work-orders").with(user(principal)).param("from", "2026-09-30").param("to", "2026-09-28"))
 			.andExpect(status().isBadRequest());
 	}
 
@@ -328,11 +362,14 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		assertThrows(com.klaus.moply.workorders.domain.exception.WorkOrderStateException.class, () -> reschedule
 			.execute(context, new RescheduleWorkOrder.Input(saved.id(), LocalDate.of(2026, 10, 7), null)));
 		assertEquals(1,
-				orders.findAll(account, moved.serviceDate(), moved.serviceDate(), customer, WorkOrderStatus.CANCELLED)
+				orders
+					.findAll(account, new WorkOrderDateRange(moved.serviceDate(), moved.serviceDate()), customer,
+							WorkOrderStatus.CANCELLED)
 					.size());
-		assertTrue(
-				orders.findAll(account, moved.serviceDate(), moved.serviceDate(), customer, WorkOrderStatus.COMPLETED)
-					.isEmpty());
+		assertTrue(orders
+			.findAll(account, new WorkOrderDateRange(moved.serviceDate(), moved.serviceDate()), customer,
+					WorkOrderStatus.COMPLETED)
+			.isEmpty());
 	}
 
 	List<Map<String, Object>> assignmentRows(UUID id) {
@@ -499,6 +536,454 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				new com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput(customer, null, date, null,
 						null, BigDecimal.ONE, BigDecimal.TEN, List.of(person), WorkOrderStatus.COMPLETED));
 		assertEquals(WorkOrderStatus.COMPLETED, explicitCompleted.status());
+	}
+
+	@Autowired
+	com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository payments;
+
+	@Autowired
+	com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment recordPayment;
+
+	@Autowired
+	com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment recordCollaboratorPayment;
+
+	@Autowired
+	com.klaus.moply.workflows.application.RescheduleWorkOrder workflowReschedule;
+
+	@Test
+	void shouldRecordIntegralPaymentWithinAccountDateAndProtectPaymentRoutes() throws Exception {
+		accounts.update(
+				accounts.findById(account).orElseThrow().withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
+		var todayInLondon = LocalDate.of(2026, 10, 1);
+		var saved = orders.save(account, work(todayInLondon, customer, "3", "11.50"));
+		var path = "/api/v1/work-orders/" + saved.id() + "/payments";
+		mvc.perform(post(path).with(user(principal))
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"paidOn\":\"2026-10-01\"}")).andExpect(status().isForbidden());
+		mvc.perform(post(path).with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"paidOn\":\"2026-09-30\"}")).andExpect(status().isBadRequest());
+		mvc.perform(post(path).with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"paidOn\":\"2026-10-02\"}")).andExpect(status().isBadRequest());
+		var result = mvc
+			.perform(post(path).with(user(principal))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"paidOn\":\"2026-10-01\",\"amount\":0.01,\"currencyCode\":\"USD\",\"organizationId\":\""
+						+ foreignAccount + "\"}"))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.amount").value(34.50))
+			.andExpect(jsonPath("$.currencyCode").value("GBP"))
+			.andExpect(jsonPath("$.status").value("RECORDED"))
+			.andExpect(jsonPath("$.recordedBy").value(principal.getUserId().toString()))
+			.andReturn();
+		var paymentId = UUID
+			.fromString(com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.id"));
+		mvc.perform(post(path).with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"paidOn\":\"2026-10-01\"}")).andExpect(status().isConflict());
+		mvc.perform(get(path).with(user(principal)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id").value(paymentId.toString()));
+		assertTrue(payments.findById(foreignAccount, paymentId).isEmpty());
+		var foreignPrincipal = new AccountPrincipal(
+				new AppUser(UUID.randomUUID(), foreignAccount, new LoginEmail("foreign-payment@b"), "unused"));
+		mvc.perform(get(path).with(user(foreignPrincipal))).andExpect(status().isNotFound());
+		mvc.perform(post("/api/v1/payments/" + paymentId + "/reversal").with(user(principal))
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"confirmNoMoneyReceived\":true,\"reason\":\"wrong\"}")).andExpect(status().isForbidden());
+		var future = orders.save(account, work(todayInLondon.plusDays(1), customer, "3", "11.50"));
+		mvc.perform(post("/api/v1/work-orders/" + future.id() + "/payments").with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"paidOn\":\"2026-10-02\"}")).andExpect(status().isConflict());
+		var completed = orders.save(account, work(todayInLondon.minusDays(1), customer, "3", "11.50"));
+		complete.execute(new Context(account), completed.id());
+		var completedPayment = recordPayment.execute(new Context(account),
+				new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(completed.id(),
+						todayInLondon, principal.getUserId()));
+		assertEquals(com.klaus.moply.payments.domain.Payment.Status.RECORDED, completedPayment.status());
+		var cancelled = orders.save(account, work(todayInLondon.minusDays(1), customer, "3", "11.50"));
+		cancel.execute(new Context(account), cancelled.id());
+		assertThrows(com.klaus.moply.payments.application.usecase.exception.PaymentConflictException.class,
+				() -> recordPayment.execute(new Context(account),
+						new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(cancelled.id(),
+								todayInLondon, principal.getUserId())));
+	}
+
+	@Test
+	void shouldReverseWithAuditAndCancelAtomicallyOnlyAfterConfirmation() throws Exception {
+		var saved = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var payment = recordPayment.execute(new Context(account),
+				new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+						LocalDate.of(2026, 9, 30), principal.getUserId()));
+		var cancelPath = "/api/v1/work-orders/" + saved.id() + "/cancel";
+		mvc.perform(post(cancelPath).with(user(principal)).with(csrf())).andExpect(status().isConflict());
+		assertEquals(com.klaus.moply.payments.domain.Payment.Status.RECORDED,
+				payments.findById(account, payment.id()).orElseThrow().status());
+		var reversePath = "/api/v1/payments/" + payment.id() + "/reversal";
+		mvc.perform(post(reversePath).with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"confirmNoMoneyReceived\":false,\"reason\":\"mistake\"}")).andExpect(status().isBadRequest());
+		mvc.perform(post(reversePath).with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"confirmNoMoneyReceived\":true,\"reason\":\"  \"}")).andExpect(status().isBadRequest());
+		mvc.perform(post(reversePath).with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"confirmNoMoneyReceived\":true,\"reason\":\"Lançamento incorreto\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("REVERSED"))
+			.andExpect(jsonPath("$.reversedBy").value(principal.getUserId().toString()));
+		var reversed = payments.findById(account, payment.id()).orElseThrow();
+		assertEquals(payment.amount(), reversed.amount());
+		assertEquals(payment.recordedAt(), reversed.recordedAt());
+		assertEquals("Lançamento incorreto", reversed.reversal().reason());
+		var replacement = recordPayment.execute(new Context(account),
+				new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+						LocalDate.of(2026, 9, 30), principal.getUserId()));
+		assertNotEquals(payment.id(), replacement.id());
+		assertEquals(2, payments.findAllByWork(account, saved.id()).size());
+		assertThrows(IllegalStateException.class,
+				() -> new org.springframework.transaction.support.TransactionTemplate(transactionManager)
+					.executeWithoutResult(status -> {
+						cancel.execute(new Context(account),
+								new com.klaus.moply.workflows.application.CancelWorkOrder.Input(saved.id(),
+										principal.getUserId(), true, "Erro"));
+						throw new IllegalStateException("rollback");
+					}));
+		assertEquals(WorkOrderStatus.SCHEDULED, orders.findById(account, saved.id()).orElseThrow().status());
+		assertEquals(com.klaus.moply.payments.domain.Payment.Status.RECORDED,
+				payments.findById(account, replacement.id()).orElseThrow().status());
+		mvc.perform(post(cancelPath).with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"confirmNoMoneyReceived\":true,\"reason\":\"Lançamento incorreto\"}"))
+			.andExpect(status().isNoContent());
+		assertEquals(WorkOrderStatus.CANCELLED, orders.findById(account, saved.id()).orElseThrow().status());
+		assertEquals(com.klaus.moply.payments.domain.Payment.Status.REVERSED,
+				payments.findById(account, replacement.id()).orElseThrow().status());
+	}
+
+	@Test
+	void shouldSerializePaymentAgainstRescheduleOnPostgres() throws Exception {
+		var saved = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var start = new java.util.concurrent.CountDownLatch(1);
+		try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+			var payment = executor.submit(() -> {
+				await(start);
+				try {
+					recordPayment.execute(new Context(account),
+							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+									LocalDate.of(2026, 9, 30), principal.getUserId()));
+					return "paid";
+				}
+				catch (RuntimeException e) {
+					return "payment rejected";
+				}
+			});
+			var reschedule = executor.submit(() -> {
+				await(start);
+				try {
+					workflowReschedule.execute(new Context(account),
+							new com.klaus.moply.workflows.application.RescheduleWorkOrder.Input(saved.id(),
+									LocalDate.of(2026, 10, 1), null));
+					return "moved";
+				}
+				catch (RuntimeException e) {
+					return "reschedule rejected";
+				}
+			});
+			start.countDown();
+			var outcome = List.of(payment.get(15, java.util.concurrent.TimeUnit.SECONDS),
+					reschedule.get(15, java.util.concurrent.TimeUnit.SECONDS));
+			var persisted = orders.findById(account, saved.id()).orElseThrow();
+			var active = payments.findActiveByWork(account, saved.id());
+			assertFalse(outcome.contains("paid") && outcome.contains("moved"));
+			assertFalse(persisted.serviceDate().isAfter(LocalDate.of(2026, 9, 30)) && active.isPresent());
+		}
+	}
+
+	@Test
+	void shouldSerializeConcurrentDuplicatePaymentAndPaymentAgainstCancellationOnPostgres() throws Exception {
+		var saved = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var start = new java.util.concurrent.CountDownLatch(1);
+		try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+			var first = executor.submit(() -> {
+				await(start);
+				try {
+					recordPayment.execute(new Context(account),
+							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+									LocalDate.of(2026, 9, 30), principal.getUserId()));
+					return true;
+				}
+				catch (RuntimeException e) {
+					return false;
+				}
+			});
+			var second = executor.submit(() -> {
+				await(start);
+				try {
+					recordPayment.execute(new Context(account),
+							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+									LocalDate.of(2026, 9, 30), principal.getUserId()));
+					return true;
+				}
+				catch (RuntimeException e) {
+					return false;
+				}
+			});
+			start.countDown();
+			assertEquals(1, (first.get(15, java.util.concurrent.TimeUnit.SECONDS) ? 1 : 0)
+					+ (second.get(15, java.util.concurrent.TimeUnit.SECONDS) ? 1 : 0));
+		}
+		assertEquals(1,
+				payments.findAllByWork(account, saved.id())
+					.stream()
+					.filter(p -> p.status() == com.klaus.moply.payments.domain.Payment.Status.RECORDED)
+					.count());
+		var another = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var race = new java.util.concurrent.CountDownLatch(1);
+		try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+			var pay = executor.submit(() -> {
+				await(race);
+				try {
+					recordPayment.execute(new Context(account),
+							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(another.id(),
+									LocalDate.of(2026, 9, 30), principal.getUserId()));
+				}
+				catch (RuntimeException ignored) {
+				}
+			});
+			var cancelWork = executor.submit(() -> {
+				await(race);
+				cancel.execute(new Context(account), new com.klaus.moply.workflows.application.CancelWorkOrder.Input(
+						another.id(), principal.getUserId(), true, "Cancelamento simultâneo"));
+			});
+			race.countDown();
+			pay.get(15, java.util.concurrent.TimeUnit.SECONDS);
+			cancelWork.get(15, java.util.concurrent.TimeUnit.SECONDS);
+		}
+		assertEquals(WorkOrderStatus.CANCELLED, orders.findById(account, another.id()).orElseThrow().status());
+		assertTrue(payments.findActiveByWork(account, another.id()).isEmpty());
+	}
+
+	@Test
+	void shouldRecordCollaboratorAcertoWithIdempotencyReversalAndCancellationGuard() throws Exception {
+		var saved = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var base = "/api/v1/work-orders/" + saved.id() + "/collaborators/" + person + "/payments";
+		var foreignPrincipal = new AccountPrincipal(
+				new AppUser(UUID.randomUUID(), foreignAccount, new LoginEmail("foreign@b"), "unused"));
+		mvc.perform(get(base).with(user(foreignPrincipal))).andExpect(status().isNotFound());
+		var content = "{\"amount\":10.00,\"paidOn\":\"2026-09-30\"}";
+		var first = mvc
+			.perform(post(base).with(user(principal))
+				.with(csrf())
+				.header("Idempotency-Key", "collab-payment-1")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(content))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.amount").value(10.00))
+			.andReturn();
+		var paymentId = UUID.fromString(com.fasterxml.jackson.databind.json.JsonMapper.builder()
+			.build()
+			.readTree(first.getResponse().getContentAsString())
+			.get("id")
+			.asText());
+		mvc.perform(post(base).with(user(principal))
+			.with(csrf())
+			.header("Idempotency-Key", "collab-payment-1")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(content)).andExpect(status().isCreated()).andExpect(jsonPath("$.id").value(paymentId.toString()));
+		mvc.perform(post(base).with(user(principal))
+			.with(csrf())
+			.header("Idempotency-Key", "collab-payment-1")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"amount\":5.00,\"paidOn\":\"2026-09-30\"}")).andExpect(status().isConflict());
+		mvc.perform(post(base).with(user(principal))
+			.with(csrf())
+			.header("Idempotency-Key", "collab-payment-2")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"amount\":7.26,\"paidOn\":\"2026-09-30\"}")).andExpect(status().isConflict());
+		mvc.perform(post(base + "/" + paymentId + "/reversal").with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"confirmNotActuallyPaid\":false,\"reason\":\"Recorded in error\"}"))
+			.andExpect(status().isBadRequest());
+		collaborators.save(account, collaborators.findById(account, person).orElseThrow().deactivate());
+		mvc.perform(post(base + "/" + paymentId + "/reversal").with(user(principal))
+			.with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"confirmNotActuallyPaid\":true,\"reason\":\"Recorded in error\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("REVERSED"))
+			.andExpect(jsonPath("$.reversalReason").value("Recorded in error"));
+		mvc.perform(post(base).with(user(principal))
+			.with(csrf())
+			.header("Idempotency-Key", "collab-payment-3")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"amount\":7.25,\"paidOn\":\"2026-09-30\"}")).andExpect(status().isCreated());
+		mvc.perform(post(base).with(user(principal))
+			.with(csrf())
+			.header("Idempotency-Key", "collab-payment-4")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"amount\":10.00,\"paidOn\":\"2026-09-30\"}")).andExpect(status().isCreated());
+		mvc.perform(post("/api/v1/work-orders/" + saved.id() + "/complete").with(user(principal)).with(csrf()))
+			.andExpect(status().isNoContent());
+		mvc.perform(get("/api/v1/collaborators/" + person + "/payments/summary").with(user(principal)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.allocatedAmount").value(17.25))
+			.andExpect(jsonPath("$.recordedAmount").value(17.25))
+			.andExpect(jsonPath("$.remainingAmount").value(0.00))
+			.andExpect(jsonPath("$.requiresAttention").value(false));
+		mvc.perform(post("/api/v1/work-orders/" + saved.id() + "/cancel").with(user(principal)).with(csrf()))
+			.andExpect(status().isConflict());
+		mvc.perform(get(base).with(user(principal)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.length()").value(3));
+		mvc.perform(post(base).with(user(principal))
+			.header("Idempotency-Key", "csrf-required")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(content)).andExpect(status().isForbidden());
+	}
+
+	@Test
+	void shouldIncludeOnlyActiveWorksAndSignalCompletedOutstandingWorkAfterItsDate() throws Exception {
+		accounts.update(
+				accounts.findById(account).orElseThrow().withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
+		var today = LocalDate.of(2026, 10, 1);
+		var due = orders.save(account, WorkOrder.create(customer, null, today, null, null, new BigDecimal("3"),
+				new BigDecimal("11.50"), List.of(person), WorkOrderStatus.COMPLETED));
+		var future = orders.save(account, WorkOrder.create(customer, null, today.plusDays(1), null, null,
+				new BigDecimal("3"), new BigDecimal("11.50"), List.of(person), WorkOrderStatus.COMPLETED));
+		var foreignPrincipal = new AccountPrincipal(
+				new AppUser(UUID.randomUUID(), foreignAccount, new LoginEmail("foreign@b"), "unused"));
+		mvc.perform(get("/api/v1/collaborators/" + person + "/payments/summary").with(user(principal)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.currencyCode").value("GBP"))
+			.andExpect(jsonPath("$.remainingAmount").value(69.00))
+			.andExpect(jsonPath("$.workOrders[0].workOrderId").value(due.id().toString()))
+			.andExpect(jsonPath("$.workOrders[0].requiresAttention").value(true))
+			.andExpect(jsonPath("$.workOrders[1].workOrderId").value(future.id().toString()))
+			.andExpect(jsonPath("$.workOrders[1].requiresAttention").value(false));
+		mvc.perform(get("/api/v1/collaborators/" + person + "/payments/summary").with(user(foreignPrincipal)))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void shouldSerializeConcurrentAcertosAgainstTheSameAllocationAndLifecycleOperations() throws Exception {
+		var context = new Context(account);
+		var saved = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var gate = new java.util.concurrent.CountDownLatch(1);
+		try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+			var first = executor.submit(() -> {
+				await(gate);
+				try {
+					recordCollaboratorPayment.execute(context,
+							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(saved.id(),
+									person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30), "concurrent-1",
+									principal.getUserId()));
+					return true;
+				}
+				catch (com.klaus.moply.payments.application.usecase.exception.PaymentConflictException rejected) {
+					return false;
+				}
+			});
+			var secondPayment = executor.submit(() -> {
+				await(gate);
+				try {
+					recordCollaboratorPayment.execute(context,
+							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(saved.id(),
+									person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30), "concurrent-2",
+									principal.getUserId()));
+					return true;
+				}
+				catch (com.klaus.moply.payments.application.usecase.exception.PaymentConflictException expected) {
+					return false;
+				}
+			});
+			gate.countDown();
+			assertEquals(1, (first.get(15, java.util.concurrent.TimeUnit.SECONDS) ? 1 : 0)
+					+ (secondPayment.get(15, java.util.concurrent.TimeUnit.SECONDS) ? 1 : 0));
+		}
+		var totals = jdbc.queryForObject(
+				"SELECT sum(amount) FROM tb_collaborator_payment WHERE organization_id=? AND work_order_id=? AND collaborator_id=? AND status='RECORDED'",
+				java.math.BigDecimal.class, account, saved.id(), person);
+		assertEquals(0, totals.compareTo(new BigDecimal("10.00")));
+
+		var racingCancel = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var race = new java.util.concurrent.CountDownLatch(1);
+		try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+			var posting = executor.submit(() -> {
+				await(race);
+				try {
+					recordCollaboratorPayment.execute(context,
+							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(
+									racingCancel.id(), person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30),
+									"cancel-race", principal.getUserId()));
+					return true;
+				}
+				catch (RuntimeException rejected) {
+					return false;
+				}
+			});
+			var cancelling = executor.submit(() -> {
+				await(race);
+				try {
+					cancel.execute(context, new com.klaus.moply.workflows.application.CancelWorkOrder.Input(
+							racingCancel.id(), principal.getUserId(), false, null));
+					return true;
+				}
+				catch (RuntimeException rejected) {
+					return false;
+				}
+			});
+			race.countDown();
+			posting.get(15, java.util.concurrent.TimeUnit.SECONDS);
+			cancelling.get(15, java.util.concurrent.TimeUnit.SECONDS);
+		}
+		var afterRace = orders.findById(account, racingCancel.id()).orElseThrow();
+		var active = jdbc.queryForObject(
+				"SELECT count(*) FROM tb_collaborator_payment WHERE organization_id=? AND work_order_id=? AND status='RECORDED'",
+				Integer.class, account, racingCancel.id());
+		assertFalse(afterRace.status() == WorkOrderStatus.CANCELLED && active > 0);
+
+		var rescheduling = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
+		var rescheduleGate = new java.util.concurrent.CountDownLatch(1);
+		try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+			var posting = executor.submit(() -> {
+				await(rescheduleGate);
+				try {
+					return recordCollaboratorPayment.execute(context,
+							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(
+									rescheduling.id(), person, new BigDecimal("5.00"), LocalDate.of(2026, 9, 30),
+									"before-reschedule", principal.getUserId()));
+				}
+				catch (com.klaus.moply.payments.application.usecase.exception.PaymentConflictException expected) {
+					return null;
+				}
+			});
+			var moving = executor.submit(() -> {
+				await(rescheduleGate);
+				workflowReschedule.execute(context, new com.klaus.moply.workflows.application.RescheduleWorkOrder.Input(
+						rescheduling.id(), LocalDate.of(2026, 10, 6), null));
+			});
+			rescheduleGate.countDown();
+			posting.get(15, java.util.concurrent.TimeUnit.SECONDS);
+			moving.get(15, java.util.concurrent.TimeUnit.SECONDS);
+		}
+		assertEquals(LocalDate.of(2026, 10, 6),
+				orders.findById(account, rescheduling.id()).orElseThrow().serviceDate());
+		var settled = jdbc.queryForObject(
+				"SELECT coalesce(sum(amount),0) FROM tb_collaborator_payment WHERE organization_id=? AND work_order_id=? AND status='RECORDED'",
+				BigDecimal.class, account, rescheduling.id());
+		assertTrue(settled.signum() == 0 || settled.compareTo(new BigDecimal("5.00")) == 0);
 	}
 
 }
