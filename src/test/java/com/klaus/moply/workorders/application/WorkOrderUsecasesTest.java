@@ -1,5 +1,7 @@
 package com.klaus.moply.workorders.application;
 
+import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
+
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
@@ -102,9 +104,9 @@ class WorkOrderUsecasesTest {
 	void shouldCombineFiltersAndRejectInvertedDates() {
 		var date = LocalDate.now();
 		var filter = new FindWorkOrders.Filter(date, date, customer);
-		when(orders.findAll(account, date, date, customer, null)).thenReturn(List.of());
+		when(orders.findAll(account, new WorkOrderDateRange(date, date), customer, null)).thenReturn(List.of());
 		assertTrue(new FindWorkOrders(orders, customers).execute(context, filter).isEmpty());
-		verify(orders).findAll(account, date, date, customer, null);
+		verify(orders).findAll(account, new WorkOrderDateRange(date, date), customer, null);
 		assertThrows(DomainException.class, () -> new FindWorkOrders.Filter(date, date.minusDays(1), null));
 	}
 
