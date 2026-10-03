@@ -1,5 +1,7 @@
 package com.klaus.moply.accounts.infra.web;
 
+import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -467,8 +469,9 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 				() -> orders.save(bid, order));
 		var savedOrder = orders.save(aid, order);
 		assertTrue(orders.findById(bid, savedOrder.id()).isEmpty());
-		assertTrue(orders.findAll(bid, null, null, original.getId()).isEmpty());
-		assertTrue(orders.findAll(bid, savedOrder.serviceDate(), savedOrder.serviceDate(), null).isEmpty());
+		assertTrue(orders.findAll(bid, new WorkOrderDateRange(null, null), original.getId()).isEmpty());
+		assertTrue(orders.findAll(bid, new WorkOrderDateRange(savedOrder.serviceDate(), savedOrder.serviceDate()), null)
+			.isEmpty());
 		assertThrows(com.klaus.moply.shared.domain.exception.DomainException.class, () -> orders.save(bid, savedOrder));
 		var ready = new java.util.concurrent.CountDownLatch(2);
 		var start = new java.util.concurrent.CountDownLatch(1);
