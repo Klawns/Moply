@@ -3,7 +3,9 @@ package com.klaus.moply.workorders.domain;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+
 import org.junit.jupiter.api.Test;
+
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.shared.domain.vo.Money;
 import com.klaus.moply.workorders.domain.entity.*;
@@ -19,8 +21,9 @@ class WorkOrderTest {
 	private final UUID second = UUID.randomUUID();
 
 	private WorkOrder create(List<UUID> ids, WorkOrderStatus status) {
-		return WorkOrder.create(customer, null, LocalDate.of(2026, 9, 28), null, "  ", new BigDecimal("0.01"),
-				BigDecimal.ONE, ids, status);
+		return WorkOrder.create(customer, null, new WorkOrderSchedule(LocalDate.of(2026, 9, 28), null),
+				new WorkOrderDescription("  "), new DurationHours(new BigDecimal("0.01")),
+				new HourlyRate(BigDecimal.ONE), ids, status);
 	}
 
 	@Test
@@ -48,9 +51,11 @@ class WorkOrderTest {
 	}
 
 	private WorkOrder restore(List<WorkAssignment> assignments) {
-		return new WorkOrder(UUID.randomUUID(), customer, null, LocalDate.now(), null, null,
-				new DurationHours(BigDecimal.ONE), new HourlyRate(BigDecimal.TEN), "GBP", new Money(BigDecimal.ONE), 7,
-				WorkOrderStatus.CANCELLED, 4, assignments);
+		return WorkOrder.restore(UUID.randomUUID(), customer, null, new WorkOrderSchedule(LocalDate.now(), null),
+				new WorkOrderDescription(null),
+				new WorkOrderPricing(new DurationHours(BigDecimal.ONE), new HourlyRate(BigDecimal.TEN), "GBP",
+						new Money(BigDecimal.ONE), 7),
+				WorkOrderStatus.CANCELLED, 4, new WorkOrderAssignments(assignments), null);
 	}
 
 	@Test
@@ -73,6 +78,44 @@ class WorkOrderTest {
 				() -> restore(List.of(new WorkAssignment(first, 0, new Money(BigDecimal.ONE)),
 						new WorkAssignment(first, 1, new Money(BigDecimal.ZERO)))));
 		assertThrows(DomainException.class, () -> restore(List.of()));
+	}
+
+	@Test
+	void shouldValidateRequiredAggregateDataAndRestorationIdentity() {
+		var work = create(List.of(first), WorkOrderStatus.SCHEDULED);
+		var id = UUID.randomUUID();
+		assertThrows(DomainException.class, () -> WorkOrder.restore(null, customer, null, work.schedule(),
+				work.workDescription(), work.pricing(), work.status(), 0, work.workAssignments(), null));
+		assertThrows(DomainException.class, () -> WorkOrder.restore(id, customer, null, work.schedule(),
+				work.workDescription(), work.pricing(), work.status(), -1, work.workAssignments(), null));
+		assertThrows(DomainException.class, () -> WorkOrder.create(null, null, work.schedule(), work.workDescription(),
+				work.contractedHours(), work.hourlyRate(), List.of(first), work.status()));
+		assertThrows(DomainException.class, () -> WorkOrder.restore(id, customer, null, null, work.workDescription(),
+				work.pricing(), work.status(), 0, work.workAssignments(), null));
+		assertThrows(DomainException.class, () -> WorkOrder.restore(id, customer, null, work.schedule(), null,
+				work.pricing(), work.status(), 0, work.workAssignments(), null));
+		assertThrows(DomainException.class, () -> WorkOrder.restore(id, customer, null, work.schedule(),
+				work.workDescription(), null, work.status(), 0, work.workAssignments(), null));
+		assertThrows(DomainException.class, () -> WorkOrder.restore(id, customer, null, work.schedule(),
+				work.workDescription(), work.pricing(), null, 0, work.workAssignments(), null));
+		assertThrows(DomainException.class, () -> WorkOrder.restore(id, customer, null, work.schedule(),
+				work.workDescription(), work.pricing(), work.status(), 0, null, null));
+	}
+
+	@Test
+	void shouldKeepOriginalStateAndOccurrenceAcrossOperationalChanges() {
+		var created = create(List.of(first), WorkOrderStatus.SCHEDULED);
+		var occurrence = new OccurrenceIdentity(UUID.randomUUID(), LocalDate.of(2026, 9, 28));
+		var work = WorkOrder.restore(UUID.randomUUID(), customer, null, created.schedule(), created.workDescription(),
+				created.pricing(), created.status(), 4, created.workAssignments(), occurrence);
+		var changed = work.reschedule(LocalDate.of(2026, 10, 5), null, LocalDate.of(2026, 9, 28)).complete().cancel();
+		assertEquals(WorkOrderStatus.SCHEDULED, work.status());
+		assertEquals(LocalDate.of(2026, 9, 28), work.serviceDate());
+		assertEquals(occurrence, changed.occurrence());
+		assertTrue(work.hasSameConditionsAs(changed));
+		assertFalse(work.hasSameOperationAs(changed));
+		assertFalse(work.hasSameConditionsAs(null));
+		assertFalse(work.hasSameOperationAs(null));
 	}
 
 }

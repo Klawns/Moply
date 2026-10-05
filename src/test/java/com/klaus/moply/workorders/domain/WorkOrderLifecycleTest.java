@@ -1,23 +1,31 @@
 package com.klaus.moply.workorders.domain;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.domain.entity.*;
 import com.klaus.moply.workorders.domain.exception.WorkOrderStateException;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
 
 class WorkOrderLifecycleTest {
 
 	private final LocalDate today = LocalDate.of(2026, 9, 30);
 
 	private WorkOrder work(LocalDate date, WorkOrderStatus state) {
-		var work = WorkOrder.create(UUID.randomUUID(), UUID.randomUUID(), date, LocalTime.NOON, "Visit",
-				new BigDecimal("3"), new BigDecimal("11.50"),
+		var work = WorkOrder.create(UUID.randomUUID(), UUID.randomUUID(), new WorkOrderSchedule(date, LocalTime.NOON),
+				new WorkOrderDescription("Visit"), new DurationHours(new BigDecimal("3")),
+				new HourlyRate(new BigDecimal("11.50")),
 				List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()),
 				WorkOrderStatus.SCHEDULED);
 		return state == WorkOrderStatus.CANCELLED ? work.cancel()
