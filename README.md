@@ -352,4 +352,232 @@ Cada ocorrência recebe novas atribuições e parcelas calculadas pelo contrato 
 
 Validação: testes `Recurrence*Test` cobrem calendário, fuso, concorrência PostgreSQL, preservação da identidade, migração V13→V14, rollback e continuidade. Executar `./mvnw clean verify spring-javaformat:validate` e `git diff --check`.
 
-Alterações coletivas de série pertencem ao PR 10 e não foram implementadas. Também não há novos relatórios, geração retroativa, pagamentos automáticos ou movimentação de dinheiro. Documentos detalhados em `src/docs` continuam sob a regra de ignore preexistente.
+No PR 9, alterações coletivas de série ficaram reservadas ao PR 10, descrito a seguir. Também não há novos relatórios, geração retroativa, pagamentos automáticos ou movimentação de dinheiro. Documentos detalhados em `src/docs` continuam sob a regra de ignore preexistente.
+
+## PR 10 — cancelamento e reagendamento de recorrências
+
+O corte usa a **posição original na família**, não `serviceDate`. Cada versão guarda
+`familyId`, `previousSeriesId`, `firstPosition` e `untilPosition` (exclusivo).
+A posição é o índice semanal/quinzenal/mensal a partir da âncora da versão, somado
+à posição inicial. Por exemplo, mover isoladamente a terceira ocorrência para
+outro mês não muda o conjunto “terceira e próximas”. Um comando iniciado numa
+versão histórica alcança também as posições correspondentes das sucessoras.
+
+### API
+
+Os endpoints continuam sendo `POST /api/v1/work-orders/{id}/cancel` e
+`POST /api/v1/work-orders/{id}/reschedule`, com resposta 204. Para recorrências,
+`scope` e `idempotencyKey` são obrigatórios, inclusive na operação isolada:
+
+```json
+{
+  "scope": "THIS_OCCURRENCE",
+  "idempotencyKey": "move-occurrence-2026-10-04",
+  "serviceDate": "2026-10-12",
+  "startTime": "09:00:00"
+}
+```
+
+`THIS_OCCURRENCE` significa “somente esta ocorrência”; `THIS_AND_FOLLOWING`
+significa “esta e as próximas”. No reagendamento, `startTime` omitido remove o
+horário, como no fluxo existente. No coletivo, data e horário ancoram a sucessora.
+O contrato de trabalhos avulsos continua aceitando os corpos anteriores; alcance
+coletivo em trabalho avulso é rejeitado. Conta e responsável vêm do principal
+JWT; campos enviados pelo cliente não substituem essa identidade. CSRF continua
+obrigatório.
+
+Cancelamento de recorrência com pagamentos ativos exige confirmação por ID:
+
+```json
+{
+  "scope": "THIS_AND_FOLLOWING",
+  "idempotencyKey": "cancel-following-2026-10-04",
+  "confirmations": [
+    {
+      "paymentId": "00000000-0000-0000-0000-000000000001",
+      "confirmNoMoneyReceived": true,
+      "reason": "Lançamento incorreto; o valor não foi recebido"
+    }
+  ]
+}
+```
+
+Sem pagamentos ativos, `confirmations` pode ser omitido ou vazio. Confirmações
+faltantes, duplicadas ou referentes a pagamentos que já não estão ativos no
+conjunto impedem a operação. O booleano legado no topo do corpo continua restrito
+a trabalhos avulsos e não autoriza reversões de uma recorrência.
+
+A chave é única por conta e família, tem até 255 caracteres e é normalizada por
+`strip`. Repetir chave e conteúdo normalizado retorna 204 sem nova divisão,
+cancelamento, auditoria ou reversão, mesmo depois de outras alterações. Reutilizar
+a chave para outro conteúdo retorna 409. Falhas não consomem a chave. O conteúdo
+considera ação, ocorrência, responsável, alcance, data/horário e confirmações
+ordenadas por pagamento. Recursos de outra conta retornam 404; entrada inválida,
+400; conflitos de estado/financeiros, 409.
+
+### Calendário, versões e histórico
+
+- A operação isolada reutiliza os workflows financeiros e operacionais existentes;
+  mantém `recurrenceSeriesId`, `occurrenceDate`, identidade e atribuições.
+- Cancelamento coletivo encerra os intervalos de geração alcançados e cancela os
+  trabalhos materializados elegíveis. Posições anteriores, histórico e atribuições
+  permanecem preservados.
+- Reagendamento coletivo encerra o trecho anterior e cria uma versão da mesma
+  família, ligada à versão selecionada, com nova âncora. Não altera frequência,
+  preço, equipe ou preferência inicial da série.
+- O término inclusivo original é mantido. Âncora posterior ao término é inválida.
+  Uma mudança de âncora pode reduzir a quantidade restante de ocorrências.
+- Trabalhos substituídos ficam cancelados com motivo `REPLACED`. A auditoria guarda
+  trabalho original, posição e versão de destino. Não há exclusão física nem
+  transferência de pagamentos ou acertos às novas atribuições.
+- Cancelamentos individuais são exclusões persistidas por posição da família e
+  continuam valendo nas sucessoras. Isso inclui exclusões anteriores ao PR 10
+  reconhecidas entre as ocorrências alcançadas. Reagendamentos isolados alcançados
+  são substituídos pelo novo calendário.
+- A sucessora gera somente na janela `[hoje, hoje + 30 dias)` no fuso atual da
+  conta, respeitando término, exclusões e limites da versão. Não há backfill nem
+  geração fora da janela para preencher vínculos de substituição.
+- Comandos isolados novos sobre uma ocorrência já substituída/encerrada retornam
+  conflito; repetições idempotentes continuam válidas. Não há reabertura do trecho
+  encerrado por cancelamento. Reagendar antes de um cancelamento coletivo anterior
+  preserva também seu limite de posições, inclusive nas posições não materializadas.
+
+`GET /api/v1/recurrence-series/{id}` acrescenta os metadados de família e versão.
+`GET /api/v1/work-orders/{id}/recurrence-history` retorna operações com responsável,
+instante, motivo (`CANCELLED`, `RESCHEDULED`, `REPLACED`), posição, datas operacionais
+anterior/posterior e destino da substituição. O trabalho substituído conserva sua
+data operacional; a data do novo calendário aparece em `targetOccurrenceDate`.
+`replacementWorkId` é resolvido pela identidade da ocorrência na versão de destino;
+é nulo enquanto não houver materialização (ou se o término/exclusão a impedir).
+Divisões posteriores mantêm o vínculo histórico com o destino original. O estado
+vigente pode ser seguido pelo histórico do trabalho substituto. Histórico anterior
+ao PR 10 não recebe eventos inventados. O endpoint de histórico aceita paginação
+comum e retorna `PageResponse`.
+
+### Finanças e concorrência
+
+Qualquer acerto ativo de colaborador bloqueia cancelamento. Como o reagendamento
+coletivo cancela para substituir, também é bloqueado por acertos ativos; nenhuma
+reversão de acerto é automática. O reagendamento isolado preserva acertos e suas
+atribuições, como antes. Pagamento ativo do cliente bloqueia todo reagendamento.
+Concluídos cuja data já chegou bloqueiam o lote de reagendamento; concluídos
+futuros são elegíveis pelas mesmas regras do fluxo isolado.
+
+No cancelamento, reversões permitidas exigem confirmação individual de ausência
+de recebimento real e motivo. Registros financeiros e auditoria são preservados;
+o sistema não movimenta nem devolve dinheiro. Uma única ocorrência impeditiva
+rejeita todo o conjunto, inclusive as reversões que seriam permitidas nas demais.
+
+Os decorators de infraestrutura mantêm uma única transação para seleção,
+validação, encerramento, substituições, geração inicial e auditoria. A ordem de
+bloqueios é raiz da família, versões em ordem de UUID e trabalhos em ordem de
+UUID. O gerador adquire raiz antes da série. Pagamentos, acertos, reversões e
+operações operacionais continuam serializados pelo trabalho e não adquirem
+posteriormente a família. A seleção lê identidades imutáveis; estados e condições
+financeiras são lidos novamente sob bloqueio, evitando reutilizar uma leitura
+operacional anterior à espera. Falha na geração da sucessora desfaz a divisão.
+
+### Migration e validação
+
+`V15__version_recurrence_changes.sql` acrescenta família, antecessora e intervalos
+às séries; cria comandos auditáveis/idempotentes, itens de alteração e exclusões.
+Séries existentes viram raízes de suas próprias famílias. FKs compostas preservam
+o isolamento por conta, e a antecessora/sucessora do comando deve pertencer à mesma
+família. V1–V14 permanecem intactas; nenhuma tabela financeira é recriada.
+
+Validação focada anterior à implementação do PR 10: 37 testes aprovados; baseline
+completa: 305 testes aprovados, incluindo PostgreSQL real. Nenhum defeito concreto
+do PR 9 foi identificado; não houve correção separada do PR 9.
+
+A verificação do PR 10 cobre migração V14→V15 e instalação vazia, posição original,
+exclusões, versões históricas, calendário mensal, término, janela, confirmações,
+rollback após reversão e falha de geração, idempotência, JWT/CSRF e concorrência
+com gerador, pagamento, acerto, reversão e reagendamento isolado em PostgreSQL
+17.6 via Testcontainers. Resultado final: 63 testes focados e 331 testes em
+`./mvnw clean verify spring-javaformat:validate`, todos aprovados, sem falhas,
+erros ou ignorados. Empacotamento, formatação e `git diff --check` aprovados.
+A V15 foi aplicada apenas em bancos descartáveis de teste nesta entrega.
+
+O PR 11 adiciona consultas de relatórios por período, descritas a seguir. Edição
+coletiva de preço/equipe, interface gráfica, PDF, backfill e movimentação financeira
+continuam fora do escopo. Os documentos detalhados em `src/docs` continuam locais
+e ignorados pelo Git; este README registra o contrato versionável.
+
+## Relatórios por período — PR 11
+
+As três consultas exigem autenticação JWT e recebem `from` e `to` como datas
+ISO (`YYYY-MM-DD`), inclusivas. Intervalos ausentes, inválidos ou invertidos
+retornam 400. `customerId` é opcional nas três consultas e `collaboratorId` é
+opcional no relatório de colaboradores. A conta vem do principal autenticado;
+referências inexistentes ou de outra conta retornam 404. As respostas contêm o
+período, a moeda da conta (GBP), o fuso e detalhes que reconciliam com os totais.
+
+| Método e rota | Conteúdo e data usada |
+|---|---|
+| `GET /api/v1/reports/work-orders?from=2026-09-01&to=2026-09-30&customerId=<uuid>` | Trabalhos, valor realizado, pendência do cliente e projeção, por `serviceDate` |
+| `GET /api/v1/reports/customer-payments?from=2026-10-01&to=2026-10-31&customerId=<uuid>` | Pagamentos ativos registrados, por `paidOn` |
+| `GET /api/v1/reports/collaborators?from=2026-09-01&to=2026-09-30&customerId=<uuid>&collaboratorId=<uuid>` | Parcelas e saldo por `serviceDate`; acertos ativos registrados por `paidOn` |
+
+**Valor realizado** soma `total_amount` persistido de trabalhos `COMPLETED` cuja
+data do trabalho está no período e não é posterior a hoje no fuso da conta.
+Trabalho concluído no futuro permanece projeção. **Valor pendente do cliente**
+soma os realizados sem pagamento ativo, independentemente da data em que esse
+pagamento foi lançado. **Recebimentos registrados** incluem somente pagamentos
+`RECORDED` com `paidOn` no período; não são subtraídos do realizado de outro
+período. **Projeção de trabalhos** inclui todos os trabalhos não cancelados no
+período, inclusive futuros e concluídos futuros.
+
+No relatório de colaboradores, atribuições usam as parcelas monetárias
+persistidas. O valor atribuído e seu saldo aparecem por trabalho/colaborador,
+com totais realizados (`COMPLETED` e data atingida) e futuros (data posterior
+a hoje) separados. Acertos ativos vinculados são considerados no saldo mesmo
+quando `paidOn` cai fora do período; o total e os detalhes de acertos registrados
+no período usam `paidOn`. Revertidos não entram nas somas; continuam consultáveis
+no histórico financeiro por trabalho. Trabalhos cancelados ou substituídos são
+excluídos das métricas operacionais. Histórico financeiro preservado após
+reagendamento continua representado segundo a data do respectivo registro.
+
+Os relatórios representam registros do sistema: nenhum lançamento comprova uma
+movimentação bancária. Não há cálculo de lucro ou retenção do proprietário.
+Consultas não geram ocorrências e não alteram dados; somente trabalhos já
+materializados entram nos resultados. Não há tabela de totais nem migration para
+este PR. Os índices existentes sustentam as consultas por conta, data e vínculo;
+nenhum índice adicional foi adicionado nesta entrega.
+
+## Paginação das listagens — PR 12
+
+As listagens de clientes, locais de clientes, colaboradores, trabalhos,
+histórico de alterações recorrentes, pagamentos do cliente e acertos dos colaboradores aceitam `page` (zero-based, padrão `0`), `size`
+(padrão `20`, máximo `100`), `sort` e `direction` (`ASC` ou `DESC`, padrão
+`ASC`). Página negativa, tamanho fora dos limites, direção inválida ou campo de
+ordenação não permitido retorna 400. A resposta deixa de ser um array e usa
+`content`, `page`, `size`, `totalElements` e `totalPages`; os totais contam todo
+o conjunto filtrado, inclusive quando a página está vazia.
+
+| Recurso | Filtros mantidos | Campos de `sort` |
+|---|---|---|
+| `GET /api/v1/customers` | nenhum | `name`, `id` |
+| `GET /api/v1/customers/{customerId}/locations` | cliente da rota | `name`, `id` |
+| `GET /api/v1/collaborators` | `active` | `name`, `active`, `id` |
+| `GET /api/v1/work-orders` | `from`, `to`, `customerId`, `status` | `serviceDate`, `startTime`, `status`, `id` |
+| `GET /api/v1/work-orders/{workOrderId}/payments` | trabalho da rota | `recordedAt`, `paidOn`, `amount`, `status`, `id` |
+| `GET /api/v1/work-orders/{workOrderId}/collaborators/{collaboratorId}/payments` | trabalho e colaborador da rota | `recordedAt`, `paidOn`, `amount`, `status`, `id` |
+| `GET /api/v1/work-orders/{workOrderId}/recurrence-history` | trabalho da rota | `at`, `id` |
+
+Todas as consultas impõem o escopo da conta autenticada. A ordenação acrescenta
+`id ASC` como desempate quando ID não é o campo principal. As páginas são lidas
+no banco; os totais vêm da contagem da mesma especificação. Em trabalhos, IDs
+selecionados na página são hidratados com atribuições após a consulta paginada,
+sem join multiplicador. As três rotas de relatório também aceitam os parâmetros
+de página e incluem envelope `content/page/size/totalElements/totalPages` nas
+coleções detalhadas (`works`, `payments`, `assignments` e `settlements`). O mesmo
+filtro de página é aplicado às coleções da resposta. Indicadores e totais vêm
+de consultas agregadas independentes e sempre consideram o conjunto completo
+filtrado. O resumo financeiro do colaborador permanece integral. Recorrências
+não possuem endpoint de listagem de séries; a consulta por ID e o lote do
+agendador seguem integrais. Nenhuma migration ou índice foi necessário.
+
+Nos relatórios, `works` permite `sort=serviceDate|status|id`, `payments` e
+`settlements` permitem `sort=paidOn|amount|id`, e `assignments` permite
+`sort=collaboratorName|serviceDate|id`. A direção e o desempate seguem o
+contrato comum; cada envelope detalhado expõe seus próprios totais de itens.
