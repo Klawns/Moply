@@ -4,18 +4,26 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 import java.util.function.UnaryOperator;
+
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 import org.mockito.ArgumentCaptor;
+
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
-import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
+import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.workflows.application.usecase.RescheduleWorkOrder;
+import com.klaus.moply.workflows.application.usecase.dto.RescheduleWorkOrderInput;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
-import com.klaus.moply.workflows.application.RescheduleWorkOrder;
 import com.klaus.moply.workorders.domain.entity.*;
 import com.klaus.moply.workorders.domain.exception.WorkOrderStateException;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class WorkOrderLifecycleUsecasesTest {
 
@@ -36,13 +44,15 @@ class WorkOrderLifecycleUsecasesTest {
 		var operations = mock(WorkOrderOperations.class);
 		when(accounts.findById(account))
 			.thenReturn(Optional.of(new Organization(account, "Account", zone, DefaultWorkStatus.COMPLETED)));
-		var original = WorkOrder.create(UUID.randomUUID(), null, date, null, null, BigDecimal.ONE, BigDecimal.TEN,
+		var original = WorkOrder.create(UUID.randomUUID(), null, new WorkOrderSchedule(date, null),
+				new WorkOrderDescription(null), new DurationHours(BigDecimal.ONE), new HourlyRate(BigDecimal.TEN),
 				List.of(UUID.randomUUID()), WorkOrderStatus.COMPLETED);
 		// Deliberately different from both account and server zones.
 		var usecase = new RescheduleWorkOrder(operations,
-				mock(com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository.class), accounts,
-				Clock.fixed(Instant.parse(instant), ZoneId.of("Asia/Tokyo")));
-		var input = new RescheduleWorkOrder.Input(id, date.plusDays(7), LocalTime.NOON);
+				mock(com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository.class),
+				new com.klaus.moply.accounts.application.usecase.GetOrganizationDate(accounts,
+						Clock.fixed(Instant.parse(instant), ZoneId.of("Asia/Tokyo"))));
+		var input = new RescheduleWorkOrderInput(id, date.plusDays(7), LocalTime.NOON);
 		usecase.execute(new Context(account), input);
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<UnaryOperator<WorkOrder>> transition = (ArgumentCaptor<UnaryOperator<WorkOrder>>) (ArgumentCaptor<?>) ArgumentCaptor
