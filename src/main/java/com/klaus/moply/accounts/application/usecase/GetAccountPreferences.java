@@ -1,6 +1,7 @@
 package com.klaus.moply.accounts.application.usecase;
 
 import java.time.Clock;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
@@ -24,11 +25,12 @@ public class GetAccountPreferences implements Usecase.Contextual<Void, GetAccoun
 	public Output execute(Context context, Void input) {
 		var organization = organizations.findById(context.organizationId()).orElseThrow(AccountNotFoundException::new);
 		return new Output(organization.id(), organization.name(), organization.currencyCode(), organization.timezone(),
-				organization.defaultWorkStatus(), LocalDate.now(clock.withZone(ZoneId.of(organization.timezone()))));
+				organization.defaultWorkStatus(), LocalDate.now(clock.withZone(ZoneId.of(organization.timezone()))),
+				organization.defaultHourlyRate());
 	}
 
 	public record Output(UUID organizationId, String name, String currencyCode, String timezone,
-			DefaultWorkStatus defaultWorkStatus, LocalDate today) {
+			DefaultWorkStatus defaultWorkStatus, LocalDate today, BigDecimal defaultHourlyRate) {
 	}
 
 }

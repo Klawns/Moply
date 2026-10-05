@@ -1,6 +1,7 @@
 package com.klaus.moply.accounts.infra.persistence.entities;
 
 import java.util.UUID;
+import java.math.BigDecimal;
 
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.Organization;
@@ -36,6 +37,9 @@ public class OrganizationEntity {
 	@Column(name = "default_work_status", nullable = false, length = 20)
 	private DefaultWorkStatus defaultWorkStatus;
 
+	@Column(name = "default_hourly_rate", columnDefinition = "numeric")
+	private BigDecimal defaultHourlyRate;
+
 	public OrganizationEntity(Organization organization) {
 		id = organization.id();
 		name = organization.name();
@@ -46,10 +50,11 @@ public class OrganizationEntity {
 	public void updatePreferences(Organization organization) {
 		timezone = organization.timezone();
 		defaultWorkStatus = organization.defaultWorkStatus();
+		defaultHourlyRate = organization.defaultHourlyRate();
 	}
 
 	public Organization toDomain() {
-		return new Organization(id, name, timezone, defaultWorkStatus);
+		return new Organization(id, name, timezone, defaultWorkStatus, defaultHourlyRate);
 	}
 
 }

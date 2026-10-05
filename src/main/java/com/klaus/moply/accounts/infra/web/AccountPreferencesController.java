@@ -1,6 +1,8 @@
 package com.klaus.moply.accounts.infra.web;
 
 import java.util.UUID;
+import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,22 +33,65 @@ public class AccountPreferencesController {
 	public PreferencesResponse preferences(@AuthenticationPrincipal AccountPrincipal principal) {
 		var result = preferences.execute(new Context(principal.getOrganizationId()), null);
 		return new PreferencesResponse(result.organizationId(), result.name(), result.currencyCode(), result.timezone(),
-				result.defaultWorkStatus(), result.today());
+				result.defaultWorkStatus(), result.today(), result.defaultHourlyRate());
 	}
 
 	@PutMapping("/preferences")
 	public ResponseEntity<Void> update(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestBody PreferencesRequest request) {
 		update.execute(new Context(principal.getOrganizationId()),
-				new UpdateAccountPreferences.Input(request.timezone(), request.defaultWorkStatus()));
+				new UpdateAccountPreferences.Input(request.timezone(), request.defaultWorkStatus(),
+						request.defaultHourlyRate(), request.defaultHourlyRateProvided()));
 		return ResponseEntity.noContent().build();
 	}
 
-	public record PreferencesRequest(String timezone, DefaultWorkStatus defaultWorkStatus) {
+	public static class PreferencesRequest {
+
+		private String timezone;
+
+		private DefaultWorkStatus defaultWorkStatus;
+
+		private BigDecimal defaultHourlyRate;
+
+		private boolean defaultHourlyRateProvided;
+
+		public PreferencesRequest() {
+		}
+
+		public String timezone() {
+			return timezone;
+		}
+
+		public DefaultWorkStatus defaultWorkStatus() {
+			return defaultWorkStatus;
+		}
+
+		public BigDecimal defaultHourlyRate() {
+			return defaultHourlyRate;
+		}
+
+		public boolean defaultHourlyRateProvided() {
+			return defaultHourlyRateProvided;
+		}
+
+		public void setTimezone(String timezone) {
+			this.timezone = timezone;
+		}
+
+		public void setDefaultWorkStatus(DefaultWorkStatus status) {
+			this.defaultWorkStatus = status;
+		}
+
+		@JsonSetter("defaultHourlyRate")
+		public void setDefaultHourlyRate(BigDecimal value) {
+			this.defaultHourlyRate = value;
+			this.defaultHourlyRateProvided = true;
+		}
+
 	}
 
 	public record PreferencesResponse(UUID organizationId, String name, String currencyCode, String timezone,
-			DefaultWorkStatus defaultWorkStatus, java.time.LocalDate today) {
+			DefaultWorkStatus defaultWorkStatus, java.time.LocalDate today, BigDecimal defaultHourlyRate) {
 	}
 
 }
