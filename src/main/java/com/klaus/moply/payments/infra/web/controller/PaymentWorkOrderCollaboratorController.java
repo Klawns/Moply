@@ -1,7 +1,6 @@
 package com.klaus.moply.payments.infra.web.controller;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -22,6 +21,8 @@ import com.klaus.moply.payments.infra.web.dto.PaymentResponse;
 import com.klaus.moply.payments.infra.web.dto.RecordCollaboratorPaymentRequest;
 import com.klaus.moply.payments.infra.web.dto.ReverseCollaboratorPaymentRequest;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.shared.infra.web.PageQueryRequest;
+import com.klaus.moply.shared.infra.web.dto.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -51,14 +52,16 @@ public class PaymentWorkOrderCollaboratorController {
 	}
 
 	@GetMapping
-	public List<PaymentResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
-			@PathVariable UUID workOrderId, @PathVariable UUID collaboratorId) {
-		return list
-			.execute(new Context(principal.getOrganizationId()),
-					new ListCollaboratorPayments.Input(workOrderId, collaboratorId))
-			.stream()
-			.map(PaymentResponse::from)
-			.toList();
+	public PageResponse<PaymentResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+			@PathVariable UUID workOrderId, @PathVariable UUID collaboratorId,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer size,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) String sort,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) String direction) {
+		return PageResponse.from(
+				list.execute(new Context(principal.getOrganizationId()), new ListCollaboratorPayments.Input(workOrderId,
+						collaboratorId, PageQueryRequest.toQuery(page, size, sort, direction))),
+				PaymentResponse::from);
 	}
 
 	@PostMapping("/{paymentId}/reversal")

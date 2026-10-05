@@ -1,7 +1,6 @@
 package com.klaus.moply.payments.infra.web.controller;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -19,6 +18,8 @@ import com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment;
 import com.klaus.moply.payments.infra.web.dto.PaymentResponse;
 import com.klaus.moply.payments.infra.web.dto.RecordPaymentRequest;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.shared.infra.web.PageQueryRequest;
+import com.klaus.moply.shared.infra.web.dto.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -43,12 +44,15 @@ public class PaymentWorkOrderController {
 	}
 
 	@GetMapping
-	public List<PaymentResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
-			@PathVariable UUID workOrderId) {
-		return list.execute(new Context(principal.getOrganizationId()), new ListWorkOrderPayments.Input(workOrderId))
-			.stream()
-			.map(PaymentResponse::from)
-			.toList();
+	public PageResponse<PaymentResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+			@PathVariable UUID workOrderId,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer size,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) String sort,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) String direction) {
+		return PageResponse.from(list.execute(new Context(principal.getOrganizationId()),
+				new ListWorkOrderPayments.Input(workOrderId, PageQueryRequest.toQuery(page, size, sort, direction))),
+				PaymentResponse::from);
 	}
 
 }
