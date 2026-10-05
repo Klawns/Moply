@@ -30,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -50,6 +51,9 @@ import jakarta.servlet.http.Cookie;
 		"spring.jpa.hibernate.ddl-auto=validate" })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// with(csrf()) in other suites replaces the cached filter's token repository.
+// These tests exercise real cookies and must start with the production repository.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Autowired
@@ -539,8 +543,9 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 			request.cookie(session);
 		}
 		var result = mvc.perform(request).andExpect(status().isOk()).andReturn();
-		return new Token(result.getResponse().getCookie("XSRF-TOKEN"), json(result, "$.headerName"),
-				json(result, "$.token"));
+		var cookie = result.getResponse().getCookie("XSRF-TOKEN");
+		assertNotNull(cookie, "GET /api/v1/auth/csrf deve emitir o cookie XSRF-TOKEN real.");
+		return new Token(cookie, json(result, "$.headerName"), json(result, "$.token"));
 	}
 
 	private String json(MvcResult result, String path) throws Exception {

@@ -2,6 +2,7 @@ package com.klaus.moply.collaborators.infra.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -27,6 +28,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -49,6 +51,9 @@ import jakarta.servlet.http.Cookie;
 		"spring.jpa.hibernate.ddl-auto=validate" })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// with(csrf()) in other suites replaces the cached filter's token repository.
+// These tests exercise real cookies and must start with the production repository.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	private static final String BASE = "/api/v1/collaborators";
@@ -284,6 +289,7 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(status().isNoContent())
 			.andReturn();
 		var auth = login.getResponse().getCookie(JwtCookieService.COOKIE);
+		assertNotNull(auth, "Login deve emitir o cookie de autenticação.");
 		String id = JsonPath.read(signup.getResponse().getContentAsString(), "$.organizationId");
 		return new Owner(UUID.fromString(id), auth, csrf(auth));
 	}
@@ -293,8 +299,9 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 		if (auth != null)
 			request.cookie(auth);
 		MvcResult result = mvc.perform(request).andExpect(status().isOk()).andReturn();
-		return new Token(result.getResponse().getCookie("XSRF-TOKEN"),
-				JsonPath.read(result.getResponse().getContentAsString(), "$.headerName"),
+		var cookie = result.getResponse().getCookie("XSRF-TOKEN");
+		assertNotNull(cookie, "GET /api/v1/auth/csrf deve emitir o cookie XSRF-TOKEN real.");
+		return new Token(cookie, JsonPath.read(result.getResponse().getContentAsString(), "$.headerName"),
 				JsonPath.read(result.getResponse().getContentAsString(), "$.token"));
 	}
 
