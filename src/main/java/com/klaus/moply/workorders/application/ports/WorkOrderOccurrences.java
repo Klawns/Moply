@@ -4,10 +4,14 @@ import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Public occurrence identity contract; callers must create and link in one transaction.
- */
 public interface WorkOrderOccurrences {
+
+	record Reference(UUID id, UUID seriesId, LocalDate originalDate) {
+	}
+
+	Reference reference(UUID account, UUID workId);
+
+	java.util.List<Reference> inSeries(UUID account, UUID seriesId);
 
 	Set<LocalDate> findDates(UUID organizationId, UUID seriesId, LocalDate from, LocalDate until);
 
