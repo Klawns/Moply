@@ -147,4 +147,85 @@ class RecurrenceMigrationTest {
 				() -> jdbc.update("UPDATE tb_order_service SET occurrence_date='2026-10-10' WHERE id=?", other));
 	}
 
+	@Test
+	void shouldMigrateV14ToV15PreservingOccurrenceAndFinancialHistory() {
+		flyway("14").migrate();
+		var a = account();
+		var c = customer(a);
+		var p = person(a);
+		var s = series(a, c);
+		var w = work(a, c, null);
+		assignment(a, w, p, 0, "10.00");
+		member(a, s, p, 0);
+		jdbc.update(
+				"UPDATE tb_order_service SET recurrence_series_id=?, occurrence_date='2026-10-03',service_date='2026-12-01',status='CANCELLED' WHERE id=?",
+				s, w);
+		var payment = UUID.randomUUID();
+		jdbc.update(
+				"INSERT INTO tb_collaborator_payment(id,organization_id,work_order_id,collaborator_id,idempotency_key,amount,currency_code,paid_on,recorded_at,recorded_by,status) VALUES (?,?,?,?,?,2,'GBP',CURRENT_DATE,CURRENT_TIMESTAMP,?,'RECORDED')",
+				payment, a, w, p, "old", UUID.randomUUID());
+		assertEquals(1, flyway("15").migrate().migrationsExecuted);
+		assertEquals(s, jdbc.queryForObject("SELECT family_id FROM tb_recurrence_series WHERE id=?", UUID.class, s));
+		assertEquals(0L,
+				jdbc.queryForObject("SELECT first_position FROM tb_recurrence_series WHERE id=?", Long.class, s));
+		assertEquals("2026-10-03",
+				jdbc.queryForObject("SELECT occurrence_date::text FROM tb_order_service WHERE id=?", String.class, w));
+		assertEquals("2026-12-01",
+				jdbc.queryForObject("SELECT service_date::text FROM tb_order_service WHERE id=?", String.class, w));
+		assertEquals("RECORDED",
+				jdbc.queryForObject("SELECT status FROM tb_collaborator_payment WHERE id=?", String.class, payment));
+		assertEquals(0, flyway("15").migrate().migrationsExecuted);
+		flyway("15").validate();
+	}
+
+	@Test
+	void shouldEnforceVersionTenantFamilyAndIdempotencyConstraints() {
+		flyway("14").migrate();
+		var a = account();
+		var b = account();
+		var ca = customer(a);
+		var cb = customer(b);
+		var sa = series(a, ca);
+		var sa2 = series(a, ca);
+		var sb = series(b, cb);
+		var wa = work(a, ca, null);
+		var wb = work(b, cb, null);
+		flyway("15").migrate();
+		assertThrows(DataIntegrityViolationException.class,
+				() -> jdbc.update("UPDATE tb_recurrence_series SET family_id=? WHERE id=?", sb, sa));
+		assertThrows(DataIntegrityViolationException.class,
+				() -> jdbc.update("UPDATE tb_recurrence_series SET previous_series_id=? WHERE id=?", sa2, sa));
+		assertThrows(DataIntegrityViolationException.class,
+				() -> jdbc.update("UPDATE tb_recurrence_series SET previous_series_id=id WHERE id=?", sa));
+		assertThrows(DataIntegrityViolationException.class,
+				() -> jdbc.update("UPDATE tb_recurrence_series SET until_position=-1 WHERE id=?", sa));
+		var command = UUID.randomUUID();
+		jdbc.update(
+				"INSERT INTO tb_recurrence_command(id,organization_id,family_id,command_key,content,actor_id,recorded_at) VALUES (?,?,?,'key','content',?,CURRENT_TIMESTAMP)",
+				command, a, sa, UUID.randomUUID());
+		assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(
+				"INSERT INTO tb_recurrence_command(id,organization_id,family_id,command_key,content,actor_id,recorded_at) VALUES (?,?,?,'key','content',?,CURRENT_TIMESTAMP)",
+				UUID.randomUUID(), a, sa, UUID.randomUUID()));
+		assertThrows(DataIntegrityViolationException.class,
+				() -> jdbc.update("UPDATE tb_recurrence_command SET successor_id=? WHERE id=?", sa2, command));
+		assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(
+				"INSERT INTO tb_recurrence_change_item(id,organization_id,command_id,work_id,position,reason,service_date_before,service_date_after) VALUES (?,?,?,?,0,'REPLACED',CURRENT_DATE,CURRENT_DATE)",
+				UUID.randomUUID(), a, command, wb));
+		assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(
+				"INSERT INTO tb_recurrence_exclusion(id,organization_id,family_id,work_id,position) VALUES (?,?,?,?,0)",
+				UUID.randomUUID(), a, sb, wa));
+		jdbc.update(
+				"INSERT INTO tb_recurrence_exclusion(id,organization_id,family_id,work_id,position) VALUES (?,?,?,?,0)",
+				UUID.randomUUID(), a, sa, wa);
+		assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(
+				"INSERT INTO tb_recurrence_exclusion(id,organization_id,family_id,work_id,position) VALUES (?,?,?,?,0)",
+				UUID.randomUUID(), a, sa, wa));
+	}
+
+	@Test
+	void shouldInstallAllFifteenMigrationsOnEmptyPostgres() {
+		assertEquals(15, flyway("15").migrate().migrationsExecuted);
+		flyway("15").validate();
+	}
+
 }
