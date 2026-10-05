@@ -9,6 +9,7 @@ import com.klaus.moply.accounts.application.ports.AccountRegistration;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.application.ports.PasswordHasher;
 import com.klaus.moply.accounts.application.usecase.GetAccountPreferences;
+import com.klaus.moply.accounts.application.usecase.GetOrganizationDate;
 import com.klaus.moply.accounts.application.usecase.RegisterAccount;
 import com.klaus.moply.accounts.application.usecase.UpdateAccountPreferences;
 
@@ -28,6 +29,11 @@ public class AccountConfig {
 	@Bean
 	public GetAccountPreferences getAccountPreferences(OrganizationRepository organizations, Clock clock) {
 		return new GetAccountPreferences(organizations, clock);
+	}
+
+	@Bean
+	public GetOrganizationDate getOrganizationDate(OrganizationRepository organizations, Clock clock) {
+		return new GetOrganizationDate(organizations, clock);
 	}
 
 	@Bean
