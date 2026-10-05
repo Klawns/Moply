@@ -73,7 +73,8 @@ public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeries.R
 		try {
 			var work = createWork.execute(context, toWorkOrderInput(series.getTemplate(), date));
 			occurrences.link(context.organizationId(), work.id(), series.getId(), date);
-		} catch (RuntimeException error) {
+		}
+		catch (RuntimeException error) {
 			log.error("recurrence rollback account={} series={} from={} until={} occurrence={}",
 					context.organizationId(), series.getId(), window.from(), window.until(), date, error);
 			throw error;

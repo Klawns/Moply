@@ -48,11 +48,11 @@ public class FindOccurrenceHistory
 
 	private UUID findReplacementWorkId(UUID organizationId, UUID seriesId, LocalDate occurrenceDate) {
 		return occurrences.inSeries(organizationId, seriesId)
-				.stream()
-				.filter(occurrence -> occurrence.originalDate().equals(occurrenceDate))
-				.map(WorkOrderOccurrences.Reference::id)
-				.findFirst()
-				.orElse(null);
+			.stream()
+			.filter(occurrence -> occurrence.originalDate().equals(occurrenceDate))
+			.map(WorkOrderOccurrences.Reference::id)
+			.findFirst()
+			.orElse(null);
 	}
 
 	public record Filter(UUID workOrderId, PageQuery page) {
