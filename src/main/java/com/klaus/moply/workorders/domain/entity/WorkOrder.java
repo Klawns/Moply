@@ -87,6 +87,15 @@ public class WorkOrder {
 				workAssignments, null);
 	}
 
+	public static WorkOrder createPriced(UUID customerId, UUID locationId, WorkOrderSchedule schedule,
+			WorkOrderDescription description, WorkOrderPricing pricing, WorkOrderAssignments assignments,
+			WorkOrderStatus status) {
+		if (status == null || status == WorkOrderStatus.CANCELLED)
+			throw new DomainException("Estado inicial inválido.");
+		return new WorkOrder(null, customerId, locationId, schedule, description, pricing, status, 0, assignments,
+				null);
+	}
+
 	/**
 	 * Restores and validates historical conditions without applying the current policy.
 	 */
