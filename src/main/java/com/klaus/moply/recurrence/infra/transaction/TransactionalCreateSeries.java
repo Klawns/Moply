@@ -1,5 +1,7 @@
 package com.klaus.moply.recurrence.infra.transaction;
 
+import org.springframework.transaction.annotation.Isolation;
+
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 
 import com.klaus.moply.recurrence.application.usecase.dto.CreateSeriesInput;
@@ -23,7 +25,7 @@ public class TransactionalCreateSeries extends CreateSeries {
 	}
 
 	@Override
-	@Transactional
+	@Transactional(isolation = Isolation.REPEATABLE_READ)
 	public RecurrenceSeries execute(Usecase.Context context, CreateSeriesInput input) {
 		return super.execute(context, input);
 	}

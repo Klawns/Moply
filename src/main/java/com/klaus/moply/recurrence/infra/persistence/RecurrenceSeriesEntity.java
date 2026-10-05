@@ -1,5 +1,11 @@
 package com.klaus.moply.recurrence.infra.persistence;
 
+import com.klaus.moply.shared.domain.vo.Money;
+
+import com.klaus.moply.workorders.domain.vo.WorkOrderAssignments;
+
+import com.klaus.moply.workorders.domain.vo.WorkOrderPricing;
+
 import com.klaus.moply.recurrence.domain.vo.SeriesVersion;
 
 import java.math.BigDecimal;
@@ -64,6 +70,12 @@ public class RecurrenceSeriesEntity {
 	@Column(name = "currency_code", nullable = false, length = 3)
 	private String currencyCode;
 
+	@Column(name = "total_amount", columnDefinition = "numeric")
+	private BigDecimal totalAmount;
+
+	@Column(name = "allocation_policy_version")
+	private Integer allocationPolicyVersion;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "initial_status", nullable = false, length = 20)
 	private WorkOrderStatus initialStatus;
@@ -111,8 +123,15 @@ public class RecurrenceSeriesEntity {
 		e.hourlyRate = t.hourlyRate().value();
 		e.currencyCode = t.currencyCode();
 		e.initialStatus = t.initialStatus();
+		if (t.frozenPricing() != null) {
+			e.totalAmount = t.frozenPricing().pricing().totalAmount().value();
+			e.allocationPolicyVersion = t.frozenPricing().pricing().allocationPolicyVersion();
+		}
 		for (int i = 0; i < t.participants().ids().size(); i++) {
-			e.members.add(new RecurrenceMemberEntity(e, t.participants().ids().get(i), i));
+			var member = new RecurrenceMemberEntity(e, t.participants().ids().get(i), i);
+			if (t.frozenPricing() != null)
+				member.freeze(t.frozenPricing().assignments().values().get(i));
+			e.members.add(member);
 		}
 		return e;
 	}
@@ -123,8 +142,17 @@ public class RecurrenceSeriesEntity {
 						new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
 						new RecurrenceParticipants(
 								members.stream().map(RecurrenceMemberEntity::getCollaboratorId).toList()),
-						initialStatus),
+						initialStatus, frozenPricing()),
 				new SeriesVersion(familyId, previousSeriesId, firstPosition, untilPosition));
+	}
+
+	private FrozenWorkPricing frozenPricing() {
+		if (totalAmount == null && allocationPolicyVersion == null)
+			return null;
+		return new FrozenWorkPricing(
+				new WorkOrderPricing(new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
+						new Money(totalAmount), allocationPolicyVersion),
+				new WorkOrderAssignments(members.stream().map(RecurrenceMemberEntity::assignment).toList()));
 	}
 
 }

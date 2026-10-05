@@ -71,7 +71,9 @@ public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeries.R
 	private void createOccurrence(Usecase.Context context, RecurrenceSeries series, GenerationWindow window,
 			LocalDate date) {
 		try {
-			var work = createWork.execute(context, toWorkOrderInput(series.getTemplate(), date));
+			var frozen = series.getTemplate().frozenPricing();
+			var work = createWork.executeFrozen(context, toWorkOrderInput(series.getTemplate(), date),
+					frozen == null ? null : frozen.pricing(), frozen == null ? null : frozen.assignments());
 			occurrences.link(context.organizationId(), work.id(), series.getId(), date);
 		}
 		catch (RuntimeException error) {

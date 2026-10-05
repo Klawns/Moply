@@ -12,10 +12,11 @@ import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 
 public record CreateSeriesRequest(Frequency frequency, LocalDate startsOn, LocalDate endsOn, UUID customerId,
 		UUID customerLocationId, LocalTime startTime, String description, BigDecimal contractedHours,
-		BigDecimal hourlyRate, List<UUID> participantIds, WorkOrderStatus initialStatus) {
+		BigDecimal hourlyRate, List<UUID> participantIds, WorkOrderStatus initialStatus,
+		String acceptedPricingFingerprint) {
 	CreateSeriesInput toInput() {
 		return new CreateSeriesInput(frequency, startsOn, endsOn,
 				new CreateWorkOrderInput(customerId, customerLocationId, startsOn, startTime, description,
-						contractedHours, hourlyRate, participantIds, initialStatus));
+						contractedHours, hourlyRate, participantIds, initialStatus, acceptedPricingFingerprint));
 	}
 }

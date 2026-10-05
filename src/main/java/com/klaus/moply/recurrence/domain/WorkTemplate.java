@@ -11,12 +11,29 @@ import com.klaus.moply.workorders.domain.vo.HourlyRate;
 
 public record WorkTemplate(UUID customerId, UUID customerLocationId, LocalTime startTime, String description,
 		DurationHours contractedHours, HourlyRate hourlyRate, String currencyCode, RecurrenceParticipants participants,
-		WorkOrderStatus initialStatus) {
+		WorkOrderStatus initialStatus, FrozenWorkPricing frozenPricing) {
+	public WorkTemplate(UUID customerId, UUID customerLocationId, LocalTime startTime, String description,
+			DurationHours contractedHours, HourlyRate hourlyRate, String currencyCode,
+			RecurrenceParticipants participants, WorkOrderStatus initialStatus) {
+		this(customerId, customerLocationId, startTime, description, contractedHours, hourlyRate, currencyCode,
+				participants, initialStatus, null);
+	}
+
 	public WorkTemplate {
 		validateRequiredConditions(customerId, contractedHours, hourlyRate);
 		validateCurrency(currencyCode);
 		validateParticipants(participants);
 		validateInitialStatus(initialStatus);
+		if (frozenPricing != null && (!frozenPricing.pricing().contractedHours().equals(contractedHours)
+				|| !frozenPricing.pricing().hourlyRate().equals(hourlyRate)
+				|| !frozenPricing.pricing().currencyCode().equals(currencyCode)
+				|| !frozenPricing.assignments()
+					.values()
+					.stream()
+					.map(a -> a.collaboratorId())
+					.toList()
+					.equals(participants.ids())))
+			throw new DomainException("Condições financeiras não correspondem à série.");
 	}
 
 	private static void validateRequiredConditions(UUID customerId, DurationHours contractedHours,
@@ -39,10 +56,7 @@ public record WorkTemplate(UUID customerId, UUID customerLocationId, LocalTime s
 	}
 
 	private static void validateInitialStatus(WorkOrderStatus initialStatus) {
-		if (initialStatus == null || initialStatus == WorkOrderStatus.CANCELLED) {
+		if (initialStatus == null || initialStatus == WorkOrderStatus.CANCELLED)
 			throw new DomainException("Condições da série inválidas.");
-		}
-
 	}
-
 }

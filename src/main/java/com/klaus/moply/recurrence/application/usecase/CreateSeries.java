@@ -1,5 +1,7 @@
 package com.klaus.moply.recurrence.application.usecase;
 
+import com.klaus.moply.recurrence.domain.FrozenWorkPricing;
+
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 import com.klaus.moply.recurrence.application.usecase.dto.CreateSeriesInput;
 import com.klaus.moply.recurrence.domain.RecurrenceSeries;
@@ -51,14 +53,14 @@ public class CreateSeries implements Usecase.Contextual<CreateSeriesInput, Recur
 		return createWork.prepare(context,
 				new CreateWorkOrderInput(work.customerId(), work.customerLocationId(), input.startsOn(),
 						work.startTime(), work.description(), work.contractedHours(), work.hourlyRate(),
-						work.participantIds(), work.initialStatus()));
+						work.participantIds(), work.initialStatus(), work.acceptedPricingFingerprint()));
 	}
 
 	private static WorkTemplate toTemplate(WorkOrder work) {
 		return new WorkTemplate(work.customerId(), work.customerLocationId(), work.startTime(), work.description(),
 				work.contractedHours(), work.hourlyRate(), work.currencyCode(),
 				new RecurrenceParticipants(work.assignments().stream().map(WorkAssignment::collaboratorId).toList()),
-				work.status());
+				work.status(), new FrozenWorkPricing(work.pricing(), work.workAssignments()));
 	}
 
 }

@@ -67,7 +67,7 @@ public final class RecurrenceSeries {
 		var nextPeriod = new RecurrencePeriod(anchor, getPeriod().endsOn());
 		var nextTemplate = new WorkTemplate(template.customerId(), template.customerLocationId(), time,
 				template.description(), template.contractedHours(), template.hourlyRate(), template.currencyCode(),
-				template.participants(), template.initialStatus());
+				template.participants(), template.initialStatus(), template.frozenPricing());
 		return restore(UUID.randomUUID(), organizationId, getFrequency(), nextPeriod, nextTemplate,
 				new SeriesVersion(lineage.familyId(), id, position, null));
 	}

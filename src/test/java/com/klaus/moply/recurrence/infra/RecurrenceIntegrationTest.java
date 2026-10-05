@@ -205,6 +205,56 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	}
 
 	@Test
+	void shouldFreezeApprovedMixedRatesAcrossGenerationAndSuccessorSeries() {
+		people.save(account, people.findById(account, first).orElseThrow().update("First", null, new BigDecimal("20")));
+		var request = new CreateWorkOrderInput(customer, null, today, LocalTime.NOON, "Mixed", new BigDecimal("4"),
+				new BigDecimal("30"), List.of(first, second), null);
+		var preview = createWork.preview(context, request);
+		var accepted = new CreateWorkOrderInput(customer, null, today, LocalTime.NOON, "Mixed", new BigDecimal("4"),
+				new BigDecimal("30"), List.of(first, second), null, preview.pricingFingerprint());
+		assertThrows(com.klaus.moply.workorders.application.usecase.exception.PricingAcceptanceException.class,
+				() -> create.execute(context, new CreateSeriesInput(Frequency.WEEKLY, today, null, request)));
+		assertEquals(0, count("tb_recurrence_series"));
+		var series = create.execute(context, new CreateSeriesInput(Frequency.WEEKLY, today, null, accepted));
+		var frozen = find.execute(context, series.getId()).getTemplate().frozenPricing();
+		assertEquals(new BigDecimal("50.00"), frozen.assignments().values().getFirst().allocatedAmount().value());
+		people.save(account,
+				people.findById(account, first).orElseThrow().update("First", null, new BigDecimal("100")));
+		accounts.update(accounts.findById(account)
+			.orElseThrow()
+			.withPreferences("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("99")));
+		setTime("2026-11-12T12:00:00Z");
+		assertTrue(generate.execute(context, series.getId()).created() > 0);
+		for (var work : all()) {
+			assertEquals(new BigDecimal("120.00"), work.totalAmount().value());
+			assertEquals(new BigDecimal("50.00"), work.assignments().getFirst().allocatedAmount().value());
+			assertEquals(new BigDecimal("20.00"), work.assignments().getFirst().appliedHourlyRate().value());
+		}
+		var successor = series.successor(10, today.plusDays(70), LocalTime.NOON);
+		seriesRepository.save(successor);
+		assertEquals(frozen, find.execute(context, successor.getId()).getTemplate().frozenPricing());
+	}
+
+	@Test
+	void shouldPreserveLegacyRecurringRateAfterAddingCollaboratorFixedRate() {
+		var series = create.execute(context, input(today, null, null));
+		// Simulate a historical series that has no financial snapshot.
+		jdbc.update("UPDATE tb_recurrence_series SET total_amount=NULL,allocation_policy_version=NULL WHERE id=?",
+				series.getId());
+		jdbc.update(
+				"UPDATE tb_recurrence_member SET allocated_amount=NULL,applied_hourly_rate=NULL,fixed_rate=NULL,base_amount=NULL,surplus_amount=NULL WHERE series_id=?",
+				series.getId());
+		people.save(account,
+				people.findById(account, second).orElseThrow().update("Second", null, new BigDecimal("100")));
+		setTime("2026-11-12T12:00:00Z");
+		assertTrue(generate.execute(context, series.getId()).created() > 0);
+		for (var work : all()) {
+			assertEquals(1, work.allocationPolicyVersion());
+			assertEquals(new BigDecimal("5.01"), work.assignments().getFirst().allocatedAmount().value());
+		}
+	}
+
+	@Test
 	void shouldCreateIndependentAssignmentsAndFreezeDefaultWithoutRecordingMoney() {
 		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.COMPLETED));
 		var series = create.execute(context, input(today, null, null));
@@ -303,7 +353,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 			if (data.customerId().equals(badCustomer) && data.serviceDate().equals(LocalDate.of(2026, 11, 19)))
 				throw new IllegalStateException("Injected second occurrence failure");
 			return i.callRealMethod();
-		}).when(createWork).execute(any(), any());
+		}).when(createWork).executeFrozen(any(), any(), any(), any());
 		new RecurrenceScheduler(seriesRepository, generate).run();
 		assertEquals(5, all().size());
 		assertTrue(all().stream().allMatch(w -> w.customerId().equals(customer)));
@@ -324,7 +374,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 			if (data.serviceDate().equals(today.plusDays(7)))
 				throw new IllegalStateException("Injected failure");
 			return i.callRealMethod();
-		}).when(createWork).execute(any(), any());
+		}).when(createWork).executeFrozen(any(), any(), any(), any());
 		assertThrows(IllegalStateException.class, () -> create.execute(context, input(today, null, null)));
 		assertEquals(0, count("tb_recurrence_series"));
 		assertEquals(0, count("tb_order_service"));
@@ -597,7 +647,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldRollbackClosureReplacementsAndAuditWhenSuccessorGenerationFails() {
 		var original = create.execute(context, input(today, null, null));
 		var old = all();
-		doThrow(new IllegalStateException("injected generation failure")).when(createWork).execute(any(), any());
+		doThrow(new IllegalStateException("injected generation failure")).when(createWork)
+			.executeFrozen(any(), any(), any(), any());
 		assertThrows(IllegalStateException.class,
 				() -> move(old.getFirst().id(), ChangeScope.THIS_AND_FOLLOWING, "fail", today.plusDays(1)));
 		assertEquals(5, active().size());
