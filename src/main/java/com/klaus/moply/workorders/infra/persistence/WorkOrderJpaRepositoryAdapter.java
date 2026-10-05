@@ -1,13 +1,16 @@
 package com.klaus.moply.workorders.infra.persistence;
 
-import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,12 +19,16 @@ import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.infra.persistence.PageableMapper;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.application.usecase.exception.WorkOrderNotFoundException;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,17 +49,25 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 		Objects.requireNonNull(organizationId);
 		if (work.id() != null)
 			throw new DomainException("Somente criação de trabalhos é suportada.");
+		validateCustomer(organizationId, work);
+		validateCollaborators(organizationId, work);
+		return repo.saveAndFlush(WorkOrderEntity.from(organizationId, work)).toDomain();
+	}
+
+	private void validateCustomer(UUID organizationId, WorkOrder work) {
 		var customer = customers.findById(organizationId, work.customerId())
 			.orElseThrow(() -> new CustomerNotFoundException(work.customerId()));
 		if (work.customerLocationId() != null)
 			customer.findLocation(work.customerLocationId());
-		for (var a : work.assignments()) {
-			var c = collaborators.findById(organizationId, a.collaboratorId())
-				.orElseThrow(() -> new CollaboratorNotFoundException(a.collaboratorId()));
-			if (!c.isActive())
+	}
+
+	private void validateCollaborators(UUID organizationId, WorkOrder work) {
+		for (var assignment : work.assignments()) {
+			var collaborator = collaborators.findById(organizationId, assignment.collaboratorId())
+				.orElseThrow(() -> new CollaboratorNotFoundException(assignment.collaboratorId()));
+			if (!collaborator.isActive())
 				throw new InactiveCollaboratorException();
 		}
-		return repo.saveAndFlush(WorkOrderEntity.from(organizationId, work)).toDomain();
 	}
 
 	@Override
@@ -61,15 +76,10 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 		var entity = lockWorkOrder(organizationId, id);
 		var before = entity.toDomain();
 		var after = Objects.requireNonNull(transition.apply(before));
-		// Only operational fields are mutable. Never recreate assignments or recalculate
-		// history.
-		var expected = new WorkOrder(before.id(), before.customerId(), before.customerLocationId(), after.serviceDate(),
-				after.startTime(), before.description(), before.contractedHours(), before.hourlyRate(),
-				before.currencyCode(), before.totalAmount(), before.allocationPolicyVersion(), after.status(),
-				before.version(), before.assignments(), before.occurrence());
-		if (!expected.equals(after))
+		if (!before.hasSameConditionsAs(after)) {
 			throw new IllegalArgumentException("A transição alterou condições imutáveis do trabalho.");
-		if (!before.equals(after)) {
+		}
+		if (!before.hasSameOperationAs(after)) {
 			entity.setStatus(after.status());
 			entity.setServiceDate(after.serviceDate());
 			entity.setStartTime(after.startTime());
@@ -107,10 +117,35 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 	public List<WorkOrder> findAll(UUID organizationId, WorkOrderDateRange dateRange, UUID customerId,
 			WorkOrderStatus status) {
 		Objects.requireNonNull(organizationId);
-		return repo.findAllByFilters(organizationId, dateRange.from(), dateRange.to(), customerId, status)
+		return repo
+			.findAll(WorkOrderSpecifications.filters(organizationId, dateRange, customerId, status),
+					Sort.by("serviceDate", "id"))
 			.stream()
 			.map(WorkOrderEntity::toDomain)
 			.toList();
+	}
+
+	@Override
+	public PageResult<WorkOrder> search(UUID organizationId, WorkOrderDateRange dateRange, UUID customerId,
+			WorkOrderStatus status, PageQuery page) {
+		Objects.requireNonNull(organizationId);
+		var specification = WorkOrderSpecifications.filters(organizationId, dateRange, customerId, status);
+		var selected = repo.findAll(specification,
+				PageableMapper.toPageable(page, Set.of("serviceDate", "startTime", "status", "id"), "serviceDate"));
+		return assemblePage(organizationId, selected);
+	}
+
+	private PageResult<WorkOrder> assemblePage(UUID organizationId, Page<WorkOrderEntity> selected) {
+		if (selected.isEmpty())
+			return new PageResult<>(List.of(), selected.getNumber(), selected.getSize(), selected.getTotalElements(),
+					selected.getTotalPages());
+		var ids = selected.getContent().stream().map(WorkOrderEntity::getId).toList();
+		var loadedById = repo.findAllByOrganizationIdAndIdIn(organizationId, ids)
+			.stream()
+			.collect(Collectors.toMap(WorkOrderEntity::getId, Function.identity()));
+		var ordered = ids.stream().map(loadedById::get).map(WorkOrderEntity::toDomain).toList();
+		return new PageResult<>(ordered, selected.getNumber(), selected.getSize(), selected.getTotalElements(),
+				selected.getTotalPages());
 	}
 
 }
