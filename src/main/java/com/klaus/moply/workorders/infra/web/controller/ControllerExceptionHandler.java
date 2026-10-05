@@ -1,15 +1,20 @@
 package com.klaus.moply.workorders.infra.web.controller;
 
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundException;
 import com.klaus.moply.shared.domain.exception.DomainException;
@@ -20,23 +25,23 @@ import com.klaus.moply.workorders.domain.exception.WorkOrderStateException;
 public class ControllerExceptionHandler {
 
 	@ExceptionHandler({ WorkOrderNotFoundException.class, CustomerNotFoundException.class,
-			CustomerLocationNotFoundException.class,
-			com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException.class })
+			CustomerLocationNotFoundException.class, CollaboratorNotFoundException.class })
 	private ResponseEntity<ProblemDetail> handleNotFoundException(RuntimeException e) {
 		ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
 		problemDetail.setTitle(e.getMessage());
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
 	}
 
-	@ExceptionHandler({ com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException.class,
-			WorkOrderStateException.class })
+	@ExceptionHandler({ InactiveCollaboratorException.class, WorkOrderStateException.class })
 	public ResponseEntity<ProblemDetail> inactive(RuntimeException e) {
-		return ResponseEntity.status(409).body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+			.body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
 	}
 
-	@ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
 	public ResponseEntity<ProblemDetail> unsupported(Exception e) {
-		return ResponseEntity.status(405).body(ProblemDetail.forStatus(HttpStatus.METHOD_NOT_ALLOWED));
+		return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+			.body(ProblemDetail.forStatus(HttpStatus.METHOD_NOT_ALLOWED));
 	}
 
 	@ExceptionHandler(DomainException.class)
@@ -72,10 +77,9 @@ public class ControllerExceptionHandler {
 			.body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Dados inválidos."));
 	}
 
-	@ExceptionHandler({ org.springframework.dao.OptimisticLockingFailureException.class,
-			org.springframework.dao.PessimisticLockingFailureException.class })
+	@ExceptionHandler({ OptimisticLockingFailureException.class, PessimisticLockingFailureException.class })
 	public ResponseEntity<ProblemDetail> conflict(Exception exception) {
-		return ResponseEntity.status(409)
+		return ResponseEntity.status(HttpStatus.CONFLICT)
 			.body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 					"O registro foi alterado por outra operação. Recarregue e tente novamente."));
 	}

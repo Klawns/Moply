@@ -2,8 +2,6 @@ package com.klaus.moply.workorders.infra.web.controller;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -18,8 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.workflows.application.CancelWorkOrder;
-import com.klaus.moply.workflows.application.RescheduleWorkOrder;
+import com.klaus.moply.shared.infra.web.PageQueryRequest;
+import com.klaus.moply.shared.infra.web.dto.PageResponse;
+import com.klaus.moply.workflows.application.usecase.CancelSelectedWorkOrder;
+import com.klaus.moply.workflows.application.usecase.RescheduleSelectedWorkOrder;
+import com.klaus.moply.workflows.application.usecase.dto.CancelSelectedWorkOrderInput;
+import com.klaus.moply.workflows.application.usecase.dto.RescheduleSelectedWorkOrderInput;
 import com.klaus.moply.workorders.application.usecase.CompleteWorkOrder;
 import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
@@ -27,6 +29,8 @@ import com.klaus.moply.workorders.application.usecase.FindWorkOrders;
 import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
 import com.klaus.moply.workorders.application.usecase.dto.WorkOrderOutput;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.infra.web.dto.request.CancelRequest;
+import com.klaus.moply.workorders.infra.web.dto.request.RescheduleRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,15 +47,9 @@ public class WorkOrderController {
 
 	private final CompleteWorkOrder complete;
 
-	private final RescheduleWorkOrder reschedule;
+	private final RescheduleSelectedWorkOrder reschedule;
 
-	private final CancelWorkOrder cancel;
-
-	public record RescheduleRequest(LocalDate serviceDate, LocalTime startTime) {
-	}
-
-	public record CancelRequest(Boolean confirmNoMoneyReceived, String reason) {
-	}
+	private final CancelSelectedWorkOrder cancel;
 
 	@PostMapping("/{id}/complete")
 	public ResponseEntity<Void> complete(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
@@ -63,17 +61,16 @@ public class WorkOrderController {
 	public ResponseEntity<Void> reschedule(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
 			@RequestBody RescheduleRequest request) {
 		reschedule.execute(new Context(principal.getOrganizationId()),
-				new RescheduleWorkOrder.Input(id, request.serviceDate(), request.startTime()));
+				new RescheduleSelectedWorkOrderInput(id, principal.getUserId(), request.serviceDate(),
+						request.startTime(), request.scope(), request.idempotencyKey()));
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{id}/cancel")
 	public ResponseEntity<Void> cancel(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
 			@RequestBody(required = false) CancelRequest request) {
-		var confirmed = request != null && Boolean.TRUE.equals(request.confirmNoMoneyReceived());
-		var reason = request == null ? null : request.reason();
-		var input = new CancelWorkOrder.Input(id, principal.getUserId(), confirmed, reason);
-		cancel.execute(new Context(principal.getOrganizationId()), input);
+		cancel.execute(new Context(principal.getOrganizationId()), new CancelSelectedWorkOrderInput(id,
+				principal.getUserId(), request == null ? null : request.toOptions()));
 		return ResponseEntity.noContent().build();
 	}
 
@@ -90,11 +87,14 @@ public class WorkOrderController {
 	}
 
 	@GetMapping
-	public List<WorkOrderOutput> list(@AuthenticationPrincipal AccountPrincipal principal,
+	public PageResponse<WorkOrderOutput> list(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestParam(required = false) LocalDate from, @RequestParam(required = false) LocalDate to,
-			@RequestParam(required = false) UUID customerId, @RequestParam(required = false) WorkOrderStatus status) {
-		return find.execute(new Context(principal.getOrganizationId()),
-				new FindWorkOrders.Filter(from, to, customerId, status));
+			@RequestParam(required = false) UUID customerId, @RequestParam(required = false) WorkOrderStatus status,
+			@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
+			@RequestParam(required = false) String sort, @RequestParam(required = false) String direction) {
+		return PageResponse
+			.from(find.execute(new Context(principal.getOrganizationId()), new FindWorkOrders.Filter(from, to,
+					customerId, status, PageQueryRequest.toQuery(page, size, sort, direction))), value -> value);
 	}
 
 }
