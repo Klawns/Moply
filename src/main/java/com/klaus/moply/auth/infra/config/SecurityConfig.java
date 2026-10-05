@@ -54,7 +54,7 @@ public class SecurityConfig {
 		return repository;
 	}
 
-	private void configureAuthorization(HttpSecurity http) throws Exception {
+	private void configureAuthorization(HttpSecurity http) {
 		http.authorizeHttpRequests(authorize -> authorize.dispatcherTypeMatchers(DispatcherType.ERROR)
 			.permitAll()
 			.requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf")
@@ -65,13 +65,14 @@ public class SecurityConfig {
 			.authenticated()
 			.requestMatchers("/api/v1/customers", "/api/v1/customers/**", "/api/v1/work-orders",
 					"/api/v1/work-orders/**", "/api/v1/payments/**", "/api/v1/collaborators",
-					"/api/v1/collaborators/**", "/api/v1/recurrence-series", "/api/v1/recurrence-series/**")
+					"/api/v1/collaborators/**", "/api/v1/recurrence-series", "/api/v1/recurrence-series/**",
+					"/api/v1/reports/**")
 			.authenticated()
 			.anyRequest()
 			.denyAll());
 	}
 
-	private void configureLogin(HttpSecurity http, JwtCookieService jwt) throws Exception {
+	private void configureLogin(HttpSecurity http, JwtCookieService jwt) {
 		http.formLogin(login -> login.loginPage(LOGIN_URL)
 			.loginProcessingUrl(LOGIN_URL)
 			.usernameParameter("email")
@@ -84,7 +85,7 @@ public class SecurityConfig {
 					"Credenciais inválidas.")));
 	}
 
-	private void configureLogout(HttpSecurity http, JwtCookieService jwt) throws Exception {
+	private void configureLogout(HttpSecurity http, JwtCookieService jwt) {
 		http.logout(logout -> logout.logoutUrl("/api/v1/auth/logout")
 			.addLogoutHandler((request, response, authentication) -> response.addHeader(HttpHeaders.SET_COOKIE,
 					jwt.cookie("").toString()))
@@ -92,7 +93,7 @@ public class SecurityConfig {
 					(request, response, authentication) -> response.setStatus(HttpStatus.NO_CONTENT.value())));
 	}
 
-	private void configureExceptionHandling(HttpSecurity http) throws Exception {
+	private void configureExceptionHandling(HttpSecurity http) {
 		http.exceptionHandling(errors -> errors
 			.authenticationEntryPoint((request, response, exception) -> writeProblem(response, HttpStatus.UNAUTHORIZED,
 					"Autenticação necessária."))
