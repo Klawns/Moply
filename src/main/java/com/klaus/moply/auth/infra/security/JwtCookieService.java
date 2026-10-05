@@ -76,15 +76,15 @@ public class JwtCookieService {
 	public String issue(AccountPrincipal principal) {
 		var now = clock.instant();
 		var claims = JwtClaimsSet.builder()
-				.issuer(issuer)
-				.audience(List.of(audience))
-				.subject(principal.getUserId().toString())
-				.claim(ORGANIZATION_ID_CLAIM, principal.getOrganizationId().toString())
-				.issuedAt(now)
-				.expiresAt(now.plus(TOKEN_LIFETIME))
-				.build();
+			.issuer(issuer)
+			.audience(List.of(audience))
+			.subject(principal.getUserId().toString())
+			.claim(ORGANIZATION_ID_CLAIM, principal.getOrganizationId().toString())
+			.issuedAt(now)
+			.expiresAt(now.plus(TOKEN_LIFETIME))
+			.build();
 		return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
-				.getTokenValue();
+			.getTokenValue();
 	}
 
 	public AccountPrincipal authenticate(String token) {
@@ -120,12 +120,12 @@ public class JwtCookieService {
 
 	public ResponseCookie cookie(String value) {
 		return ResponseCookie.from(COOKIE, value)
-				.httpOnly(true)
-				.secure(secure)
-				.sameSite("Lax")
-				.path("/api/v1")
-				.maxAge(value.isEmpty() ? Duration.ZERO : TOKEN_LIFETIME)
-				.build();
+			.httpOnly(true)
+			.secure(secure)
+			.sameSite("Lax")
+			.path("/api/v1")
+			.maxAge(value.isEmpty() ? Duration.ZERO : TOKEN_LIFETIME)
+			.build();
 	}
 
 }
