@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
+import com.klaus.moply.recurrence.application.ports.RecurrenceChanges;
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 import com.klaus.moply.recurrence.domain.RecurrenceSeries;
 import com.klaus.moply.recurrence.domain.WorkTemplate;
@@ -33,25 +34,32 @@ public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeries.R
 
 	private final Clock clock;
 
+	private final RecurrenceChanges changes;
+
 	public record Result(UUID organizationId, UUID seriesId, LocalDate from, LocalDate until, int created,
 			int existing) {
 	}
 
-	public Result execute(Usecase.Context context, UUID id) {
-		var series = repository.lock(context.organizationId(), id);
-		var window = generationWindow(context.organizationId());
-		var dates = series.occurrences(window);
-		var known = occurrences.findDates(context.organizationId(), id, window.from(), window.until());
-		int created = 0, existing = 0;
-		for (var date : dates) {
-			if (known.contains(date)) {
+	@Override
+	public Result execute(Usecase.Context context, UUID seriesId) {
+		var organizationId = context.organizationId();
+		var series = repository.lock(organizationId, seriesId);
+		var window = generationWindow(organizationId);
+		var occurrenceDates = series.occurrences(window);
+		var existingDates = occurrences.findDates(organizationId, seriesId, window.from(), window.until());
+		var familyId = series.getLineage().familyId();
+
+		int created = 0;
+		int existing = 0;
+		for (var date : occurrenceDates) {
+			if (existingDates.contains(date) || changes.excluded(organizationId, familyId, series.positionOf(date))) {
 				existing++;
 				continue;
 			}
 			createOccurrence(context, series, window, date);
 			created++;
 		}
-		return new Result(context.organizationId(), id, window.from(), window.until(), created, existing);
+		return new Result(organizationId, seriesId, window.from(), window.until(), created, existing);
 	}
 
 	private GenerationWindow generationWindow(UUID organizationId) {
@@ -65,8 +73,7 @@ public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeries.R
 		try {
 			var work = createWork.execute(context, toWorkOrderInput(series.getTemplate(), date));
 			occurrences.link(context.organizationId(), work.id(), series.getId(), date);
-		}
-		catch (RuntimeException error) {
+		} catch (RuntimeException error) {
 			log.error("recurrence rollback account={} series={} from={} until={} occurrence={}",
 					context.organizationId(), series.getId(), window.from(), window.until(), date, error);
 			throw error;

@@ -13,6 +13,10 @@ public interface RecurrenceRepository {
 
 	RecurrenceSeries lock(UUID account, UUID id);
 
+	List<RecurrenceSeries> lockFamily(UUID account, UUID seriesId);
+
+	void close(RecurrenceSeries series);
+
 	List<Reference> nextBatch(UUID after, int size);
 
 	record Reference(UUID organizationId, UUID id) {
