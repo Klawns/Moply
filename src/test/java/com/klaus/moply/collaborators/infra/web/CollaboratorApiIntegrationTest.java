@@ -78,6 +78,26 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 	}
 
 	@Test
+	void shouldPersistPreserveAndRemoveOptionalHourlyRate() throws Exception {
+		var owner = account("rate@example.com");
+		var id = create(owner, "{\"name\":\"Ana\",\"hourlyRate\":20}");
+		mvc.perform(get(BASE + "/" + id).cookie(owner.auth()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.hourlyRate").value(20));
+		mvc.perform(mutation(put(BASE + "/" + id), owner).content("{\"name\":\"Ana renamed\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.hourlyRate").value(20));
+		for (String invalid : new String[] { "0", "-1", "1.001" }) {
+			mvc.perform(
+					mutation(put(BASE + "/" + id), owner).content("{\"name\":\"Ana\",\"hourlyRate\":" + invalid + "}"))
+				.andExpect(status().isBadRequest());
+		}
+		mvc.perform(mutation(put(BASE + "/" + id), owner).content("{\"name\":\"Ana\",\"hourlyRate\":null}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.hourlyRate").doesNotExist());
+	}
+
+	@Test
 	void shouldManageHomonymsWithoutCredentialsAndPreserveInactiveHistory() throws Exception {
 		var owner = account("owner@example.com");
 		var usersBefore = jdbc.queryForList("SELECT * FROM tb_app_user");

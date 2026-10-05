@@ -51,7 +51,7 @@ public class CollaboratorController {
 	public ResponseEntity<UUID> create(@AuthenticationPrincipal AccountPrincipal principal,
 			@Valid @RequestBody CollaboratorRequest request) {
 		var id = create.execute(new Context(principal.getOrganizationId()),
-				new CreateCollaboratorInput(request.name(), request.phone()));
+				new CreateCollaboratorInput(request.name(), request.phone(), request.hourlyRate()));
 		return ResponseEntity.created(URI.create("/api/v1/collaborators/" + id)).body(id);
 	}
 
@@ -74,8 +74,9 @@ public class CollaboratorController {
 	@PutMapping("/{id}")
 	public CollaboratorResponse update(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
 			@Valid @RequestBody CollaboratorRequest request) {
-		return CollaboratorResponse.from(update.execute(new Context(principal.getOrganizationId()),
-				new UpdateCollaboratorInput(id, request.name(), request.phone())));
+		return CollaboratorResponse
+			.from(update.execute(new Context(principal.getOrganizationId()), new UpdateCollaboratorInput(id,
+					request.name(), request.phone(), request.hourlyRate(), request.hourlyRateProvided())));
 	}
 
 	@PostMapping("/{id}/deactivate")

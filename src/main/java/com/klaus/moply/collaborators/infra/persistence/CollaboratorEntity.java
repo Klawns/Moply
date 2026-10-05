@@ -1,6 +1,7 @@
 package com.klaus.moply.collaborators.infra.persistence;
 
 import java.util.UUID;
+import java.math.BigDecimal;
 
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 
@@ -35,6 +36,9 @@ public class CollaboratorEntity {
 	@Column(nullable = false)
 	private boolean active;
 
+	@Column(name = "hourly_rate", columnDefinition = "numeric")
+	private BigDecimal hourlyRate;
+
 	@Version
 	private long version;
 
@@ -47,10 +51,11 @@ public class CollaboratorEntity {
 		name = collaborator.getName().value();
 		phone = collaborator.getPhone() == null ? null : collaborator.getPhone().value();
 		active = collaborator.isActive();
+		hourlyRate = collaborator.getHourlyRate() == null ? null : collaborator.getHourlyRate().value();
 	}
 
 	public Collaborator toDomain() {
-		return Collaborator.restore(id, organizationId, name, phone, active, version);
+		return Collaborator.restore(id, organizationId, name, phone, active, version, hourlyRate);
 	}
 
 }

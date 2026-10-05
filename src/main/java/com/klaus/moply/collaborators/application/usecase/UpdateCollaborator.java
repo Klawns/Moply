@@ -18,8 +18,9 @@ public class UpdateCollaborator implements Usecase.Contextual<UpdateCollaborator
 	public CollaboratorOutput execute(Context context, UpdateCollaboratorInput input) {
 		var collaborator = repo.findById(context.organizationId(), input.id())
 			.orElseThrow(() -> new CollaboratorNotFoundException(input.id()));
-		return CollaboratorOutput
-			.fromDomain(repo.save(context.organizationId(), collaborator.update(input.name(), input.phone())));
+		return CollaboratorOutput.fromDomain(repo.save(context.organizationId(),
+				collaborator.update(input.name(), input.phone(), input.hourlyRateProvided() ? input.hourlyRate()
+						: collaborator.getHourlyRate() == null ? null : collaborator.getHourlyRate().value())));
 	}
 
 }

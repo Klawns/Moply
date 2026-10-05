@@ -18,7 +18,8 @@ public class CreateCollaborator implements Usecase.Contextual<CreateCollaborator
 	@Override
 	public UUID execute(Context context, CreateCollaboratorInput input) {
 		return repo
-			.save(context.organizationId(), Collaborator.create(context.organizationId(), input.name(), input.phone()))
+			.save(context.organizationId(),
+					Collaborator.create(context.organizationId(), input.name(), input.phone(), input.hourlyRate()))
 			.getId();
 	}
 
