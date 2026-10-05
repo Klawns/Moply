@@ -16,6 +16,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.customers.domain.entities.CustomerLocation;
+import com.klaus.moply.shared.application.pagination.PageQuery;
 
 import jakarta.persistence.EntityManager;
 
@@ -56,7 +57,12 @@ class CustomerRepositoryIntegrationTest {
 		assertEquals(2, result.getLocations().size());
 		assertEquals("Casa nova", result.findLocation(home.getId()).getName());
 		assertEquals("Rua A", result.findLocation(office.getId()).getAddress());
-		assertEquals(1, repo.findAll(ACCOUNT).size());
+		assertEquals(1, repo.findAll(ACCOUNT, new com.klaus.moply.shared.application.pagination.PageQuery(0, 20, null))
+			.totalElements());
+		var locationPage = repo.findLocations(ACCOUNT, saved.getId(), new PageQuery(1, 1, null));
+		assertEquals(2, locationPage.totalElements());
+		assertEquals(2, locationPage.totalPages());
+		assertEquals("Escritório", locationPage.content().getFirst().getName());
 	}
 
 	@Test
@@ -70,7 +76,23 @@ class CustomerRepositoryIntegrationTest {
 		assertEquals(location.getId(),
 				repo.findById(ACCOUNT, first.getId()).orElseThrow().getLocations().getFirst().getId());
 		assertTrue(repo.findById(ACCOUNT, second.getId()).orElseThrow().getLocations().isEmpty());
-		assertEquals(2, repo.findAll(ACCOUNT).size());
+		assertEquals(2, repo.findAll(ACCOUNT, new com.klaus.moply.shared.application.pagination.PageQuery(0, 20, null))
+			.totalElements());
+		var firstPage = repo.findAll(ACCOUNT,
+				new com.klaus.moply.shared.application.pagination.PageQuery(0, 1,
+						new com.klaus.moply.shared.application.pagination.SortQuery("name",
+								com.klaus.moply.shared.application.pagination.SortQuery.Direction.ASC)));
+		var secondPage = repo.findAll(ACCOUNT,
+				new com.klaus.moply.shared.application.pagination.PageQuery(1, 1,
+						new com.klaus.moply.shared.application.pagination.SortQuery("name",
+								com.klaus.moply.shared.application.pagination.SortQuery.Direction.ASC)));
+		assertEquals(2, firstPage.totalElements());
+		assertEquals(2, firstPage.totalPages());
+		assertNotEquals(firstPage.content().getFirst().getId(), secondPage.content().getFirst().getId());
+		assertTrue(java.util.Set.of(first.getId(), second.getId())
+			.containsAll(
+					java.util.Set.of(firstPage.content().getFirst().getId(), secondPage.content().getFirst().getId())));
+		assertEquals(1, secondPage.page());
 	}
 
 	@Test
