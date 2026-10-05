@@ -1,5 +1,7 @@
 package com.klaus.moply.workorders.infra.web.controller;
 
+import com.klaus.moply.workorders.application.usecase.exception.PricingAcceptanceException;
+
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -82,6 +84,16 @@ public class ControllerExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 			.body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 					"O registro foi alterado por outra operação. Recarregue e tente novamente."));
+	}
+
+	@ExceptionHandler(PricingAcceptanceException.class)
+	public ResponseEntity<ProblemDetail> pricing(PricingAcceptanceException error) {
+		var status = error.preview().canCreate() ? HttpStatus.CONFLICT : HttpStatus.UNPROCESSABLE_CONTENT;
+		var problem = ProblemDetail.forStatusAndDetail(status, error.getMessage());
+		problem.setProperty("code",
+				error.preview().canCreate() ? "PRICING_ACCEPTANCE_REQUIRED" : "PRICING_BASES_EXCEED_TOTAL");
+		problem.setProperty("pricingPreview", error.preview());
+		return ResponseEntity.status(status).body(problem);
 	}
 
 	@ExceptionHandler(Exception.class)

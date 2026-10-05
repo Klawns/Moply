@@ -1,5 +1,7 @@
 package com.klaus.moply.workorders.infra.persistence;
 
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -50,6 +52,18 @@ public class WorkAssignmentEntity {
 	@Column(name = "allocated_amount", nullable = false, columnDefinition = "numeric")
 	private BigDecimal allocatedAmount;
 
+	@Column(name = "applied_hourly_rate", columnDefinition = "numeric")
+	private BigDecimal appliedHourlyRate;
+
+	@Column(name = "fixed_rate")
+	private Boolean fixedRate;
+
+	@Column(name = "base_amount", columnDefinition = "numeric")
+	private BigDecimal baseAmount;
+
+	@Column(name = "surplus_amount", columnDefinition = "numeric")
+	private BigDecimal surplusAmount;
+
 	static WorkAssignmentEntity from(WorkOrderEntity work, WorkAssignment a) {
 		var e = new WorkAssignmentEntity();
 		e.organizationId = work.getOrganizationId();
@@ -57,11 +71,18 @@ public class WorkAssignmentEntity {
 		e.collaboratorId = a.collaboratorId();
 		e.inclusionPosition = a.inclusionPosition();
 		e.allocatedAmount = a.allocatedAmount().value();
+		e.appliedHourlyRate = a.appliedHourlyRate() == null ? null : a.appliedHourlyRate().value();
+		e.fixedRate = a.fixedRate();
+		e.baseAmount = a.baseAmount() == null ? null : a.baseAmount().value();
+		e.surplusAmount = a.surplusAmount() == null ? null : a.surplusAmount().value();
 		return e;
 	}
 
 	WorkAssignment toDomain() {
-		return new WorkAssignment(collaboratorId, inclusionPosition, new Money(allocatedAmount));
+		return new WorkAssignment(collaboratorId, inclusionPosition, new Money(allocatedAmount),
+				appliedHourlyRate == null ? null : new HourlyRate(appliedHourlyRate), fixedRate,
+				baseAmount == null ? null : new Money(baseAmount),
+				surplusAmount == null ? null : new Money(surplusAmount));
 	}
 
 }

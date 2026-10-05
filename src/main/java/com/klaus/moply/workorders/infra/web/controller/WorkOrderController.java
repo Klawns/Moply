@@ -1,5 +1,9 @@
 package com.klaus.moply.workorders.infra.web.controller;
 
+import com.klaus.moply.workorders.application.usecase.dto.PricingPreviewOutput;
+
+import com.klaus.moply.workorders.application.usecase.PreviewWorkOrderPricing;
+
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -40,6 +44,14 @@ import lombok.RequiredArgsConstructor;
 public class WorkOrderController {
 
 	private final CreateWorkOrder create;
+
+	private final PreviewWorkOrderPricing preview;
+
+	@PostMapping("/pricing-preview")
+	public PricingPreviewOutput preview(@AuthenticationPrincipal AccountPrincipal principal,
+			@RequestBody CreateWorkOrderInput input) {
+		return preview.execute(new Context(principal.getOrganizationId()), input);
+	}
 
 	private final FindWorkOrderById findById;
 
