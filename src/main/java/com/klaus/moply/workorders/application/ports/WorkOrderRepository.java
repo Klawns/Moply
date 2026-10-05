@@ -4,6 +4,8 @@ import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
 
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
@@ -21,5 +23,8 @@ public interface WorkOrderRepository {
 	}
 
 	List<WorkOrder> findAll(UUID organizationId, WorkOrderDateRange dateRange, UUID customerId, WorkOrderStatus status);
+
+	PageResult<WorkOrder> search(UUID organizationId, WorkOrderDateRange dateRange, UUID customerId,
+			WorkOrderStatus status, PageQuery page);
 
 }

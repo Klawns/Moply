@@ -1,18 +1,19 @@
 package com.klaus.moply.workorders.application;
 
-import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
+
 import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
-import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
-import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
+import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
@@ -26,6 +27,11 @@ import com.klaus.moply.workorders.application.usecase.*;
 import com.klaus.moply.workorders.application.usecase.dto.*;
 import com.klaus.moply.workorders.application.usecase.exception.WorkOrderNotFoundException;
 import com.klaus.moply.workorders.domain.entity.*;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
 
 class WorkOrderUsecasesTest {
 
@@ -88,7 +94,8 @@ class WorkOrderUsecasesTest {
 
 	@Test
 	void shouldReadStoredWorkWithoutConsultingPreferenceOrParticipantState() {
-		var work = WorkOrder.create(customer, null, LocalDate.now(), null, null, BigDecimal.ONE, BigDecimal.TEN,
+		var work = WorkOrder.create(customer, null, new WorkOrderSchedule(LocalDate.now(), null),
+				new WorkOrderDescription(null), new DurationHours(BigDecimal.ONE), new HourlyRate(BigDecimal.TEN),
 				List.of(person), WorkOrderStatus.SCHEDULED);
 		UUID id = UUID.randomUUID();
 		when(orders.findById(account, id)).thenReturn(Optional.of(work));
@@ -104,9 +111,12 @@ class WorkOrderUsecasesTest {
 	void shouldCombineFiltersAndRejectInvertedDates() {
 		var date = LocalDate.now();
 		var filter = new FindWorkOrders.Filter(date, date, customer);
-		when(orders.findAll(account, new WorkOrderDateRange(date, date), customer, null)).thenReturn(List.of());
-		assertTrue(new FindWorkOrders(orders, customers).execute(context, filter).isEmpty());
-		verify(orders).findAll(account, new WorkOrderDateRange(date, date), customer, null);
+		when(orders.search(account, new WorkOrderDateRange(date, date), customer, null,
+				com.klaus.moply.shared.application.pagination.PageQuery.defaults()))
+			.thenReturn(new com.klaus.moply.shared.application.pagination.PageResult<>(List.of(), 0, 20, 0, 0));
+		assertTrue(new FindWorkOrders(orders, customers).execute(context, filter).content().isEmpty());
+		verify(orders).search(account, new WorkOrderDateRange(date, date), customer, null,
+				com.klaus.moply.shared.application.pagination.PageQuery.defaults());
 		assertThrows(DomainException.class, () -> new FindWorkOrders.Filter(date, date.minusDays(1), null));
 	}
 
