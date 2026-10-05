@@ -1,4 +1,4 @@
-package com.klaus.moply.recurrence.infra;
+package com.klaus.moply.recurrence.infra.scheduler;
 
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 
