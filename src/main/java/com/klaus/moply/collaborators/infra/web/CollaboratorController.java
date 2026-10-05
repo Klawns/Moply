@@ -1,7 +1,6 @@
 package com.klaus.moply.collaborators.infra.web;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -25,6 +24,8 @@ import com.klaus.moply.collaborators.application.usecase.dto.CreateCollaboratorI
 import com.klaus.moply.collaborators.application.usecase.dto.UpdateCollaboratorInput;
 import com.klaus.moply.collaborators.infra.web.dto.CollaboratorRequest;
 import com.klaus.moply.collaborators.infra.web.dto.CollaboratorResponse;
+import com.klaus.moply.shared.infra.web.PageQueryRequest;
+import com.klaus.moply.shared.infra.web.dto.PageResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import jakarta.validation.Valid;
@@ -55,12 +56,14 @@ public class CollaboratorController {
 	}
 
 	@GetMapping
-	public List<CollaboratorResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
-			@RequestParam(required = false) Boolean active) {
-		return findAll.execute(new Context(principal.getOrganizationId()), active)
-			.stream()
-			.map(CollaboratorResponse::from)
-			.toList();
+	public PageResponse<CollaboratorResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+			@RequestParam(required = false) Boolean active, @RequestParam(required = false) Integer page,
+			@RequestParam(required = false) Integer size, @RequestParam(required = false) String sort,
+			@RequestParam(required = false) String direction) {
+		return PageResponse.from(
+				findAll.execute(new Context(principal.getOrganizationId()),
+						new FindAllCollaborators.Filter(active, PageQueryRequest.toQuery(page, size, sort, direction))),
+				CollaboratorResponse::from);
 	}
 
 	@GetMapping("/{id}")

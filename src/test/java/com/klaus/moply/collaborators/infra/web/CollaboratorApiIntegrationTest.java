@@ -33,6 +33,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import com.jayway.jsonpath.JsonPath;
 import com.klaus.moply.auth.infra.security.JwtCookieService;
+import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.application.usecase.FindEligibleCollaborators;
@@ -103,15 +104,21 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
 		mvc.perform(get(BASE).cookie(owner.auth()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(2));
+			.andExpect(jsonPath("$.content.length()").value(2))
+			.andExpect(jsonPath("$.totalElements").value(2));
 		mvc.perform(get(BASE).param("active", "true").cookie(owner.auth()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(1))
-			.andExpect(jsonPath("$[0].id").value(homonym.toString()));
+			.andExpect(jsonPath("$.content.length()").value(1))
+			.andExpect(jsonPath("$.content[0].id").value(homonym.toString()));
 		mvc.perform(get(BASE).param("active", "false").cookie(owner.auth()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(1))
-			.andExpect(jsonPath("$[0].id").value(id.toString()));
+			.andExpect(jsonPath("$.content.length()").value(1))
+			.andExpect(jsonPath("$.content[0].id").value(id.toString()))
+			.andExpect(jsonPath("$.totalElements").value(1));
+		mvc.perform(get(BASE).param("active", "false").param("page", "1").param("size", "1").cookie(owner.auth()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content.length()").value(0))
+			.andExpect(jsonPath("$.totalElements").value(1));
 		assertEquals(homonym, eligible.execute(new Context(owner.id()), null).getFirst().id());
 		assertEquals(usersBefore, jdbc.queryForList("SELECT * FROM tb_app_user"));
 		var csrf = csrf(null);
@@ -120,7 +127,7 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.param("email", "collaborator@example.com")
 			.param("password", "not-a-login")).andExpect(status().isUnauthorized());
 		mvc.perform(delete(BASE + "/" + homonym).cookie(owner.auth())).andExpect(status().isForbidden());
-		assertEquals(2, repo.findAll(owner.id(), null).size());
+		assertEquals(2, repo.findAll(owner.id(), null, PageQuery.defaults()).totalElements());
 	}
 
 	@Test
@@ -132,8 +139,8 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 		for (String filter : new String[] { "", "?active=true" }) {
 			mvc.perform(get(BASE + filter).cookie(a.auth()))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(1))
-				.andExpect(jsonPath("$[0].id").value(ca.toString()));
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].id").value(ca.toString()));
 		}
 		for (UUID id : new UUID[] { cb, UUID.randomUUID() }) {
 			mvc.perform(get(BASE + "/" + id).cookie(a.auth())).andExpect(status().isNotFound());
@@ -190,7 +197,7 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 		}
 		mvc.perform(get(BASE + "/invalid").cookie(owner.auth())).andExpect(status().isBadRequest());
 		mvc.perform(get(BASE).param("active", "invalid").cookie(owner.auth())).andExpect(status().isBadRequest());
-		assertEquals(1, repo.findAll(owner.id(), null).size());
+		assertEquals(1, repo.findAll(owner.id(), null, PageQuery.defaults()).totalElements());
 		assertEquals("Maria", repo.findById(owner.id(), id).orElseThrow().getName().value());
 	}
 
