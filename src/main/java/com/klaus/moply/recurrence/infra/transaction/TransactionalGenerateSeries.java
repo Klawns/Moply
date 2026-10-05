@@ -1,4 +1,6 @@
-package com.klaus.moply.recurrence.infra;
+package com.klaus.moply.recurrence.infra.transaction;
+
+import com.klaus.moply.recurrence.application.ports.RecurrenceChanges;
 
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 
@@ -19,8 +21,8 @@ import com.klaus.moply.shared.application.usecase.Usecase;
 public class TransactionalGenerateSeries extends GenerateSeries {
 
 	public TransactionalGenerateSeries(RecurrenceRepository repo, OrganizationRepository accounts,
-			WorkOrderOccurrences occurrences, CreateWorkOrder create, Clock clock) {
-		super(repo, accounts, occurrences, create, clock);
+			WorkOrderOccurrences occurrences, CreateWorkOrder create, Clock clock, RecurrenceChanges changes) {
+		super(repo, accounts, occurrences, create, clock, changes);
 	}
 
 	/**
