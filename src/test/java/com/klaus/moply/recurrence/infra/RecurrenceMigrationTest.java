@@ -3,7 +3,6 @@ package com.klaus.moply.recurrence.infra;
 import java.util.*;
 import java.math.BigDecimal;
 import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.FlywayException;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.springframework.jdbc.core.JdbcTemplate;

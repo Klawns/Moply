@@ -1,9 +1,11 @@
 package com.klaus.moply.reports.infra;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,11 +41,11 @@ import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 import com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment;
 import com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment;
 import com.klaus.moply.payments.application.usecase.ReverseCollaboratorPayment;
+import com.klaus.moply.reports.application.ports.ReportReadRepository;
 import com.klaus.moply.reports.application.ports.ReportReadRepository.AssignmentRow;
 import com.klaus.moply.reports.application.ports.ReportReadRepository.PaymentRow;
 import com.klaus.moply.reports.application.ports.ReportReadRepository.SettlementRow;
 import com.klaus.moply.reports.application.ports.ReportReadRepository.WorkRow;
-import com.klaus.moply.reports.application.ports.ReportReadRepository;
 import com.klaus.moply.reports.application.usecase.FindCollaboratorsReport;
 import com.klaus.moply.reports.application.usecase.FindCustomerPaymentsReport;
 import com.klaus.moply.reports.application.usecase.FindWorkOrdersReport;
@@ -52,8 +54,8 @@ import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
 import com.klaus.moply.reports.application.usecase.dto.WorkOrdersReport;
 import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
-import com.klaus.moply.shared.application.pagination.SortQuery.Direction;
 import com.klaus.moply.shared.application.pagination.SortQuery;
+import com.klaus.moply.shared.application.pagination.SortQuery.Direction;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
