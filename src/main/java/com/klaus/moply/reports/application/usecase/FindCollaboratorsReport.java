@@ -24,43 +24,22 @@ public class FindCollaboratorsReport implements Usecase.Contextual<Collaborators
 	}
 
 	@Override
-	public CollaboratorsReport execute(
-			Usecase.Context context,
-			CollaboratorsReportInput input) {
+	public CollaboratorsReport execute(Usecase.Context context, CollaboratorsReportInput input) {
 
 		validateInput(input);
 
 		var period = input.period();
 		var collaboratorId = input.collaboratorId();
 
-		var reportContext = contextResolver.resolve(
-				context,
-				period,
-				collaboratorId);
+		var reportContext = contextResolver.resolve(context, period, collaboratorId);
 
-		var assignments = findAssignments(
-				context,
-				period,
-				collaboratorId,
-				reportContext.referenceDate());
+		var assignments = findAssignments(context, period, collaboratorId, reportContext.referenceDate());
 
-		var settlements = findSettlements(
-				context,
-				period,
-				collaboratorId);
+		var settlements = findSettlements(context, period, collaboratorId);
 
-		var totals = findTotals(
-				context,
-				period,
-				collaboratorId,
-				reportContext.referenceDate());
+		var totals = findTotals(context, period, collaboratorId, reportContext.referenceDate());
 
-		return createReport(
-				period,
-				reportContext,
-				totals,
-				assignments,
-				settlements);
+		return createReport(period, reportContext, totals, assignments, settlements);
 	}
 
 	private void validateInput(CollaboratorsReportInput input) {
@@ -69,114 +48,57 @@ public class FindCollaboratorsReport implements Usecase.Contextual<Collaborators
 		}
 	}
 
-	private PageResult<CollaboratorsReport.Assignment> findAssignments(
-			Usecase.Context context,
-			ReportPeriod period,
-			UUID collaboratorId,
-			LocalDate referenceDate) {
+	private PageResult<CollaboratorsReport.Assignment> findAssignments(Usecase.Context context, ReportPeriod period,
+			UUID collaboratorId, LocalDate referenceDate) {
 
-		return reports.assignments(
-				context.organizationId(),
-				period.from(),
-				period.to(),
-				period.customerId(),
-				collaboratorId,
-				period.page())
-				.map(row -> toAssignment(row, referenceDate));
+		return reports
+			.assignments(context.organizationId(), period.from(), period.to(), period.customerId(), collaboratorId,
+					period.page())
+			.map(row -> toAssignment(row, referenceDate));
 	}
 
-	private PageResult<CollaboratorsReport.Settlement> findSettlements(
-			Usecase.Context context,
-			ReportPeriod period,
+	private PageResult<CollaboratorsReport.Settlement> findSettlements(Usecase.Context context, ReportPeriod period,
 			UUID collaboratorId) {
 
-		return reports.settlements(
-				context.organizationId(),
-				period.from(),
-				period.to(),
-				period.customerId(),
-				collaboratorId,
-				period.page())
-				.map(this::toSettlement);
+		return reports
+			.settlements(context.organizationId(), period.from(), period.to(), period.customerId(), collaboratorId,
+					period.page())
+			.map(this::toSettlement);
 	}
 
-	private ReportReadRepository.CollaboratorTotals findTotals(
-			Usecase.Context context,
-			ReportPeriod period,
-			UUID collaboratorId,
-			LocalDate referenceDate) {
+	private ReportReadRepository.CollaboratorTotals findTotals(Usecase.Context context, ReportPeriod period,
+			UUID collaboratorId, LocalDate referenceDate) {
 
-		return reports.collaboratorTotals(
-				context.organizationId(),
-				period.from(),
-				period.to(),
-				period.customerId(),
-				collaboratorId,
-				referenceDate);
+		return reports.collaboratorTotals(context.organizationId(), period.from(), period.to(), period.customerId(),
+				collaboratorId, referenceDate);
 	}
 
-	private CollaboratorsReport createReport(
-			ReportPeriod period,
-			ReportContext reportContext,
-			ReportReadRepository.CollaboratorTotals totals,
-			PageResult<CollaboratorsReport.Assignment> assignments,
+	private CollaboratorsReport createReport(ReportPeriod period, ReportContext reportContext,
+			ReportReadRepository.CollaboratorTotals totals, PageResult<CollaboratorsReport.Assignment> assignments,
 			PageResult<CollaboratorsReport.Settlement> settlements) {
 
-		return new CollaboratorsReport(
-				period.from(),
-				period.to(),
-				reportContext.referenceDate(),
-				reportContext.timezone(),
-				reportContext.currencyCode(),
-				totals.allocated(),
-				totals.realizedAllocated(),
-				totals.futureAllocated(),
-				totals.pending(),
-				totals.realizedPending(),
-				totals.futurePending(),
-				totals.settlements(),
-				assignments,
-				settlements);
+		return new CollaboratorsReport(period.from(), period.to(), reportContext.referenceDate(),
+				reportContext.timezone(), reportContext.currencyCode(), totals.allocated(), totals.realizedAllocated(),
+				totals.futureAllocated(), totals.pending(), totals.realizedPending(), totals.futurePending(),
+				totals.settlements(), assignments, settlements);
 	}
 
-	private CollaboratorsReport.Assignment toAssignment(
-			ReportReadRepository.AssignmentRow row,
+	private CollaboratorsReport.Assignment toAssignment(ReportReadRepository.AssignmentRow row,
 			LocalDate referenceDate) {
 
-		var pendingAmount = row.allocatedAmount()
-				.subtract(row.activeSettlements());
+		var pendingAmount = row.allocatedAmount().subtract(row.activeSettlements());
 
-		var realized = ReportRealization.isRealized(
-				row.workStatus(),
-				row.serviceDate(),
-				referenceDate);
+		var realized = ReportRealization.isRealized(row.workStatus(), row.serviceDate(), referenceDate);
 
-		return new CollaboratorsReport.Assignment(
-				row.workOrderId(),
-				row.customerId(),
-				row.customerName(),
-				row.serviceDate(),
-				row.workStatus(),
-				row.collaboratorId(),
-				row.collaboratorName(),
-				row.allocatedAmount(),
-				row.activeSettlements(),
-				pendingAmount,
-				realized);
+		return new CollaboratorsReport.Assignment(row.workOrderId(), row.customerId(), row.customerName(),
+				row.serviceDate(), row.workStatus(), row.collaboratorId(), row.collaboratorName(),
+				row.allocatedAmount(), row.activeSettlements(), pendingAmount, realized);
 	}
 
-	private CollaboratorsReport.Settlement toSettlement(
-			ReportReadRepository.SettlementRow row) {
+	private CollaboratorsReport.Settlement toSettlement(ReportReadRepository.SettlementRow row) {
 
-		return new CollaboratorsReport.Settlement(
-				row.paymentId(),
-				row.workOrderId(),
-				row.customerId(),
-				row.customerName(),
-				row.serviceDate(),
-				row.collaboratorId(),
-				row.collaboratorName(),
-				row.paidOn(),
+		return new CollaboratorsReport.Settlement(row.paymentId(), row.workOrderId(), row.customerId(),
+				row.customerName(), row.serviceDate(), row.collaboratorId(), row.collaboratorName(), row.paidOn(),
 				row.amount());
 	}
 
