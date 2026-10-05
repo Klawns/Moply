@@ -1,7 +1,6 @@
 package com.klaus.moply.customers.infra.web.controller;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -25,6 +24,8 @@ import com.klaus.moply.customers.application.usecase.dto.UpdateCustomerLocationI
 import com.klaus.moply.customers.infra.web.dto.CustomerLocationRequest;
 import com.klaus.moply.customers.infra.web.dto.CustomerLocationResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.shared.infra.web.PageQueryRequest;
+import com.klaus.moply.shared.infra.web.dto.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -53,12 +54,17 @@ public class CustomerLocationController {
 	}
 
 	@GetMapping
-	public List<CustomerLocationResponse> locations(@AuthenticationPrincipal AccountPrincipal principal,
-			@PathVariable UUID customerId) {
-		return findLocations.execute(new Context(principal.getOrganizationId()), customerId)
-			.stream()
-			.map(CustomerLocationResponse::from)
-			.toList();
+	public PageResponse<CustomerLocationResponse> locations(@AuthenticationPrincipal AccountPrincipal principal,
+			@PathVariable UUID customerId,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer size,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) String sort,
+			@org.springframework.web.bind.annotation.RequestParam(required = false) String direction) {
+		return PageResponse.from(
+				findLocations.execute(new Context(principal.getOrganizationId()),
+						new FindCustomerLocations.Filter(customerId,
+								PageQueryRequest.toQuery(page, size, sort, direction))),
+				CustomerLocationResponse::from);
 	}
 
 	@GetMapping("/{locationId}")

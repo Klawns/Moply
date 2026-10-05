@@ -1,7 +1,6 @@
 package com.klaus.moply.customers.infra.web.controller;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
@@ -23,6 +23,8 @@ import com.klaus.moply.customers.application.usecase.dto.UpdateCustomerInput;
 import com.klaus.moply.customers.infra.web.dto.CreateCustomerRequest;
 import com.klaus.moply.customers.infra.web.dto.CustomerResponse;
 import com.klaus.moply.customers.infra.web.dto.UpdateCustomerRequest;
+import com.klaus.moply.shared.infra.web.PageQueryRequest;
+import com.klaus.moply.shared.infra.web.dto.PageResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import jakarta.validation.Valid;
@@ -50,11 +52,11 @@ public class CustomerController {
 	}
 
 	@GetMapping
-	public List<CustomerResponse> list(@AuthenticationPrincipal AccountPrincipal principal) {
-		return findAll.execute(new Context(principal.getOrganizationId()), null)
-			.stream()
-			.map(CustomerResponse::from)
-			.toList();
+	public PageResponse<CustomerResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+			@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
+			@RequestParam(required = false) String sort, @RequestParam(required = false) String direction) {
+		return PageResponse.from(findAll.execute(new Context(principal.getOrganizationId()),
+				PageQueryRequest.toQuery(page, size, sort, direction)), CustomerResponse::from);
 	}
 
 	@GetMapping("/{customerId}")

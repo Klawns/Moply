@@ -113,7 +113,16 @@ class CustomerApiIntegrationTest {
 			.andExpect(jsonPath("$.locations[0].id").value(initialLocationId.toString()));
 		mvc.perform(get("/api/v1/customers"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].id").value(customerId));
+			.andExpect(jsonPath("$.content[0].id").value(customerId))
+			.andExpect(jsonPath("$.totalElements").value(1));
+		mvc.perform(get("/api/v1/customers").param("page", "1").param("size", "1"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content.length()").value(0))
+			.andExpect(jsonPath("$.page").value(1))
+			.andExpect(jsonPath("$.totalElements").value(1))
+			.andExpect(jsonPath("$.totalPages").value(1));
+		mvc.perform(get("/api/v1/customers").param("size", "101")).andExpect(status().isBadRequest());
+		mvc.perform(get("/api/v1/customers").param("sort", "notes")).andExpect(status().isBadRequest());
 		mvc.perform(post("/api/v1/customers/" + customerId + "/locations").contentType(MediaType.APPLICATION_JSON)
 			.content("""
 					{"name":"Escritório","address":"Rua A"}
@@ -128,7 +137,15 @@ class CustomerApiIntegrationTest {
 			.andExpect(jsonPath("$.address").value("Rua B"));
 		mvc.perform(get("/api/v1/customers/" + customerId + "/locations"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(2));
+			.andExpect(jsonPath("$.content.length()").value(2))
+			.andExpect(jsonPath("$.totalElements").value(2))
+			.andExpect(jsonPath("$.totalPages").value(1));
+		mvc.perform(get("/api/v1/customers/" + customerId + "/locations").param("page", "1").param("size", "1"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content.length()").value(1))
+			.andExpect(jsonPath("$.page").value(1))
+			.andExpect(jsonPath("$.totalElements").value(2))
+			.andExpect(jsonPath("$.totalPages").value(2));
 		String orderId = mvc
 			.perform(post("/api/v1/work-orders").contentType(MediaType.APPLICATION_JSON)
 				.content(
@@ -153,15 +170,18 @@ class CustomerApiIntegrationTest {
 			.param("to", "2026-09-28")
 			.param("customerId", UUID.randomUUID().toString()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(0));
+			.andExpect(jsonPath("$.content.length()").value(0))
+			.andExpect(jsonPath("$.totalElements").value(0));
 		mvc.perform(get("/api/v1/work-orders").param("from", "2026-09-28").param("to", "2026-09-28"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].customer").value("Maria Silva"));
+			.andExpect(jsonPath("$.content[0].customer").value("Maria Silva"));
 		assertEquals(UUID.fromString(customerId), loaded.customerId());
 		assertEquals(1, loaded.participantCount());
 		mvc.perform(get("/api/v1/work-orders").param("from", "2026-09-28")
 			.param("to", "2026-09-28")
-			.param("customerId", customerId)).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(orderId));
+			.param("customerId", customerId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].id").value(orderId));
 	}
 
 	@Test
@@ -210,7 +230,9 @@ class CustomerApiIntegrationTest {
 							"""
 						.formatted(participant())))
 			.andExpect(status().isBadRequest());
-		assertTrue(customers.findAll(ACCOUNT).isEmpty());
+		assertEquals(0,
+				customers.findAll(ACCOUNT, new com.klaus.moply.shared.application.pagination.PageQuery(0, 20, null))
+					.totalElements());
 	}
 
 	@Test
