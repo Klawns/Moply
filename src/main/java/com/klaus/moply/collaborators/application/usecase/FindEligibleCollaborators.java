@@ -16,7 +16,7 @@ public class FindEligibleCollaborators implements Usecase.Contextual<Void, List<
 
 	@Override
 	public List<CollaboratorOutput> execute(Context context, Void input) {
-		return repo.findAll(context.organizationId(), true).stream().map(CollaboratorOutput::fromDomain).toList();
+		return repo.findAllActive(context.organizationId()).stream().map(CollaboratorOutput::fromDomain).toList();
 	}
 
 }

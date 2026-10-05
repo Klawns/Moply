@@ -17,6 +17,8 @@ import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
 import com.klaus.moply.factory.CollaboratorFactory;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
 
 class CollaboratorUsecasesTest {
 
@@ -43,15 +45,24 @@ class CollaboratorUsecasesTest {
 	void shouldFindAndFilterWithinAccountIncludingDedicatedEligibilityQuery() {
 		var saved = CollaboratorFactory.persisted(account);
 		when(repo.findById(account, saved.getId())).thenReturn(Optional.of(saved));
-		when(repo.findAll(account, null)).thenReturn(List.of(saved, saved.deactivate()));
-		when(repo.findAll(account, true)).thenReturn(List.of(saved));
-		when(repo.findAll(account, false)).thenReturn(List.of(saved.deactivate()));
+		when(repo.findAll(account, null, PageQuery.defaults()))
+			.thenReturn(new PageResult<>(List.of(saved, saved.deactivate()), 0, 20, 2, 1));
+		when(repo.findAll(account, false, PageQuery.defaults()))
+			.thenReturn(new PageResult<>(List.of(saved.deactivate()), 0, 20, 1, 1));
+		when(repo.findAllActive(account)).thenReturn(List.of(saved));
 		assertEquals(saved.getId(), new FindCollaboratorById(repo).execute(new Context(account), saved.getId()).id());
-		assertEquals(2, new FindAllCollaborators(repo).execute(new Context(account), null).size());
-		assertFalse(new FindAllCollaborators(repo).execute(new Context(account), false).getFirst().active());
+		assertEquals(2,
+				new FindAllCollaborators(repo)
+					.execute(new Context(account), new FindAllCollaborators.Filter(null, PageQuery.defaults()))
+					.totalElements());
+		assertFalse(new FindAllCollaborators(repo)
+			.execute(new Context(account), new FindAllCollaborators.Filter(false, PageQuery.defaults()))
+			.content()
+			.getFirst()
+			.active());
 		assertEquals(List.of(CollaboratorOutput.fromDomain(saved)),
 				new FindEligibleCollaborators(repo).execute(new Context(account), null));
-		verify(repo).findAll(account, true);
+		verify(repo).findAllActive(account);
 	}
 
 	@Test

@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
 
 public interface CollaboratorRepository {
 
@@ -12,6 +14,8 @@ public interface CollaboratorRepository {
 
 	Optional<Collaborator> findById(UUID organizationId, UUID id);
 
-	List<Collaborator> findAll(UUID organizationId, Boolean active);
+	PageResult<Collaborator> findAll(UUID organizationId, Boolean active, PageQuery page);
+
+	List<Collaborator> findAllActive(UUID organizationId);
 
 }
