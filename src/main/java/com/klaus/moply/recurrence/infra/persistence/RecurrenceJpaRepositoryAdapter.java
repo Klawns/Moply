@@ -33,7 +33,27 @@ public class RecurrenceJpaRepositoryAdapter implements RecurrenceRepository {
 
 	@Transactional(propagation = Propagation.MANDATORY)
 	public RecurrenceSeries lock(UUID account, UUID id) {
+		var family = repository.findFamilyId(account, id).orElseThrow(SeriesNotFoundException::new);
+		repository.lock(account, family).orElseThrow(SeriesNotFoundException::new);
 		return repository.lock(account, id).orElseThrow(SeriesNotFoundException::new).toDomain();
+	}
+
+	@Transactional(propagation = Propagation.MANDATORY)
+	public List<RecurrenceSeries> lockFamily(UUID account, UUID seriesId) {
+		var family = repository.findFamilyId(account, seriesId).orElseThrow(SeriesNotFoundException::new);
+		repository.lock(account, family).orElseThrow(SeriesNotFoundException::new);
+		return repository.familyIds(account, family)
+			.stream()
+			.map(id -> repository.lock(account, id).orElseThrow(SeriesNotFoundException::new).toDomain())
+			.toList();
+	}
+
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void close(RecurrenceSeries series) {
+		var entity = repository.findByOrganizationIdAndId(series.getOrganizationId(), series.getId())
+			.orElseThrow(SeriesNotFoundException::new);
+		entity.closeAt(series.getLineage().untilPosition());
+		repository.saveAndFlush(entity);
 	}
 
 	public List<Reference> nextBatch(UUID after, int size) {

@@ -19,6 +19,12 @@ public interface RecurrenceSeriesJpaRepository extends JpaRepository<RecurrenceS
 	@Query("select s.id as id, s.organizationId as organizationId from RecurrenceSeriesEntity s where s.id > :after order by s.id")
 	List<Reference> nextBatch(UUID after, Pageable pageable);
 
+	@Query("select s.familyId from RecurrenceSeriesEntity s where s.organizationId=:account and s.id=:id")
+	Optional<UUID> findFamilyId(UUID account, UUID id);
+
+	@Query("select s.id from RecurrenceSeriesEntity s where s.organizationId=:account and s.familyId=:family order by s.id")
+	List<UUID> familyIds(UUID account, UUID family);
+
 	interface Reference {
 
 		UUID getId();

@@ -1,5 +1,7 @@
 package com.klaus.moply.recurrence.infra.persistence;
 
+import com.klaus.moply.recurrence.domain.vo.SeriesVersion;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -66,6 +68,22 @@ public class RecurrenceSeriesEntity {
 	@Column(name = "initial_status", nullable = false, length = 20)
 	private WorkOrderStatus initialStatus;
 
+	@Column(name = "family_id", nullable = false)
+	private UUID familyId;
+
+	@Column(name = "previous_series_id")
+	private UUID previousSeriesId;
+
+	@Column(name = "first_position", nullable = false)
+	private long firstPosition;
+
+	@Column(name = "until_position")
+	private Long untilPosition;
+
+	public void closeAt(Long position) {
+		this.untilPosition = position;
+	}
+
 	@Version
 	private Long version;
 
@@ -77,6 +95,10 @@ public class RecurrenceSeriesEntity {
 		var e = new RecurrenceSeriesEntity();
 		var t = s.getTemplate();
 		e.id = s.getId();
+		e.familyId = s.getLineage().familyId();
+		e.previousSeriesId = s.getLineage().previousSeriesId();
+		e.firstPosition = s.getLineage().firstPosition();
+		e.untilPosition = s.getLineage().untilPosition();
 		e.organizationId = s.getOrganizationId();
 		e.frequency = s.getFrequency();
 		e.startsOn = s.getPeriod().startsOn();
@@ -101,7 +123,8 @@ public class RecurrenceSeriesEntity {
 						new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
 						new RecurrenceParticipants(
 								members.stream().map(RecurrenceMemberEntity::getCollaboratorId).toList()),
-						initialStatus));
+						initialStatus),
+				new SeriesVersion(familyId, previousSeriesId, firstPosition, untilPosition));
 	}
 
 }
