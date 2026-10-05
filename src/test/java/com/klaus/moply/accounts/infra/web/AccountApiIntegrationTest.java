@@ -196,8 +196,8 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 		}
 		mvc.perform(get("/api/v1/customers").cookie(a))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(1))
-			.andExpect(jsonPath("$[0].id").value(ca));
+			.andExpect(jsonPath("$.totalElements").value(1))
+			.andExpect(jsonPath("$.content[0].id").value(ca));
 		for (String path : new String[] { "/api/v1/customers/" + cb, "/api/v1/customers/" + cb + "/locations",
 				"/api/v1/customers/" + cb + "/locations/" + lb, "/api/v1/customers/" + ca + "/locations/" + lb,
 				"/api/v1/work-orders/" + ob }) {
@@ -226,8 +226,9 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 				request.param("customerId", ca);
 			mvc.perform(request)
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(1))
-				.andExpect(jsonPath("$[0].id").value(oa));
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].id").value(oa))
+				.andExpect(jsonPath("$.totalElements").value(1));
 		}
 		mvc.perform(put("/api/v1/customers/" + ca + "/locations/" + la).cookie(a, ta.cookie())
 			.header(ta.header(), ta.value())
@@ -458,7 +459,8 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 		UUID aid = UUID.fromString(json(mvc.perform(get("/api/v1/auth/me").cookie(a)).andReturn(), "$.organizationId"));
 		UUID bid = UUID.fromString(json(mvc.perform(get("/api/v1/auth/me").cookie(b)).andReturn(), "$.organizationId"));
 		var original = customers.save(aid, com.klaus.moply.customers.domain.entities.Customer.create("Maria"));
-		assertTrue(customers.findAll(bid).isEmpty());
+		assertEquals(0, customers.findAll(bid, new com.klaus.moply.shared.application.pagination.PageQuery(0, 20, null))
+			.totalElements());
 		assertTrue(customers.findById(bid, original.getId()).isEmpty());
 		assertThrows(com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException.class,
 				() -> customers.save(bid, original.update("Wrong", null, null, null)));
