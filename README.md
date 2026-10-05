@@ -58,8 +58,9 @@ Fluxo HTTP, preservando cookies entre requisições:
    CSRF após login. JWT nunca aparece no corpo da resposta.
 4. `GET /api/v1/auth/me` retorna IDs/e-mail. `GET /api/v1/accounts/me` e
    `/api/v1/accounts/me/preferences` retornam preferências e hoje no fuso da conta.
-   `PUT /api/v1/accounts/me/preferences` altera `timezone` e `defaultWorkStatus`
-   (`SCHEDULED`/`COMPLETED`), retorna 204. GBP permanece fixa.
+   `PUT /api/v1/accounts/me/preferences` altera `timezone`, `defaultWorkStatus`
+   (`SCHEDULED`/`COMPLETED`) e o valor opcional `defaultHourlyRate`; retorna 204.
+   GBP permanece fixa.
 5. APIs de clientes, locais e `/api/v1/work-orders` estão liberadas para a
    conta autenticada. Conta enviada no payload não muda o escopo. Consultas,
    alterações e referências a recursos alheios retornam 404. Trabalhos não têm exclusão pública.
@@ -341,7 +342,7 @@ Séries são percorridas em lotes de 100. Cada tentativa possui transação e bl
 
 V14 adiciona séries, participantes ordenados e identidade de ocorrência. V1–V13 permanecem intactas. A unicidade por série/data original impede duplicação, inclusive após cancelamento ou reagendamento. Respostas de trabalhos incluem `recurrenceSeriesId` e `occurrenceDate`; a data operacional continua em `serviceDate`.
 
-Cada ocorrência recebe novas atribuições e parcelas calculadas pelo contrato público de criação de trabalhos. Nenhum pagamento, acerto, reversão ou chave financeira é copiado. Trabalho futuro pode nascer concluído, mas permanece projeção e não antecipa operações financeiras.
+Cada ocorrência recebe novas atribuições com as condições financeiras aprovadas e congeladas na criação da série. Séries históricas sem snapshot mantêm o rateio antigo. Nenhum pagamento, acerto, reversão ou chave financeira é copiado. Trabalho futuro pode nascer concluído, mas permanece projeção e não antecipa operações financeiras.
 
 ### Ajustes financeiros anteriores, separados do módulo novo
 
@@ -581,3 +582,13 @@ Nos relatórios, `works` permite `sort=serviceDate|status|id`, `payments` e
 `settlements` permitem `sort=paidOn|amount|id`, e `assignments` permite
 `sort=collaboratorName|serviceDate|id`. A direção e o desempate seguem o
 contrato comum; cada envelope detalhado expõe seus próprios totais de itens.
+
+## Valores por hora opcionais e confirmação de rateio
+
+A [jornada do usuário na API](docs/jornada-do-usuario-api.md) documenta `hourlyRate`
+opcional nos colaboradores, `defaultHourlyRate` nas preferências da organização,
+a prévia `POST /api/v1/work-orders/pricing-preview` e a confirmação por
+`acceptedPricingFingerprint` ao criar trabalhos e séries. Tarifas diferentes
+calculam bases individuais e dividem igualmente a sobra; bases acima do preço
+bloqueiam a criação. Tarifas iguais preservam o rateio anterior. A migration V16
+adiciona os campos e snapshots sem recalcular dados históricos.
