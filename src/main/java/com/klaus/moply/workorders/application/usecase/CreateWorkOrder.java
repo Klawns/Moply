@@ -18,6 +18,10 @@ import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
 import com.klaus.moply.workorders.application.usecase.dto.WorkOrderOutput;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
 
 import lombok.RequiredArgsConstructor;
 
@@ -69,8 +73,10 @@ public class CreateWorkOrder implements Usecase.Contextual<CreateWorkOrderInput,
 	}
 
 	private WorkOrder createWorkOrder(CreateWorkOrderInput input, WorkOrderStatus status) {
-		return WorkOrder.create(input.customerId(), input.customerLocationId(), input.serviceDate(), input.startTime(),
-				input.description(), input.contractedHours(), input.hourlyRate(), input.participantIds(), status);
+		return WorkOrder.create(input.customerId(), input.customerLocationId(),
+				new WorkOrderSchedule(input.serviceDate(), input.startTime()),
+				new WorkOrderDescription(input.description()), new DurationHours(input.contractedHours()),
+				new HourlyRate(input.hourlyRate()), input.participantIds(), status);
 	}
 
 	private Customer findCustomer(UUID organizationId, UUID customerId) {
