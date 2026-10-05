@@ -36,11 +36,7 @@ public class ListCollaboratorPayments
 
 		validateCollaboratorAssignment(workOrder, input.collaboratorId());
 
-		return payments.findAll(
-				context.organizationId(),
-				input.workOrderId(),
-				input.collaboratorId(),
-				input.page());
+		return payments.findAll(context.organizationId(), input.workOrderId(), input.collaboratorId(), input.page());
 	}
 
 	private void validateInput(Input input) {
@@ -51,13 +47,13 @@ public class ListCollaboratorPayments
 
 	private WorkOrder findWorkOrder(Usecase.Context context, UUID workOrderId) {
 		return workOrders.findById(context.organizationId(), workOrderId)
-				.orElseThrow(() -> new WorkOrderNotFoundException(workOrderId));
+			.orElseThrow(() -> new WorkOrderNotFoundException(workOrderId));
 	}
 
 	private void validateCollaboratorAssignment(WorkOrder workOrder, UUID collaboratorId) {
 		var isAssigned = workOrder.assignments()
-				.stream()
-				.anyMatch(assignment -> assignment.collaboratorId().equals(collaboratorId));
+			.stream()
+			.anyMatch(assignment -> assignment.collaboratorId().equals(collaboratorId));
 
 		if (!isAssigned) {
 			throw new DomainException("Colaborador não participa deste trabalho.");
