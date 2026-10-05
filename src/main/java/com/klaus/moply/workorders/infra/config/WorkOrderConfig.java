@@ -1,17 +1,17 @@
 package com.klaus.moply.workorders.infra.config;
 
-import java.time.Clock;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
+import com.klaus.moply.workorders.application.ports.WorkOrderOccurrences;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.application.usecase.CompleteWorkOrder;
 import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
+import com.klaus.moply.workorders.application.usecase.FindWorkOccurrence;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrders;
 
@@ -19,19 +19,24 @@ import com.klaus.moply.workorders.application.usecase.FindWorkOrders;
 public class WorkOrderConfig {
 
 	@Bean
-	CreateWorkOrder createWorkOrder(WorkOrderRepository r, CustomerRepository c, CollaboratorRepository p,
-			OrganizationRepository a) {
-		return new CreateWorkOrder(r, c, p, a);
+	FindWorkOccurrence findWorkOccurrence(WorkOrderOccurrences occurrences) {
+		return new FindWorkOccurrence(occurrences);
 	}
 
 	@Bean
-	FindWorkOrderById findWorkOrderById(WorkOrderRepository r, CustomerRepository c) {
-		return new FindWorkOrderById(r, c);
+	CreateWorkOrder createWorkOrder(WorkOrderRepository repository, CustomerRepository customers,
+			CollaboratorRepository collaborators, OrganizationRepository organizations) {
+		return new CreateWorkOrder(repository, customers, collaborators, organizations);
 	}
 
 	@Bean
-	FindWorkOrders findWorkOrders(WorkOrderRepository r, CustomerRepository c) {
-		return new FindWorkOrders(r, c);
+	FindWorkOrderById findWorkOrderById(WorkOrderRepository repository, CustomerRepository customers) {
+		return new FindWorkOrderById(repository, customers);
+	}
+
+	@Bean
+	FindWorkOrders findWorkOrders(WorkOrderRepository repository, CustomerRepository customers) {
+		return new FindWorkOrders(repository, customers);
 	}
 
 	@Bean
