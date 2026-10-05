@@ -1,36 +1,67 @@
 package com.klaus.moply.payments.application.usecase;
 
-import java.util.List;
 import java.util.UUID;
 
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.domain.Payment;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.usecase.Usecase;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.application.usecase.exception.WorkOrderNotFoundException;
+import com.klaus.moply.workorders.domain.entity.WorkOrder;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ListCollaboratorPayments implements Usecase.Contextual<ListCollaboratorPayments.Input, List<Payment>> {
+public class ListCollaboratorPayments
+		implements Usecase.Contextual<ListCollaboratorPayments.Input, PageResult<Payment>> {
 
 	private final CollaboratorPaymentRepository payments;
 
 	private final WorkOrderRepository workOrders;
 
-	public record Input(UUID workOrderId, UUID collaboratorId) {
+	public record Input(UUID workOrderId, UUID collaboratorId, PageQuery page) {
+		public Input(UUID workOrderId, UUID collaboratorId) {
+			this(workOrderId, collaboratorId, PageQuery.defaults());
+		}
 	}
 
 	@Override
-	public List<Payment> execute(Usecase.Context context, Input input) {
-		if (input == null || input.workOrderId() == null || input.collaboratorId() == null)
+	public PageResult<Payment> execute(Usecase.Context context, Input input) {
+		validateInput(input);
+
+		var workOrder = findWorkOrder(context, input.workOrderId());
+
+		validateCollaboratorAssignment(workOrder, input.collaboratorId());
+
+		return payments.findAll(
+				context.organizationId(),
+				input.workOrderId(),
+				input.collaboratorId(),
+				input.page());
+	}
+
+	private void validateInput(Input input) {
+		if (input == null || input.workOrderId() == null || input.collaboratorId() == null) {
 			throw new DomainException("Trabalho e colaborador são obrigatórios.");
-		var work = workOrders.findById(context.organizationId(), input.workOrderId())
-			.orElseThrow(() -> new WorkOrderNotFoundException(input.workOrderId()));
-		if (work.assignments().stream().noneMatch(a -> a.collaboratorId().equals(input.collaboratorId())))
+		}
+	}
+
+	private WorkOrder findWorkOrder(Usecase.Context context, UUID workOrderId) {
+		return workOrders.findById(context.organizationId(), workOrderId)
+				.orElseThrow(() -> new WorkOrderNotFoundException(workOrderId));
+	}
+
+	private void validateCollaboratorAssignment(WorkOrder workOrder, UUID collaboratorId) {
+		var isAssigned = workOrder.assignments()
+				.stream()
+				.anyMatch(assignment -> assignment.collaboratorId().equals(collaboratorId));
+
+		if (!isAssigned) {
 			throw new DomainException("Colaborador não participa deste trabalho.");
-		return payments.findAll(context.organizationId(), input.workOrderId(), input.collaboratorId());
+		}
 	}
 
 }

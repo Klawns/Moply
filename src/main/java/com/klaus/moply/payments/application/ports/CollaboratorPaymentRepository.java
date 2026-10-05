@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.klaus.moply.payments.domain.Payment;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
 
 public interface CollaboratorPaymentRepository {
 
@@ -16,6 +18,8 @@ public interface CollaboratorPaymentRepository {
 	Optional<RecordedPayment> findById(UUID organizationId, UUID paymentId);
 
 	Optional<UUID> findWorkOrderIdByPayment(UUID organizationId, UUID paymentId);
+
+	PageResult<Payment> findAll(UUID organizationId, UUID workOrderId, UUID collaboratorId, PageQuery page);
 
 	List<Payment> findAll(UUID organizationId, UUID workOrderId, UUID collaboratorId);
 
