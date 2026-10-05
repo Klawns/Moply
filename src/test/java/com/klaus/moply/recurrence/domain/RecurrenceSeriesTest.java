@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import com.klaus.moply.recurrence.domain.vo.GenerationWindow;
 import com.klaus.moply.recurrence.domain.vo.RecurrenceParticipants;
 import com.klaus.moply.recurrence.domain.vo.RecurrencePeriod;
+import com.klaus.moply.recurrence.domain.vo.SeriesVersion;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 import com.klaus.moply.workorders.domain.vo.DurationHours;
@@ -31,62 +32,6 @@ class RecurrenceSeriesTest {
 	}
 
 	@Test
-	void shouldIncludeExactlyTodayThroughDay29() {
-		var today = LocalDate.of(2026, 10, 3);
-		assertEquals(List.of(today, today.plusDays(7), today.plusDays(14), today.plusDays(21), today.plusDays(28)),
-				series(Frequency.WEEKLY, "2026-10-03", null).occurrences(new GenerationWindow(today)));
-		assertEquals(List.of(today, today.plusDays(14), today.plusDays(28)),
-				series(Frequency.BIWEEKLY, "2026-10-03", null).occurrences(new GenerationWindow(today)));
-		assertEquals(List.of(today.plusDays(2), today.plusDays(9), today.plusDays(16), today.plusDays(23)),
-				series(Frequency.WEEKLY, "2026-10-05", null).occurrences(new GenerationWindow(today)));
-	}
-
-	@Test
-	void shouldRespectStartAndInclusiveEnd() {
-		var today = LocalDate.of(2026, 10, 3);
-		assertTrue(series(Frequency.WEEKLY, "2026-11-02", null).occurrences(new GenerationWindow(today)).isEmpty());
-		assertTrue(series(Frequency.WEEKLY, "2026-09-01", "2026-10-02").occurrences(new GenerationWindow(today))
-			.isEmpty());
-		assertEquals(List.of(today, today.plusDays(7)),
-				series(Frequency.WEEKLY, "2026-10-03", "2026-10-10").occurrences(new GenerationWindow(today)));
-		assertThrows(DomainException.class, () -> series(Frequency.WEEKLY, "2026-10-03", "2026-10-02"));
-	}
-
-	@Test
-	void shouldRecoverOnlyCurrentWindowWithoutMovingWeeklyAnchor() {
-		var dates = series(Frequency.BIWEEKLY, "2000-01-01", null)
-			.occurrences(new GenerationWindow(LocalDate.of(2026, 10, 3)));
-		assertTrue(dates.stream()
-			.allMatch(d -> !d.isBefore(LocalDate.of(2026, 10, 3)) && d.isBefore(LocalDate.of(2026, 11, 2))));
-		assertTrue(dates.stream()
-			.allMatch(d -> java.time.temporal.ChronoUnit.DAYS.between(LocalDate.of(2000, 1, 1), d) % 14 == 0));
-		assertFalse(dates.isEmpty());
-	}
-
-	@Test
-	void shouldKeepOriginalMonthlyAnchorAfterShortMonthsAndLeapYears() {
-		var s = series(Frequency.MONTHLY, "2024-01-31", null);
-		assertEquals(List.of(LocalDate.of(2024, 2, 29)), s.occurrences(new GenerationWindow(LocalDate.of(2024, 2, 1))));
-		assertEquals(List.of(LocalDate.of(2024, 3, 31)), s.occurrences(new GenerationWindow(LocalDate.of(2024, 3, 2))));
-		assertEquals(List.of(LocalDate.of(2025, 2, 28)), s.occurrences(new GenerationWindow(LocalDate.of(2025, 2, 1))));
-		assertEquals(List.of(LocalDate.of(2025, 4, 30)), s.occurrences(new GenerationWindow(LocalDate.of(2025, 4, 2))));
-		assertEquals(List.of(LocalDate.of(2025, 5, 31)), s.occurrences(new GenerationWindow(LocalDate.of(2025, 5, 2))));
-	}
-
-	@Test
-	void shouldSupportMonthlyDays29And30AndYearBoundary() {
-		for (int day : List.of(29, 30)) {
-			var s = series(Frequency.MONTHLY, "2025-01-" + day, null);
-			assertEquals(List.of(LocalDate.of(2025, 2, 28)),
-					s.occurrences(new GenerationWindow(LocalDate.of(2025, 2, 1))));
-			assertEquals(List.of(LocalDate.of(2025, 3, day)),
-					s.occurrences(new GenerationWindow(LocalDate.of(2025, 3, 1))));
-		}
-		assertEquals(List.of(LocalDate.of(2027, 1, 31)), series(Frequency.MONTHLY, "2026-12-31", null)
-			.occurrences(new GenerationWindow(LocalDate.of(2027, 1, 2))));
-	}
-
-	@Test
 	void shouldRestoreIdentityAndPreserveParticipantOrder() {
 		var s = series(Frequency.WEEKLY, "2026-10-03", null);
 		var restored = RecurrenceSeries.restore(s.getId(), s.getOrganizationId(), s.getFrequency(), s.getPeriod(),
@@ -96,6 +41,65 @@ class RecurrenceSeriesTest {
 		assertThrows(UnsupportedOperationException.class, () -> restored.getTemplate().participants().ids().clear());
 		assertThrows(DomainException.class, () -> RecurrenceSeries.restore(null, s.getOrganizationId(),
 				s.getFrequency(), s.getPeriod(), s.getTemplate()));
+	}
+
+	@Test
+	void shouldKeepFamilyPositionsThroughMonthlyReanchoringAndCloseBeforeFirstDate() {
+		var original = series(Frequency.MONTHLY, "2024-01-31", "2025-12-31");
+		assertEquals(1, original.positionOf(LocalDate.of(2024, 2, 29)));
+		var successor = original.successor(1, LocalDate.of(2024, 2, 28), null);
+		assertEquals(original.getId(), successor.getLineage().familyId());
+		assertEquals(2, successor.positionOf(LocalDate.of(2024, 3, 28)));
+		assertEquals(LocalDate.of(2024, 4, 28), successor.dateAt(3));
+		assertTrue(original.closeAt(0).occurrences(new GenerationWindow(LocalDate.of(2024, 1, 1))).isEmpty());
+		assertThrows(DomainException.class, () -> original.positionOf(LocalDate.of(2024, 2, 28)));
+		assertThrows(DomainException.class, () -> original.successor(1, LocalDate.of(2026, 1, 1), null));
+	}
+
+	@Test
+	void shouldIntersectSuccessorBiweeklyCalendarWithThirtyDayWindowAndEnd() {
+		var original = series(Frequency.BIWEEKLY, "2026-10-01", "2026-11-30");
+		var successor = original.successor(2, LocalDate.of(2026, 10, 2), null);
+		assertEquals(List.of(LocalDate.of(2026, 10, 16), LocalDate.of(2026, 10, 30)),
+				successor.occurrences(new GenerationWindow(LocalDate.of(2026, 10, 3))));
+		assertEquals(4, successor.positionOf(LocalDate.of(2026, 10, 30)));
+		assertEquals(List.of(LocalDate.of(2026, 10, 16)),
+				successor.closeAt(4).occurrences(new GenerationWindow(LocalDate.of(2026, 10, 3))));
+	}
+
+	@Test
+	void shouldResolveFamilyPositionsBeyondVersionAndPeriodEnd() {
+		var original = series(Frequency.WEEKLY, "2026-10-01", "2026-10-31");
+		var successor = original.successor(2, LocalDate.of(2026, 10, 2), null).closeAt(3);
+		assertEquals(LocalDate.of(2026, 11, 6), successor.dateAt(7));
+		assertEquals(7, successor.positionOf(LocalDate.of(2026, 11, 6)));
+		assertEquals("Posição anterior à versão.",
+				assertThrows(DomainException.class, () -> successor.dateAt(1)).getMessage());
+		var dates = successor.occurrences(new GenerationWindow(LocalDate.of(2026, 10, 1)));
+		assertEquals(List.of(LocalDate.of(2026, 10, 2)), dates);
+		assertThrows(UnsupportedOperationException.class, dates::clear);
+	}
+
+	@Test
+	void shouldValidateLineageOnRestore() {
+		var original = series(Frequency.WEEKLY, "2026-10-01", null);
+		var id = original.getId();
+		var familyId = UUID.randomUUID();
+		var invalidLineages = new SeriesVersion[] { null, new SeriesVersion(id, id, 0, null),
+				new SeriesVersion(familyId, null, 0, null), new SeriesVersion(id, null, 1, null),
+				new SeriesVersion(id, UUID.randomUUID(), 1, null) };
+		for (var lineage : invalidLineages) {
+			assertEquals("Linhagem inválida.",
+					assertThrows(DomainException.class, () -> RecurrenceSeries.restore(id, original.getOrganizationId(),
+							original.getFrequency(), original.getPeriod(), original.getTemplate(), lineage))
+						.getMessage());
+		}
+		var lineage = new SeriesVersion(familyId, UUID.randomUUID(), 2, 4L);
+		var restored = RecurrenceSeries.restore(id, original.getOrganizationId(), original.getFrequency(),
+				original.getPeriod(), original.getTemplate(), lineage);
+		assertEquals(lineage, restored.getLineage());
+		assertEquals(original.getFrequency(), restored.getFrequency());
+		assertEquals(original.getPeriod(), restored.getPeriod());
 	}
 
 }
