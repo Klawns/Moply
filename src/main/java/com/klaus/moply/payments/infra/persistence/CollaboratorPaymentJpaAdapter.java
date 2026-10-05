@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.payments.domain.Payment;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
+import com.klaus.moply.shared.infra.persistence.PageableMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,6 +55,14 @@ public class CollaboratorPaymentJpaAdapter implements CollaboratorPaymentReposit
 	public Optional<UUID> findWorkOrderIdByPayment(UUID organizationId, UUID paymentId) {
 		return repository.findByOrganizationIdAndId(organizationId, paymentId)
 			.map(CollaboratorPaymentEntity::getWorkOrderId);
+	}
+
+	@Override
+	public PageResult<Payment> findAll(UUID organizationId, UUID workOrderId, UUID collaboratorId, PageQuery page) {
+		var result = repository.findAllByOrganizationIdAndWorkOrderIdAndCollaboratorId(organizationId, workOrderId,
+				collaboratorId, PageableMapper.toPageable(page,
+						java.util.Set.of("recordedAt", "paidOn", "amount", "status", "id"), "recordedAt"));
+		return PageableMapper.toResult(result, CollaboratorPaymentEntity::toDomain);
 	}
 
 	@Override

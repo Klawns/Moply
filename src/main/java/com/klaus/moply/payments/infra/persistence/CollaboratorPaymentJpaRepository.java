@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 
 import com.klaus.moply.payments.domain.Payment;
@@ -16,6 +18,9 @@ public interface CollaboratorPaymentJpaRepository extends JpaRepository<Collabor
 			String idempotencyKey);
 
 	Optional<CollaboratorPaymentEntity> findByOrganizationIdAndId(UUID organizationId, UUID id);
+
+	Page<CollaboratorPaymentEntity> findAllByOrganizationIdAndWorkOrderIdAndCollaboratorId(UUID organizationId,
+			UUID workOrderId, UUID collaboratorId, Pageable pageable);
 
 	List<CollaboratorPaymentEntity> findAllByOrganizationIdAndWorkOrderIdAndCollaboratorIdOrderByRecordedAtAsc(
 			UUID organizationId, UUID workOrderId, UUID collaboratorId);

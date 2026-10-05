@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.payments.domain.Payment;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
+import com.klaus.moply.shared.infra.persistence.PageableMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,6 +53,13 @@ public class PaymentJpaAdapter implements WorkOrderPaymentRepository {
 	@Override
 	public Optional<UUID> findWorkOrderIdByPayment(UUID organizationId, UUID paymentId) {
 		return repository.findByOrganizationIdAndId(organizationId, paymentId).map(PaymentEntity::getWorkOrderId);
+	}
+
+	@Override
+	public PageResult<Payment> findAllByWork(UUID organizationId, UUID workOrderId, PageQuery page) {
+		var result = repository.findAllByOrganizationIdAndWorkOrderId(organizationId, workOrderId, PageableMapper
+			.toPageable(page, java.util.Set.of("recordedAt", "paidOn", "amount", "status", "id"), "recordedAt"));
+		return PageableMapper.toResult(result, PaymentEntity::toDomain);
 	}
 
 	@Override
