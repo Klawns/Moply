@@ -12,6 +12,11 @@ import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 import com.klaus.moply.workorders.domain.vo.DurationHours;
 import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.OccurrenceIdentity;
+import com.klaus.moply.workorders.domain.vo.WorkOrderAssignments;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderPricing;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -25,7 +30,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -93,35 +97,36 @@ public class WorkOrderEntity {
 	private List<WorkAssignmentEntity> assignments = new ArrayList<>();
 
 	public static WorkOrderEntity from(UUID organizationId, WorkOrder work) {
-		var e = new WorkOrderEntity();
-		e.organizationId = organizationId;
-		e.customerId = work.customerId();
-		e.customerLocationId = work.customerLocationId();
-		e.serviceDate = work.serviceDate();
-		e.startTime = work.startTime();
-		e.description = work.description();
-		e.contractedHours = work.contractedHours().value();
-		e.hourlyRate = work.hourlyRate().value();
-		e.currencyCode = work.currencyCode();
-		e.totalAmount = work.totalAmount().value();
-		e.allocationPolicyVersion = work.allocationPolicyVersion();
-		e.status = work.status();
+		var entity = new WorkOrderEntity();
+		entity.organizationId = organizationId;
+		entity.customerId = work.customerId();
+		entity.customerLocationId = work.customerLocationId();
+		entity.serviceDate = work.serviceDate();
+		entity.startTime = work.startTime();
+		entity.description = work.description();
+		entity.contractedHours = work.contractedHours().value();
+		entity.hourlyRate = work.hourlyRate().value();
+		entity.currencyCode = work.currencyCode();
+		entity.totalAmount = work.totalAmount().value();
+		entity.allocationPolicyVersion = work.allocationPolicyVersion();
+		entity.status = work.status();
 		if (work.occurrence() != null) {
-			e.recurrenceSeriesId = work.occurrence().seriesId();
-			e.occurrenceDate = work.occurrence().originalDate();
+			entity.recurrenceSeriesId = work.occurrence().seriesId();
+			entity.occurrenceDate = work.occurrence().originalDate();
 		}
-		for (var a : work.assignments())
-			e.assignments.add(WorkAssignmentEntity.from(e, a));
-		return e;
+		for (var assignment : work.assignments())
+			entity.assignments.add(WorkAssignmentEntity.from(entity, assignment));
+		return entity;
 	}
 
 	public WorkOrder toDomain() {
-		return new WorkOrder(id, customerId, customerLocationId, serviceDate, startTime, description,
-				new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode, new Money(totalAmount),
-				allocationPolicyVersion, status, version,
-				assignments.stream().map(WorkAssignmentEntity::toDomain).toList(),
-				recurrenceSeriesId == null ? null : new com.klaus.moply.workorders.domain.vo.OccurrenceIdentity(
-						recurrenceSeriesId, occurrenceDate));
+		return WorkOrder.restore(id, customerId, customerLocationId, new WorkOrderSchedule(serviceDate, startTime),
+				new WorkOrderDescription(description),
+				new WorkOrderPricing(new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
+						new Money(totalAmount), allocationPolicyVersion),
+				status, version,
+				new WorkOrderAssignments(assignments.stream().map(WorkAssignmentEntity::toDomain).toList()),
+				recurrenceSeriesId == null ? null : new OccurrenceIdentity(recurrenceSeriesId, occurrenceDate));
 	}
 
 }
