@@ -1,4 +1,4 @@
-package com.klaus.moply.workorders.domain;
+package com.klaus.moply.workorders.domain.policy;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,6 +13,7 @@ import com.klaus.moply.shared.domain.vo.Money;
 import com.klaus.moply.workorders.domain.vo.DurationHours;
 import com.klaus.moply.workorders.domain.vo.HourlyRate;
 
+/** Splits the rounded total in cents, assigning remainder cents in participant order. */
 public final class ExactAllocationPolicy {
 
 	private static final int POLICY_VERSION = 1;
