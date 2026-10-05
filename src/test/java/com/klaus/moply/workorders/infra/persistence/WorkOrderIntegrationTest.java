@@ -1,23 +1,5 @@
 package com.klaus.moply.workorders.infra.persistence;
 
-import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -53,14 +35,37 @@ import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.customers.domain.entities.CustomerLocation;
 import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.workflows.application.usecase.RescheduleWorkOrder;
+import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
+import com.klaus.moply.workflows.application.usecase.dto.RescheduleWorkOrderInput;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.application.usecase.CompleteWorkOrder;
 import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
-import com.klaus.moply.workflows.application.RescheduleWorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkAssignment;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDateRange;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = { "spring.jpa.open-in-view=false", "spring.flyway.enabled=true",
 		"spring.jpa.hibernate.ddl-auto=validate" })
@@ -128,8 +133,9 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	}
 
 	WorkOrder work(LocalDate date, UUID c, String hours, String rate) {
-		return WorkOrder.create(c, null, date, null, null, new BigDecimal(hours), new BigDecimal(rate),
-				List.of(second, person), WorkOrderStatus.SCHEDULED);
+		return WorkOrder.create(c, null, new WorkOrderSchedule(date, null), new WorkOrderDescription(null),
+				new DurationHours(new BigDecimal(hours)), new HourlyRate(new BigDecimal(rate)), List.of(second, person),
+				WorkOrderStatus.SCHEDULED);
 	}
 
 	@Test
@@ -137,7 +143,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		for (String hours : List.of("0.01", "123456789012345678901234567890.12")) {
 			var saved = orders.save(account, work(LocalDate.now(), customer, hours, "1.00"));
 			var loaded = orders.findById(account, saved.id()).orElseThrow();
-			assertEquals(saved, loaded);
+			assertSameState(saved, loaded);
 			assertEquals(List.of(second, person),
 					loaded.assignments().stream().map(WorkAssignment::collaboratorId).toList());
 			assertEquals(saved.totalAmount().value(),
@@ -156,7 +162,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		var output = find.execute(new Context(account), saved.id());
 		assertEquals("Renamed", output.customer());
 		assertEquals(WorkOrderStatus.SCHEDULED, output.status());
-		assertEquals(saved, orders.findById(account, saved.id()).orElseThrow());
+		assertSameState(saved, orders.findById(account, saved.id()).orElseThrow());
 		// Reconstitution must not invoke the current policy, even for a historical
 		// policy/version.
 		jdbc.update("UPDATE tb_order_service SET allocation_policy_version=7 WHERE id=?", saved.id());
@@ -246,7 +252,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.param("to", "2026-09-28")
 			.param("customerId", customer.toString()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(1));
+			.andExpect(jsonPath("$.content.length()").value(1))
+			.andExpect(jsonPath("$.totalElements").value(1));
 		mvc.perform(
 				get("/api/v1/work-orders").with(user(principal)).param("from", "2026-09-30").param("to", "2026-09-28"))
 			.andExpect(status().isBadRequest());
@@ -292,8 +299,10 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.with(csrf())
 			.contentType(MediaType.APPLICATION_JSON)
 			.content("{}")).andExpect(status().isForbidden());
-		var saved = orders.save(account, WorkOrder.create(customer, null, LocalDate.now(), null, null, BigDecimal.ONE,
-				BigDecimal.TEN, List.of(second), WorkOrderStatus.COMPLETED));
+		var saved = orders.save(account,
+				WorkOrder.create(customer, null, new WorkOrderSchedule(LocalDate.now(), null),
+						new WorkOrderDescription(null), new DurationHours(BigDecimal.ONE),
+						new HourlyRate(BigDecimal.TEN), List.of(second), WorkOrderStatus.COMPLETED));
 		mvc.perform(delete("/api/v1/work-orders/" + saved.id()).with(user(principal)).with(csrf()))
 			.andExpect(status().isMethodNotAllowed());
 		assertTrue(orders.findById(account, saved.id()).isPresent());
@@ -306,7 +315,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	RescheduleWorkOrder reschedule;
 
 	@Autowired
-	com.klaus.moply.workflows.application.CancelWorkOrder cancel;
+	com.klaus.moply.workflows.application.usecase.CancelWorkOrder cancel;
 
 	@Autowired
 	com.klaus.moply.workorders.application.ports.WorkOrderOperations operations;
@@ -329,23 +338,23 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldPreserveIdentityConditionsAndAssignmentRowsThroughLifecycle() {
 		var context = new Context(account);
 		var saved = orders.save(account,
-				WorkOrder.create(customer, location, LocalDate.of(2026, 10, 5), LocalTime.NOON, "Historic",
-						new BigDecimal("3"), new BigDecimal("11.50"), List.of(second, person),
-						WorkOrderStatus.SCHEDULED));
+				WorkOrder.create(customer, location, new WorkOrderSchedule(LocalDate.of(2026, 10, 5), LocalTime.NOON),
+						new WorkOrderDescription("Historic"), new DurationHours(new BigDecimal("3")),
+						new HourlyRate(new BigDecimal("11.50")), List.of(second, person), WorkOrderStatus.SCHEDULED));
 		var rows = assignmentRows(saved.id());
 		collaborators.save(account, collaborators.findById(account, person).orElseThrow().deactivate());
 		complete.execute(context, saved.id());
 		complete.execute(context, saved.id());
 		assertEquals(1, orders.findById(account, saved.id()).orElseThrow().version());
-		reschedule.execute(context, new RescheduleWorkOrder.Input(saved.id(), LocalDate.of(2026, 10, 6), null));
+		reschedule.execute(context, new RescheduleWorkOrderInput(saved.id(), LocalDate.of(2026, 10, 6), null));
 		var moved = orders.findById(account, saved.id()).orElseThrow();
 		assertEquals(WorkOrderStatus.COMPLETED, moved.status());
 		assertEquals(2, moved.version());
 		assertNull(moved.startTime());
-		cancel.execute(context, saved.id());
+		cancel.execute(context, new CancelWorkOrderInput(saved.id(), null, false, null));
 		var cancelled = orders.findById(account, saved.id()).orElseThrow();
-		cancel.execute(context, saved.id());
-		assertEquals(cancelled, orders.findById(account, saved.id()).orElseThrow());
+		cancel.execute(context, new CancelWorkOrderInput(saved.id(), null, false, null));
+		assertSameState(cancelled, orders.findById(account, saved.id()).orElseThrow());
 		assertEquals(3, cancelled.version());
 		assertEquals(WorkOrderStatus.CANCELLED, cancelled.status());
 		assertEquals(rows, assignmentRows(saved.id()));
@@ -360,7 +369,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		assertThrows(com.klaus.moply.workorders.domain.exception.WorkOrderStateException.class,
 				() -> complete.execute(context, saved.id()));
 		assertThrows(com.klaus.moply.workorders.domain.exception.WorkOrderStateException.class, () -> reschedule
-			.execute(context, new RescheduleWorkOrder.Input(saved.id(), LocalDate.of(2026, 10, 7), null)));
+			.execute(context, new RescheduleWorkOrderInput(saved.id(), LocalDate.of(2026, 10, 7), null)));
 		assertEquals(1,
 				orders
 					.findAll(account, new WorkOrderDateRange(moved.serviceDate(), moved.serviceDate()), customer,
@@ -384,10 +393,10 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		assertThrows(IllegalStateException.class,
 				() -> new org.springframework.transaction.support.TransactionTemplate(transactionManager)
 					.executeWithoutResult(status -> {
-						cancel.execute(new Context(account), saved.id());
+						cancel.execute(new Context(account), new CancelWorkOrderInput(saved.id(), null, false, null));
 						throw new IllegalStateException("Failure after cancellation");
 					}));
-		assertEquals(saved, orders.findById(account, saved.id()).orElseThrow());
+		assertSameState(saved, orders.findById(account, saved.id()).orElseThrow());
 		assertEquals(rows, assignmentRows(saved.id()));
 	}
 
@@ -402,7 +411,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				var first = executor
 					.submit(() -> new org.springframework.transaction.support.TransactionTemplate(transactionManager)
 						.executeWithoutResult(status -> {
-							cancel.execute(new Context(account), saved.id());
+							cancel.execute(new Context(account),
+									new CancelWorkOrderInput(saved.id(), null, false, null));
 							locked.countDown();
 							await(release);
 						}));
@@ -412,10 +422,10 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 					if (rescheduling) {
 						assertThrows(com.klaus.moply.workorders.domain.exception.WorkOrderStateException.class,
 								() -> reschedule.execute(new Context(account),
-										new RescheduleWorkOrder.Input(saved.id(), LocalDate.of(2026, 10, 6), null)));
+										new RescheduleWorkOrderInput(saved.id(), LocalDate.of(2026, 10, 6), null)));
 					}
 					else
-						cancel.execute(new Context(account), saved.id());
+						cancel.execute(new Context(account), new CancelWorkOrderInput(saved.id(), null, false, null));
 				});
 				try {
 					assertTrue(attempted.await(10, java.util.concurrent.TimeUnit.SECONDS));
@@ -469,7 +479,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(body)).andExpect(status().isNotFound());
 		}
-		assertEquals(saved, orders.findById(account, saved.id()).orElseThrow());
+		assertSameState(saved, orders.findById(account, saved.id()).orElseThrow());
 		String base = "/api/v1/work-orders/" + saved.id();
 		mvc.perform(post(base + "/complete").with(user(principal)).with(csrf())).andExpect(status().isNoContent());
 		mvc.perform(post(base + "/reschedule").with(user(principal))
@@ -499,13 +509,25 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.param("from", "2026-10-01")
 			.param("to", "2026-10-01")
 			.param("customerId", customer.toString())
-			.param("status", "CANCELLED")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+			.param("status", "CANCELLED"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content.length()").value(1))
+			.andExpect(jsonPath("$.totalElements").value(1));
+		mvc.perform(get("/api/v1/work-orders").with(user(principal))
+			.param("status", "CANCELLED")
+			.param("page", "1")
+			.param("size", "1"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content.length()").value(0))
+			.andExpect(jsonPath("$.totalElements").value(1));
 		mvc.perform(get("/api/v1/work-orders").with(user(principal)).param("status", "SCHEDULED"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(0));
+			.andExpect(jsonPath("$.content.length()").value(0))
+			.andExpect(jsonPath("$.totalElements").value(0));
 		mvc.perform(get("/api/v1/work-orders").with(user(foreignPrincipal)).param("status", "CANCELLED"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(0));
+			.andExpect(jsonPath("$.content.length()").value(0))
+			.andExpect(jsonPath("$.totalElements").value(0));
 	}
 
 	@Autowired
@@ -526,7 +548,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(WorkOrderStatus.SCHEDULED, override.status());
 		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.SCHEDULED));
 		assertEquals(WorkOrderStatus.COMPLETED, find.execute(context, future.id()).status());
-		reschedule.execute(context, new RescheduleWorkOrder.Input(future.id(), date.plusDays(1), LocalTime.NOON));
+		reschedule.execute(context, new RescheduleWorkOrderInput(future.id(), date.plusDays(1), LocalTime.NOON));
 		var updated = find.execute(context, future.id());
 		assertEquals(WorkOrderStatus.COMPLETED, updated.status());
 		assertEquals(future.assignments(), updated.assignments());
@@ -548,7 +570,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment recordCollaboratorPayment;
 
 	@Autowired
-	com.klaus.moply.workflows.application.RescheduleWorkOrder workflowReschedule;
+	com.klaus.moply.workflows.application.usecase.RescheduleWorkOrder workflowReschedule;
 
 	@Test
 	void shouldRecordIntegralPaymentWithinAccountDateAndProtectPaymentRoutes() throws Exception {
@@ -588,7 +610,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.content("{\"paidOn\":\"2026-10-01\"}")).andExpect(status().isConflict());
 		mvc.perform(get(path).with(user(principal)))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].id").value(paymentId.toString()));
+			.andExpect(jsonPath("$.content[0].id").value(paymentId.toString()))
+			.andExpect(jsonPath("$.totalElements").value(1));
 		assertTrue(payments.findById(foreignAccount, paymentId).isEmpty());
 		var foreignPrincipal = new AccountPrincipal(
 				new AppUser(UUID.randomUUID(), foreignAccount, new LoginEmail("foreign-payment@b"), "unused"));
@@ -608,7 +631,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 						todayInLondon, principal.getUserId()));
 		assertEquals(com.klaus.moply.payments.domain.Payment.Status.RECORDED, completedPayment.status());
 		var cancelled = orders.save(account, work(todayInLondon.minusDays(1), customer, "3", "11.50"));
-		cancel.execute(new Context(account), cancelled.id());
+		cancel.execute(new Context(account), new CancelWorkOrderInput(cancelled.id(), null, false, null));
 		assertThrows(com.klaus.moply.payments.application.usecase.exception.PaymentConflictException.class,
 				() -> recordPayment.execute(new Context(account),
 						new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(cancelled.id(),
@@ -654,7 +677,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				() -> new org.springframework.transaction.support.TransactionTemplate(transactionManager)
 					.executeWithoutResult(status -> {
 						cancel.execute(new Context(account),
-								new com.klaus.moply.workflows.application.CancelWorkOrder.Input(saved.id(),
+								new com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput(saved.id(),
 										principal.getUserId(), true, "Erro"));
 						throw new IllegalStateException("rollback");
 					}));
@@ -692,7 +715,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(start);
 				try {
 					workflowReschedule.execute(new Context(account),
-							new com.klaus.moply.workflows.application.RescheduleWorkOrder.Input(saved.id(),
+							new com.klaus.moply.workflows.application.usecase.dto.RescheduleWorkOrderInput(saved.id(),
 									LocalDate.of(2026, 10, 1), null));
 					return "moved";
 				}
@@ -763,8 +786,9 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			});
 			var cancelWork = executor.submit(() -> {
 				await(race);
-				cancel.execute(new Context(account), new com.klaus.moply.workflows.application.CancelWorkOrder.Input(
-						another.id(), principal.getUserId(), true, "Cancelamento simultâneo"));
+				cancel.execute(new Context(account),
+						new com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput(another.id(),
+								principal.getUserId(), true, "Cancelamento simultâneo"));
 			});
 			race.countDown();
 			pay.get(15, java.util.concurrent.TimeUnit.SECONDS);
@@ -846,7 +870,13 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(status().isConflict());
 		mvc.perform(get(base).with(user(principal)))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(3));
+			.andExpect(jsonPath("$.content.length()").value(3))
+			.andExpect(jsonPath("$.totalElements").value(3));
+		mvc.perform(get(base).with(user(principal)).param("page", "1").param("size", "1"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content.length()").value(1))
+			.andExpect(jsonPath("$.totalElements").value(3))
+			.andExpect(jsonPath("$.page").value(1));
 		mvc.perform(post(base).with(user(principal))
 			.header("Idempotency-Key", "csrf-required")
 			.contentType(MediaType.APPLICATION_JSON)
@@ -858,10 +888,14 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		accounts.update(
 				accounts.findById(account).orElseThrow().withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
 		var today = LocalDate.of(2026, 10, 1);
-		var due = orders.save(account, WorkOrder.create(customer, null, today, null, null, new BigDecimal("3"),
-				new BigDecimal("11.50"), List.of(person), WorkOrderStatus.COMPLETED));
-		var future = orders.save(account, WorkOrder.create(customer, null, today.plusDays(1), null, null,
-				new BigDecimal("3"), new BigDecimal("11.50"), List.of(person), WorkOrderStatus.COMPLETED));
+		var due = orders.save(account,
+				WorkOrder.create(customer, null, new WorkOrderSchedule(today, null), new WorkOrderDescription(null),
+						new DurationHours(new BigDecimal("3")), new HourlyRate(new BigDecimal("11.50")),
+						List.of(person), WorkOrderStatus.COMPLETED));
+		var future = orders.save(account,
+				WorkOrder.create(customer, null, new WorkOrderSchedule(today.plusDays(1), null),
+						new WorkOrderDescription(null), new DurationHours(new BigDecimal("3")),
+						new HourlyRate(new BigDecimal("11.50")), List.of(person), WorkOrderStatus.COMPLETED));
 		var foreignPrincipal = new AccountPrincipal(
 				new AppUser(UUID.randomUUID(), foreignAccount, new LoginEmail("foreign@b"), "unused"));
 		mvc.perform(get("/api/v1/collaborators/" + person + "/payments/summary").with(user(principal)))
@@ -936,7 +970,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			var cancelling = executor.submit(() -> {
 				await(race);
 				try {
-					cancel.execute(context, new com.klaus.moply.workflows.application.CancelWorkOrder.Input(
+					cancel.execute(context, new com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput(
 							racingCancel.id(), principal.getUserId(), false, null));
 					return true;
 				}
@@ -971,8 +1005,9 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			});
 			var moving = executor.submit(() -> {
 				await(rescheduleGate);
-				workflowReschedule.execute(context, new com.klaus.moply.workflows.application.RescheduleWorkOrder.Input(
-						rescheduling.id(), LocalDate.of(2026, 10, 6), null));
+				workflowReschedule.execute(context,
+						new com.klaus.moply.workflows.application.usecase.dto.RescheduleWorkOrderInput(
+								rescheduling.id(), LocalDate.of(2026, 10, 6), null));
 			});
 			rescheduleGate.countDown();
 			posting.get(15, java.util.concurrent.TimeUnit.SECONDS);
@@ -984,6 +1019,11 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				"SELECT coalesce(sum(amount),0) FROM tb_collaborator_payment WHERE organization_id=? AND work_order_id=? AND status='RECORDED'",
 				BigDecimal.class, account, rescheduling.id());
 		assertTrue(settled.signum() == 0 || settled.compareTo(new BigDecimal("5.00")) == 0);
+	}
+
+	private void assertSameState(WorkOrder expected, WorkOrder actual) {
+		assertTrue(expected.hasSameConditionsAs(actual));
+		assertTrue(expected.hasSameOperationAs(actual));
 	}
 
 }
