@@ -15,6 +15,8 @@ import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.customers.domain.entities.CustomerLocation;
 import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundException;
 import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.pagination.PageQuery;
+import com.klaus.moply.shared.application.pagination.PageResult;
 
 import org.mockito.ArgumentCaptor;
 
@@ -131,7 +133,9 @@ class CustomerLocationsUsecasesTest {
 				new UpdateCustomerLocationInput(id, UUID.randomUUID(), "Casa", null, null)));
 		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocationById(repo).execute(context(),
 				new FindCustomerLocationByIdInput(id, UUID.randomUUID())));
-		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocations(repo).execute(context(), id));
+		when(repo.findLocations(ACCOUNT, id, PageQuery.defaults())).thenThrow(new CustomerNotFoundException(id));
+		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocations(repo).execute(context(),
+				new FindCustomerLocations.Filter(id, PageQuery.defaults())));
 		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
@@ -142,17 +146,27 @@ class CustomerLocationsUsecasesTest {
 		var expected = CustomerLocationOutput.fromDomain(location);
 		assertEquals(expected, new FindCustomerLocationById(repo).execute(context(),
 				new FindCustomerLocationByIdInput(id, location.getId())));
-		assertEquals(List.of(expected), new FindCustomerLocations(repo).execute(context(), id));
+		when(repo.findLocations(ACCOUNT, id, PageQuery.defaults()))
+			.thenReturn(new PageResult<>(List.of(location), 0, 20, 1, 1));
+		assertEquals(List.of(expected),
+				new FindCustomerLocations(repo)
+					.execute(context(), new FindCustomerLocations.Filter(id, PageQuery.defaults()))
+					.content());
 		assertEquals(List.of(expected), new FindCustomerById(repo).execute(context(), id).locations());
-		when(repo.findAll(ACCOUNT)).thenReturn(List.of(customer));
-		assertEquals(List.of(expected), new FindAllCustomers(repo).execute(context(), null).getFirst().locations());
+		var page = new com.klaus.moply.shared.application.pagination.PageQuery(0, 20, null);
+		when(repo.findAll(ACCOUNT, page))
+			.thenReturn(new com.klaus.moply.shared.application.pagination.PageResult<>(List.of(customer), 0, 20, 1, 1));
+		assertEquals(List.of(expected),
+				new FindAllCustomers(repo).execute(context(), page).content().getFirst().locations());
 		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
 	@Test
 	void shouldReturnEmptyLocationsForCustomerWithoutLocations() {
-		when(repo.findById(ACCOUNT, id)).thenReturn(Optional.of(Customer.restore(id, "Maria")));
-		assertTrue(new FindCustomerLocations(repo).execute(context(), id).isEmpty());
+		var page = PageQuery.defaults();
+		when(repo.findLocations(ACCOUNT, id, page)).thenReturn(new PageResult<>(List.of(), 0, 20, 0, 0));
+		assertTrue(new FindCustomerLocations(repo).execute(context(), new FindCustomerLocations.Filter(id, page))
+			.isEmpty());
 	}
 
 	@Test
