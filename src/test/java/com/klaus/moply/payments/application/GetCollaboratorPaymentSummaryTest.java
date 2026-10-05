@@ -28,6 +28,10 @@ import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
 
 class GetCollaboratorPaymentSummaryTest {
 
@@ -68,13 +72,12 @@ class GetCollaboratorPaymentSummaryTest {
 	}
 
 	private WorkOrder work(UUID collaboratorId, LocalDate date, WorkOrderStatus status) {
-		var draft = WorkOrder.create(UUID.randomUUID(), null, date, null, null, new BigDecimal("4.00"),
-				new BigDecimal("11.50"), List.of(collaboratorId),
+		var draft = WorkOrder.create(UUID.randomUUID(), null, new WorkOrderSchedule(date, null),
+				new WorkOrderDescription(null), new DurationHours(new BigDecimal("4.00")),
+				new HourlyRate(new BigDecimal("11.50")), List.of(collaboratorId),
 				status == WorkOrderStatus.CANCELLED ? WorkOrderStatus.SCHEDULED : status);
-		return new WorkOrder(UUID.randomUUID(), draft.customerId(), draft.customerLocationId(), draft.serviceDate(),
-				draft.startTime(), draft.description(), draft.contractedHours(), draft.hourlyRate(),
-				draft.currencyCode(), draft.totalAmount(), draft.allocationPolicyVersion(), status, 0,
-				draft.assignments());
+		return WorkOrder.restore(UUID.randomUUID(), draft.customerId(), draft.customerLocationId(), draft.schedule(),
+				draft.workDescription(), draft.pricing(), status, 0, draft.workAssignments(), null);
 	}
 
 }

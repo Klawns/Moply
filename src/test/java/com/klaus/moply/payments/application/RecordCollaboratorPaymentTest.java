@@ -33,6 +33,11 @@ import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.domain.vo.DurationHours;
+import com.klaus.moply.workorders.domain.vo.HourlyRate;
+import com.klaus.moply.workorders.domain.vo.WorkOrderDescription;
+import com.klaus.moply.workorders.domain.vo.WorkOrderPricing;
+import com.klaus.moply.workorders.domain.vo.WorkOrderSchedule;
 
 class RecordCollaboratorPaymentTest {
 
@@ -59,11 +64,13 @@ class RecordCollaboratorPaymentTest {
 
 	@BeforeEach
 	void setUp() {
-		work = WorkOrder.create(UUID.randomUUID(), null, LocalDate.of(2026, 10, 3), null, null, new BigDecimal("4.00"),
-				new BigDecimal("11.50"), List.of(collaboratorId), WorkOrderStatus.SCHEDULED);
-		work = new WorkOrder(workOrderId, work.customerId(), work.customerLocationId(), work.serviceDate(),
-				work.startTime(), work.description(), work.contractedHours(), work.hourlyRate(), work.currencyCode(),
-				work.totalAmount(), work.allocationPolicyVersion(), work.status(), work.version(), work.assignments());
+		work = WorkOrder.create(UUID.randomUUID(), null, new WorkOrderSchedule(LocalDate.of(2026, 10, 3), null),
+				new WorkOrderDescription(null), new DurationHours(new BigDecimal("4.00")),
+				new HourlyRate(new BigDecimal("11.50")), List.of(collaboratorId), WorkOrderStatus.SCHEDULED);
+		work = WorkOrder.restore(workOrderId, work.customerId(), work.customerLocationId(), work.schedule(),
+				work.workDescription(), new WorkOrderPricing(work.contractedHours(), work.hourlyRate(),
+						work.currencyCode(), work.totalAmount(), work.allocationPolicyVersion()),
+				work.status(), work.version(), work.workAssignments(), null);
 		when(organizations.findById(organizationId))
 			.thenReturn(Optional.of(new Organization(organizationId, "Test", "UTC", DefaultWorkStatus.SCHEDULED)));
 		when(workOrders.withWorkOrder(eq(organizationId), eq(workOrderId), any())).thenAnswer(invocation -> {
@@ -104,11 +111,12 @@ class RecordCollaboratorPaymentTest {
 
 	@Test
 	void shouldRejectAnAdvanceForAFutureWorkOrder() {
-		var future = WorkOrder.create(UUID.randomUUID(), null, LocalDate.of(2026, 10, 20), null, null,
-				new BigDecimal("4.00"), new BigDecimal("11.50"), List.of(collaboratorId), WorkOrderStatus.SCHEDULED);
-		work = new WorkOrder(workOrderId, future.customerId(), null, future.serviceDate(), null, null,
-				future.contractedHours(), future.hourlyRate(), future.currencyCode(), future.totalAmount(),
-				future.allocationPolicyVersion(), future.status(), future.version(), future.assignments());
+		var future = WorkOrder.create(UUID.randomUUID(), null, new WorkOrderSchedule(LocalDate.of(2026, 10, 20), null),
+				new WorkOrderDescription(null), new DurationHours(new BigDecimal("4.00")),
+				new HourlyRate(new BigDecimal("11.50")), List.of(collaboratorId), WorkOrderStatus.SCHEDULED);
+		work = WorkOrder.restore(workOrderId, future.customerId(), null,
+				new WorkOrderSchedule(future.serviceDate(), null), new WorkOrderDescription(null), future.pricing(),
+				future.status(), future.version(), future.workAssignments(), null);
 
 		assertThrows(PaymentConflictException.class, () -> usecase.execute(new Context(organizationId),
 				input(new BigDecimal("5.00"), LocalDate.of(2026, 10, 3), "advance-1")));
