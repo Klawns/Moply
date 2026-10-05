@@ -34,10 +34,7 @@ public final class ReportContextResolver {
 		this.collaborators = collaborators;
 	}
 
-	public ReportContext resolve(
-			Usecase.Context context,
-			ReportPeriod period,
-			UUID collaboratorId) {
+	public ReportContext resolve(Usecase.Context context, ReportPeriod period, UUID collaboratorId) {
 
 		validatePeriod(period);
 		validateCustomer(context, period);
@@ -54,53 +51,38 @@ public final class ReportContextResolver {
 		}
 	}
 
-	private void validateCustomer(
-			Usecase.Context context,
-			ReportPeriod period) {
+	private void validateCustomer(Usecase.Context context, ReportPeriod period) {
 
 		if (period.customerId() == null) {
 			return;
 		}
 
-		customers.findById(
-				context.organizationId(),
-				period.customerId())
-				.orElseThrow(() -> new CustomerNotFoundException(period.customerId()));
+		customers.findById(context.organizationId(), period.customerId())
+			.orElseThrow(() -> new CustomerNotFoundException(period.customerId()));
 	}
 
-	private void validateCollaborator(
-			Usecase.Context context,
-			UUID collaboratorId) {
+	private void validateCollaborator(Usecase.Context context, UUID collaboratorId) {
 
 		if (collaboratorId == null) {
 			return;
 		}
 
-		collaborators.findById(
-				context.organizationId(),
-				collaboratorId)
-				.orElseThrow(() -> new CollaboratorNotFoundException(collaboratorId));
+		collaborators.findById(context.organizationId(), collaboratorId)
+			.orElseThrow(() -> new CollaboratorNotFoundException(collaboratorId));
 	}
 
 	private Organization findOrganization(Usecase.Context context) {
-		return organizations.findById(context.organizationId())
-				.orElseThrow(AccountNotFoundException::new);
+		return organizations.findById(context.organizationId()).orElseThrow(AccountNotFoundException::new);
 	}
 
 	private ReportContext createReportContext(Organization organization) {
 		var timezone = organization.timezone();
-		var referenceDate = LocalDate.now(
-				clock.withZone(ZoneId.of(timezone)));
+		var referenceDate = LocalDate.now(clock.withZone(ZoneId.of(timezone)));
 
-		return new ReportContext(
-				timezone,
-				organization.currencyCode(),
-				referenceDate);
+		return new ReportContext(timezone, organization.currencyCode(), referenceDate);
 	}
 
-	public record ReportContext(
-			String timezone,
-			String currencyCode,
-			LocalDate referenceDate) {
+	public record ReportContext(String timezone, String currencyCode, LocalDate referenceDate) {
 	}
+
 }
