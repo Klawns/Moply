@@ -20,57 +20,32 @@ public class FindCustomerPaymentsReport implements Usecase.Contextual<ReportPeri
 	}
 
 	@Override
-	public CustomerPaymentsReport execute(
-			Usecase.Context context,
-			ReportPeriod period) {
+	public CustomerPaymentsReport execute(Usecase.Context context, ReportPeriod period) {
 
 		var reportContext = contextResolver.resolve(context, period, null);
 		var payments = findPayments(context, period);
 		var total = findTotal(context, period);
 
-		return new CustomerPaymentsReport(
-				period.from(),
-				period.to(),
-				reportContext.timezone(),
-				reportContext.currencyCode(),
-				total,
-				payments);
+		return new CustomerPaymentsReport(period.from(), period.to(), reportContext.timezone(),
+				reportContext.currencyCode(), total, payments);
 	}
 
-	private PageResult<CustomerPaymentsReport.Payment> findPayments(
-			Usecase.Context context,
-			ReportPeriod period) {
+	private PageResult<CustomerPaymentsReport.Payment> findPayments(Usecase.Context context, ReportPeriod period) {
 
-		return reports.customerPayments(
-				context.organizationId(),
-				period.from(),
-				period.to(),
-				period.customerId(),
-				period.page())
-				.map(this::toPayment);
+		return reports
+			.customerPayments(context.organizationId(), period.from(), period.to(), period.customerId(), period.page())
+			.map(this::toPayment);
 	}
 
-	private BigDecimal findTotal(
-			Usecase.Context context,
-			ReportPeriod period) {
+	private BigDecimal findTotal(Usecase.Context context, ReportPeriod period) {
 
-		return reports.customerPaymentTotal(
-				context.organizationId(),
-				period.from(),
-				period.to(),
-				period.customerId());
+		return reports.customerPaymentTotal(context.organizationId(), period.from(), period.to(), period.customerId());
 	}
 
-	private CustomerPaymentsReport.Payment toPayment(
-			ReportReadRepository.PaymentRow row) {
+	private CustomerPaymentsReport.Payment toPayment(ReportReadRepository.PaymentRow row) {
 
-		return new CustomerPaymentsReport.Payment(
-				row.paymentId(),
-				row.workOrderId(),
-				row.customerId(),
-				row.customerName(),
-				row.paidOn(),
-				row.amount());
+		return new CustomerPaymentsReport.Payment(row.paymentId(), row.workOrderId(), row.customerId(),
+				row.customerName(), row.paidOn(), row.amount());
 	}
 
 }
