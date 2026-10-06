@@ -19,15 +19,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import com.jayway.jsonpath.JsonPath;
-import jakarta.servlet.http.Cookie;
-import org.springframework.mock.web.MockHttpServletResponse;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import jakarta.servlet.http.Cookie;
 
 @SpringBootTest(properties = { "springdoc.api-docs.enabled=true", "springdoc.swagger-ui.enabled=true" })
 @AutoConfigureMockMvc
@@ -135,6 +136,42 @@ class OpenApiIntegrationTest {
 	}
 
 	@Test
+	void shouldDescribeGroupedHttpContractsWithoutApplicationDtos() throws Exception {
+		Map<String, Object> document = document();
+		Map<String, Object> components = value(document, "components");
+		Map<String, Map<String, Object>> schemas = value(components, "schemas");
+		assertThat(schemas).doesNotContainKeys("CreateWorkOrderInput", "WorkOrderOutput", "PricingPreviewOutput",
+				"OccurrenceHistoryOutput", "AssignmentOutput", "Work", "Payment", "Assignment", "Settlement");
+		assertThat(value(schemas.get("CreateWorkOrderRequest"), "properties", Map.class))
+			.containsOnlyKeys("serviceDate", "conditions", "acceptedPricingFingerprint");
+		assertThat(value(schemas.get("WorkOrderResponse"), "properties", Map.class))
+			.containsKeys("customer", "schedule", "pricing", "recurrence", "assignments")
+			.doesNotContainKeys("customerId", "totalAmount", "recurrenceSeriesId");
+		assertThat(value(schemas.get("SeriesResponse"), "properties", Map.class))
+			.containsOnlyKeys("id", "frequency", "period", "conditions", "lineage");
+		assertThat(value(schemas.get("PricingPreviewResponse"), "properties", Map.class))
+			.containsKeys("pricing", "summary", "participants").doesNotContainKeys("baseTotal", "totalAmount");
+		assertThat(value(schemas.get("PricingProblemResponse"), "properties", Map.class))
+			.containsKeys("code", "pricingPreview");
+		assertThat(value(schemas.get("PaymentResponse"), "properties", Map.class))
+			.containsKeys("recording", "reversal").doesNotContainKeys("recordedAt", "reversedBy");
+		for (String report : List.of("WorkOrders", "CustomerPayments", "Collaborators")) {
+			assertThat(value(schemas.get(report + "ReportResponse"), "properties", Map.class))
+				.containsKeys("period", "context", "summary").doesNotContainKeys("from", "timezone");
+		}
+		assertThat(schemas).containsKeys("CustomerReferenceResponse", "CollaboratorReferenceResponse",
+				"WorkAssignmentResponse", "CollaboratorsReportAssignmentResponse",
+				"CustomerPaymentsReportPaymentResponse");
+		Map<String, Map<String, Map<String, Object>>> paths = value(document, "paths");
+		for (String path : List.of("/api/v1/work-orders", "/api/v1/recurrence-series")) {
+			Map<String, Map<String, Object>> responses = value(paths.get(path).get("post"), "responses");
+			assertThat(responses.get("422").toString()).contains("PricingProblemResponse");
+			assertThat(responses.get("409").toString()).contains("PricingProblemResponse");
+		}
+		assertSchemaReferencesResolve(document, schemas);
+	}
+
+	@Test
 	void shouldSupportTheDocumentedCookieAndCsrfFlow() throws Exception {
 		var csrf = csrfResponse();
 		String email = "swagger-" + java.util.UUID.randomUUID() + "@example.com";
@@ -201,7 +238,7 @@ class OpenApiIntegrationTest {
 				annotation -> annotation.annotationType().getPackageName().startsWith("io.swagger.v3.oas.annotations"));
 	}
 
-	private void assertSchemaReferencesResolve(Object value, Map<String, Object> schemas) {
+	private void assertSchemaReferencesResolve(Object value, Map<String, ?> schemas) {
 		if (value instanceof Map<?, ?> map) {
 			if (map.get("$ref") instanceof String ref && ref.startsWith("#/components/schemas/")) {
 				assertThat(schemas).containsKey(ref.substring("#/components/schemas/".length()));
