@@ -21,6 +21,7 @@ import com.klaus.moply.customers.application.usecase.UpdateCustomerLocation;
 import com.klaus.moply.customers.application.usecase.dto.AddCustomerLocationInput;
 import com.klaus.moply.customers.application.usecase.dto.FindCustomerLocationByIdInput;
 import com.klaus.moply.customers.application.usecase.dto.UpdateCustomerLocationInput;
+import com.klaus.moply.customers.infra.web.api.CustomerLocationApi;
 import com.klaus.moply.customers.infra.web.dto.CustomerLocationRequest;
 import com.klaus.moply.customers.infra.web.dto.CustomerLocationResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
@@ -34,7 +35,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/customers/{customerId}/locations")
 @RequiredArgsConstructor
-public class CustomerLocationController {
+public class CustomerLocationController implements CustomerLocationApi {
 
 	private final AddCustomerLocation addLocation;
 
@@ -45,6 +46,7 @@ public class CustomerLocationController {
 	private final UpdateCustomerLocation updateLocation;
 
 	@PostMapping
+	@Override
 	public ResponseEntity<CustomerLocationResponse> addLocation(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID customerId, @Valid @RequestBody CustomerLocationRequest request) {
 		var output = addLocation.execute(new Context(principal.getOrganizationId()),
@@ -54,6 +56,7 @@ public class CustomerLocationController {
 	}
 
 	@GetMapping
+	@Override
 	public PageResponse<CustomerLocationResponse> locations(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID customerId,
 			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
@@ -68,6 +71,7 @@ public class CustomerLocationController {
 	}
 
 	@GetMapping("/{locationId}")
+	@Override
 	public CustomerLocationResponse location(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID customerId, @PathVariable UUID locationId) {
 		return CustomerLocationResponse.from(findLocation.execute(new Context(principal.getOrganizationId()),
@@ -75,6 +79,7 @@ public class CustomerLocationController {
 	}
 
 	@PutMapping("/{locationId}")
+	@Override
 	public CustomerLocationResponse updateLocation(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID customerId, @PathVariable UUID locationId,
 			@Valid @RequestBody CustomerLocationRequest request) {

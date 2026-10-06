@@ -20,12 +20,13 @@ import com.klaus.moply.customers.application.usecase.FindAllCustomers;
 import com.klaus.moply.customers.application.usecase.FindCustomerById;
 import com.klaus.moply.customers.application.usecase.UpdateCustomer;
 import com.klaus.moply.customers.application.usecase.dto.UpdateCustomerInput;
+import com.klaus.moply.customers.infra.web.api.CustomerApi;
 import com.klaus.moply.customers.infra.web.dto.CreateCustomerRequest;
 import com.klaus.moply.customers.infra.web.dto.CustomerResponse;
 import com.klaus.moply.customers.infra.web.dto.UpdateCustomerRequest;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.infra.web.PageQueryRequest;
 import com.klaus.moply.shared.infra.web.dto.PageResponse;
-import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import jakarta.validation.Valid;
 
@@ -34,7 +35,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor
-public class CustomerController {
+public class CustomerController implements CustomerApi {
 
 	private final CreateCustomer create;
 
@@ -45,6 +46,7 @@ public class CustomerController {
 	private final UpdateCustomer update;
 
 	@PostMapping
+	@Override
 	public ResponseEntity<UUID> create(@AuthenticationPrincipal AccountPrincipal principal,
 			@Valid @RequestBody CreateCustomerRequest request) {
 		UUID id = create.execute(new Context(principal.getOrganizationId()), request.toInput());
@@ -52,6 +54,7 @@ public class CustomerController {
 	}
 
 	@GetMapping
+	@Override
 	public PageResponse<CustomerResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
 			@RequestParam(required = false) String sort, @RequestParam(required = false) String direction) {
@@ -60,11 +63,13 @@ public class CustomerController {
 	}
 
 	@GetMapping("/{customerId}")
+	@Override
 	public CustomerResponse find(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID customerId) {
 		return CustomerResponse.from(findById.execute(new Context(principal.getOrganizationId()), customerId));
 	}
 
 	@PutMapping("/{customerId}")
+	@Override
 	public CustomerResponse update(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID customerId,
 			@Valid @RequestBody UpdateCustomerRequest request) {
 		return CustomerResponse
