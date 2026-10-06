@@ -17,6 +17,7 @@ import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.payments.application.usecase.ListCollaboratorPayments;
 import com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment;
 import com.klaus.moply.payments.application.usecase.ReverseCollaboratorPayment;
+import com.klaus.moply.payments.infra.web.api.PaymentWorkOrderCollaboratorApi;
 import com.klaus.moply.payments.infra.web.dto.PaymentResponse;
 import com.klaus.moply.payments.infra.web.dto.RecordCollaboratorPaymentRequest;
 import com.klaus.moply.payments.infra.web.dto.ReverseCollaboratorPaymentRequest;
@@ -31,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/work-orders/{workOrderId}/collaborators/{collaboratorId}/payments")
 @RequiredArgsConstructor
-public class PaymentWorkOrderCollaboratorController {
+public class PaymentWorkOrderCollaboratorController implements PaymentWorkOrderCollaboratorApi {
 
 	private final RecordCollaboratorPayment record;
 
@@ -40,6 +41,7 @@ public class PaymentWorkOrderCollaboratorController {
 	private final ReverseCollaboratorPayment reverse;
 
 	@PostMapping
+	@Override
 	public ResponseEntity<PaymentResponse> record(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID workOrderId, @PathVariable UUID collaboratorId,
 			@RequestHeader("Idempotency-Key") String idempotencyKey,
@@ -52,6 +54,7 @@ public class PaymentWorkOrderCollaboratorController {
 	}
 
 	@GetMapping
+	@Override
 	public PageResponse<PaymentResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID workOrderId, @PathVariable UUID collaboratorId,
 			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
@@ -65,6 +68,7 @@ public class PaymentWorkOrderCollaboratorController {
 	}
 
 	@PostMapping("/{paymentId}/reversal")
+	@Override
 	public PaymentResponse reverse(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID workOrderId,
 			@PathVariable UUID collaboratorId, @PathVariable UUID paymentId,
 			@Valid @RequestBody ReverseCollaboratorPaymentRequest request) {

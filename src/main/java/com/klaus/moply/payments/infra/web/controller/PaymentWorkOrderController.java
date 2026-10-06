@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.payments.application.usecase.ListWorkOrderPayments;
 import com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment;
+import com.klaus.moply.payments.infra.web.api.PaymentWorkOrderApi;
 import com.klaus.moply.payments.infra.web.dto.PaymentResponse;
 import com.klaus.moply.payments.infra.web.dto.RecordPaymentRequest;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
@@ -28,13 +29,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/work-orders/{workOrderId}/payments")
 @RequiredArgsConstructor
-public class PaymentWorkOrderController {
+public class PaymentWorkOrderController implements PaymentWorkOrderApi {
 
 	private final RecordWorkOrderPayment record;
 
 	private final ListWorkOrderPayments list;
 
 	@PostMapping
+	@Override
 	public ResponseEntity<PaymentResponse> record(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID workOrderId, @Valid @RequestBody RecordPaymentRequest request) {
 		var payment = record.execute(new Context(principal.getOrganizationId()),
@@ -44,6 +46,7 @@ public class PaymentWorkOrderController {
 	}
 
 	@GetMapping
+	@Override
 	public PageResponse<PaymentResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID workOrderId,
 			@org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
