@@ -11,7 +11,11 @@ import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.recurrence.application.usecase.CreateSeries;
 import com.klaus.moply.recurrence.application.usecase.FindSeries;
 import com.klaus.moply.recurrence.infra.web.api.RecurrenceSeriesApi;
+import com.klaus.moply.recurrence.infra.web.dto.request.CreateSeriesRequest;
+import com.klaus.moply.recurrence.infra.web.dto.response.SeriesResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
+
+import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,7 +31,7 @@ public class RecurrenceSeriesController implements RecurrenceSeriesApi {
 	@PostMapping
 	@Override
 	public ResponseEntity<SeriesResponse> create(@AuthenticationPrincipal AccountPrincipal principal,
-			@RequestBody CreateSeriesRequest request) {
+			@Valid @RequestBody CreateSeriesRequest request) {
 		var series = create.execute(new Context(principal.getOrganizationId()), request.toInput());
 		return ResponseEntity.created(URI.create("/api/v1/recurrence-series/" + series.getId()))
 			.body(SeriesResponse.from(series));

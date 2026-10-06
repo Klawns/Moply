@@ -6,8 +6,9 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
-import com.klaus.moply.recurrence.infra.web.CreateSeriesRequest;
-import com.klaus.moply.recurrence.infra.web.SeriesResponse;
+import com.klaus.moply.recurrence.infra.web.dto.request.CreateSeriesRequest;
+import com.klaus.moply.recurrence.infra.web.dto.response.SeriesResponse;
+import com.klaus.moply.workorders.infra.web.dto.response.PricingProblemResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -44,11 +45,11 @@ public interface RecurrenceSeriesApi {
 	@ApiResponse(responseCode = "409",
 			description = "Confirmação de preços necessária (PRICING_ACCEPTANCE_REQUIRED), ou conflito com o estado atual. O erro de preços inclui pricingPreview.",
 			content = @Content(mediaType = "application/problem+json",
-					schema = @Schema(implementation = ProblemDetail.class)))
+					schema = @Schema(anyOf = { ProblemDetail.class, PricingProblemResponse.class })))
 	@ApiResponse(responseCode = "422",
 			description = "Bases individuais excedem o total (PRICING_BASES_EXCEED_TOTAL). Inclui code e pricingPreview.",
 			content = @Content(mediaType = "application/problem+json",
-					schema = @Schema(implementation = ProblemDetail.class)))
+					schema = @Schema(implementation = PricingProblemResponse.class)))
 	ResponseEntity<SeriesResponse> create(@Parameter(hidden = true) AccountPrincipal principal,
 			CreateSeriesRequest request);
 

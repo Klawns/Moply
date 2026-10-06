@@ -441,7 +441,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	@Test
 	void shouldProtectApiAndTenantScope() throws Exception {
 		var body = """
-				{"frequency":"WEEKLY","startsOn":"2026-10-03","endsOn":"2026-10-10", "customerId":"%s", "contractedHours":1,"hourlyRate":10,"participantIds":["%s","%s"]}
+				{"frequency":"WEEKLY","period":{"startsOn":"2026-10-03","endsOn":"2026-10-10"}, "conditions":{"customerId":"%s", "contractedHours":1,"hourlyRate":10,"participantIds":["%s","%s"]}}
 				"""
 			.formatted(customer, second, first);
 		mvc.perform(
@@ -456,8 +456,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 			.content(body))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.conditions.initialStatus").value("SCHEDULED"))
-			.andExpect(jsonPath("$.conditions.contractedHours").value(1))
-			.andExpect(jsonPath("$.conditions.hourlyRate").value(10))
+			.andExpect(jsonPath("$.conditions.pricing.contractedHours").value(1))
+			.andExpect(jsonPath("$.conditions.pricing.hourlyRate").value(10))
 			.andExpect(jsonPath("$.conditions.participantIds[0]").value(second.toString()))
 			.andExpect(jsonPath("$.conditions.participantIds[1]").value(first.toString()))
 			.andExpect(jsonPath("$.conditions.participants").doesNotExist());
@@ -936,14 +936,14 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		var next = successor("http-move");
 		mvc.perform(get("/api/v1/recurrence-series/" + next).with(user(principal())))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.familyId").value(root.getId().toString()))
-			.andExpect(jsonPath("$.previousSeriesId").value(root.getId().toString()))
-			.andExpect(jsonPath("$.firstPosition").value(1));
+			.andExpect(jsonPath("$.lineage.familyId").value(root.getId().toString()))
+			.andExpect(jsonPath("$.lineage.previousSeriesId").value(root.getId().toString()))
+			.andExpect(jsonPath("$.lineage.firstPosition").value(1));
 		mvc.perform(get("/api/v1/work-orders/" + id + "/recurrence-history").with(user(principal())))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.content[0].reason").value("REPLACED"))
-			.andExpect(jsonPath("$.content[0].targetSeriesId").value(next.toString()))
-			.andExpect(jsonPath("$.content[0].targetOccurrenceDate").value("2026-10-12"));
+			.andExpect(jsonPath("$.content[0].target.seriesId").value(next.toString()))
+			.andExpect(jsonPath("$.content[0].target.occurrenceDate").value("2026-10-12"));
 	}
 
 	@Test

@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.http.ProblemDetail;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
-import com.klaus.moply.recurrence.application.usecase.dto.OccurrenceHistoryOutput;
+import com.klaus.moply.recurrence.infra.web.dto.response.OccurrenceHistoryResponse;
 import com.klaus.moply.shared.infra.web.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,7 +39,7 @@ public interface WorkOrderRecurrenceHistoryApi {
 	@ApiResponse(responseCode = "404", description = "Recurso não encontrado.",
 			content = @Content(mediaType = "application/problem+json",
 					schema = @Schema(implementation = ProblemDetail.class)))
-	PageResponse<OccurrenceHistoryOutput> history(@Parameter(hidden = true) AccountPrincipal principal,
+	PageResponse<OccurrenceHistoryResponse> history(@Parameter(hidden = true) AccountPrincipal principal,
 			@Parameter(description = "Identificador do recurso.") UUID id,
 			@Parameter(description = "Página, começando em zero.",
 					schema = @Schema(type = "integer", defaultValue = "0", minimum = "0")) Integer page,

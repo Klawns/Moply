@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.recurrence.application.usecase.FindOccurrenceHistory;
-import com.klaus.moply.recurrence.application.usecase.dto.OccurrenceHistoryOutput;
+import com.klaus.moply.recurrence.infra.web.dto.response.OccurrenceHistoryResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.infra.web.PageQueryRequest;
 import com.klaus.moply.shared.infra.web.dto.PageResponse;
@@ -28,14 +28,14 @@ public class WorkOrderRecurrenceHistoryController implements WorkOrderRecurrence
 
 	@GetMapping("/{id}/recurrence-history")
 	@Override
-	public PageResponse<OccurrenceHistoryOutput> history(@AuthenticationPrincipal AccountPrincipal principal,
+	public PageResponse<OccurrenceHistoryResponse> history(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID id, @RequestParam(required = false) Integer page,
 			@RequestParam(required = false) Integer size, @RequestParam(required = false) String sort,
 			@RequestParam(required = false) String direction) {
 		return PageResponse.from(
 				history.execute(new Context(principal.getOrganizationId()),
 						new FindOccurrenceHistory.Filter(id, PageQueryRequest.toQuery(page, size, sort, direction))),
-				value -> value);
+				OccurrenceHistoryResponse::from);
 	}
 
 }

@@ -253,9 +253,9 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Test
 	void shouldConfirmSeriesCreationAndExposeFrozenPricingInItsResponse() throws Exception {
-		String seriesBody = "{\"frequency\":\"WEEKLY\",\"startsOn\":\"" + LocalDate.now(java.time.ZoneOffset.UTC)
-				+ "\",\"customerId\":\"" + customer
-				+ "\",\"contractedHours\":4,\"participantIds\":[\"" + ana + "\",\"" + bruno + "\"]}";
+		String seriesBody = input("").replace("\"serviceDate\":\"" + LocalDate.now(java.time.ZoneOffset.UTC) + "\"",
+				"\"period\":{\"startsOn\":\"" + LocalDate.now(java.time.ZoneOffset.UTC) + "\"}");
+		seriesBody = seriesBody.substring(0, seriesBody.length() - 1) + ",\"frequency\":\"WEEKLY\"}";
 		mvc.perform(request("/api/v1/recurrence-series", seriesBody))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.pricingPreview.participants[0].allocatedAmount").value(50));
