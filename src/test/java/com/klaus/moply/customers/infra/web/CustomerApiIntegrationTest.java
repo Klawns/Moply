@@ -149,7 +149,7 @@ class CustomerApiIntegrationTest {
 			.perform(post("/api/v1/work-orders").contentType(MediaType.APPLICATION_JSON)
 				.content(
 						"""
-								{"customerId":"%s","contractedHours":4,"hourlyRate":10,"participantIds":["%s"],"serviceDate":"2026-09-28"}
+								{"serviceDate":"2026-09-28","conditions":{"customerId":"%s","contractedHours":4,"hourlyRate":10,"participantIds":["%s"]}}
 								"""
 							.formatted(customerId, participant())))
 			.andExpect(status().isCreated())
@@ -162,8 +162,8 @@ class CustomerApiIntegrationTest {
 				""")).andExpect(status().isOk()).andExpect(jsonPath("$.locations.length()").value(2));
 		mvc.perform(get("/api/v1/work-orders/" + orderId))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.customerId").value(customerId))
-			.andExpect(jsonPath("$.customer").value("Maria Silva"));
+			.andExpect(jsonPath("$.customer.id").value(customerId))
+			.andExpect(jsonPath("$.customer.name").value("Maria Silva"));
 		var loaded = orders.findById(ACCOUNT, UUID.fromString(orderId)).orElseThrow();
 		mvc.perform(get("/api/v1/work-orders").param("from", "2026-09-28")
 			.param("to", "2026-09-28")
@@ -173,7 +173,7 @@ class CustomerApiIntegrationTest {
 			.andExpect(jsonPath("$.totalElements").value(0));
 		mvc.perform(get("/api/v1/work-orders").param("from", "2026-09-28").param("to", "2026-09-28"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.content[0].customer").value("Maria Silva"));
+			.andExpect(jsonPath("$.content[0].customer.name").value("Maria Silva"));
 		assertEquals(UUID.fromString(customerId), loaded.customerId());
 		assertEquals(1, loaded.participantCount());
 		mvc.perform(get("/api/v1/work-orders").param("from", "2026-09-28")
@@ -207,7 +207,7 @@ class CustomerApiIntegrationTest {
 		mvc.perform(post("/api/v1/work-orders").contentType(MediaType.APPLICATION_JSON)
 			.content(
 					"""
-							{"customerId":"%s","contractedHours":4,"hourlyRate":10,"participantIds":["%s"],"serviceDate":"2026-09-28"}
+							{"serviceDate":"2026-09-28","conditions":{"customerId":"%s","contractedHours":4,"hourlyRate":10,"participantIds":["%s"]}}
 							"""
 						.formatted(missing, participant())))
 			.andExpect(status().isNotFound());
@@ -225,7 +225,7 @@ class CustomerApiIntegrationTest {
 		mvc.perform(post("/api/v1/work-orders").contentType(MediaType.APPLICATION_JSON)
 			.content(
 					"""
-							{"customerId":"invalid","contractedHours":4,"hourlyRate":10,"participantIds":["%s"],"serviceDate":"2026-09-28"}
+							{"serviceDate":"2026-09-28","conditions":{"customerId":"invalid","contractedHours":4,"hourlyRate":10,"participantIds":["%s"]}}
 							"""
 						.formatted(participant())))
 			.andExpect(status().isBadRequest());
@@ -242,7 +242,7 @@ class CustomerApiIntegrationTest {
 			.perform(post("/api/v1/work-orders").contentType(MediaType.APPLICATION_JSON)
 				.content(
 						"""
-								{"customerId":"%s","contractedHours":4,"hourlyRate":10,"participantIds":["%s"],"serviceDate":"2026-09-28"}
+								{"serviceDate":"2026-09-28","conditions":{"customerId":"%s","contractedHours":4,"hourlyRate":10,"participantIds":["%s"]}}
 								"""
 							.formatted(customer.getId(), participant())))
 			.andExpect(status().isCreated())
@@ -252,7 +252,7 @@ class CustomerApiIntegrationTest {
 			.replaceAll(".*/", "");
 		mvc.perform(get("/api/v1/work-orders/" + id))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.customer").value(name));
+			.andExpect(jsonPath("$.customer.name").value(name));
 	}
 
 }

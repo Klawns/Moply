@@ -4,20 +4,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.http.MediaType;
+
 import com.jayway.jsonpath.JsonPath;
-import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.*;
 import com.klaus.moply.accounts.domain.vo.LoginEmail;
@@ -26,11 +28,12 @@ import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.domain.entities.Customer;
-import com.klaus.moply.shared.application.usecase.Usecase.Context;
+import com.klaus.moply.factory.PostgresSpringIntegrationTest;
 import com.klaus.moply.payments.application.usecase.*;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.reports.application.usecase.*;
 import com.klaus.moply.reports.application.usecase.dto.*;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 
 @SpringBootTest(properties = { "spring.jpa.open-in-view=false", "spring.flyway.enabled=true",
@@ -104,8 +107,17 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 	}
 
 	String input(String extra) {
-		return "{\"customerId\":\"" + customer + "\",\"serviceDate\":\"" + LocalDate.now(java.time.ZoneOffset.UTC)
-				+ "\",\"contractedHours\":4,\"participantIds\":[\"" + ana + "\",\"" + bruno + "\"]" + extra + "}";
+		// Keep acceptance at the request root and work conditions in their own object.
+		String acceptance = "";
+		int marker = extra.indexOf(",\"acceptedPricingFingerprint\"");
+		if (marker >= 0) {
+			acceptance = extra.substring(marker);
+			extra = extra.substring(0, marker);
+		}
+		return "{\"serviceDate\":\"" + LocalDate.now(java.time.ZoneOffset.UTC)
+				+ "\",\"conditions\":{\"customerId\":\"" + customer
+				+ "\",\"contractedHours\":4,\"participantIds\":[\"" + ana + "\",\"" + bruno + "\"]"
+				+ extra + "}" + acceptance + "}";
 	}
 
 	String preview(String extra) throws Exception {
@@ -155,7 +167,7 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.assignments[0].allocatedAmount").value(50))
 			.andExpect(jsonPath("$.assignments[0].appliedHourlyRate").value(20))
-			.andExpect(jsonPath("$.allocationPolicyVersion").value(2))
+			.andExpect(jsonPath("$.pricing.allocationPolicyVersion").value(2))
 			.andReturn()
 			.getResponse()
 			.getContentAsString();
@@ -166,7 +178,7 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.withPreferences("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("50")));
 		mvc.perform(get("/api/v1/work-orders/" + id).with(user(principal)))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.hourlyRate").value(30))
+			.andExpect(jsonPath("$.pricing.hourlyRate").value(30))
 			.andExpect(jsonPath("$.assignments[0].allocatedAmount").value(50));
 		var work = orders.findById(org, id).orElseThrow();
 		assertEquals(new BigDecimal("10.00"), work.assignments().getFirst().surplusAmount().value());
@@ -183,7 +195,7 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 						+ fingerprint(preview(",\"hourlyRate\":10")) + "\"")))
 			.andExpect(status().isUnprocessableEntity())
 			.andExpect(jsonPath("$.code").value("PRICING_BASES_EXCEED_TOTAL"))
-			.andExpect(jsonPath("$.pricingPreview.excessAmount").value(30));
+			.andExpect(jsonPath("$.pricingPreview.summary.excessAmount").value(30));
 		assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM tb_order_service WHERE organization_id=?",
 				Integer.class, org));
 	}
@@ -233,16 +245,17 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(jsonPath("$.defaultHourlyRate").doesNotExist());
 		mvc.perform(request("/api/v1/work-orders/pricing-preview", input(",\"hourlyRate\":null")))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.hourlyRate").value(35));
+			.andExpect(jsonPath("$.pricing.hourlyRate").value(35));
 		mvc.perform(request("/api/v1/work-orders/pricing-preview", input(",\"hourlyRate\":30")))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.hourlyRate").value(30));
+			.andExpect(jsonPath("$.pricing.hourlyRate").value(30));
 	}
 
 	@Test
 	void shouldConfirmSeriesCreationAndExposeFrozenPricingInItsResponse() throws Exception {
-		String seriesBody = input("").replace("\"serviceDate\"", "\"startsOn\"");
-		seriesBody = seriesBody.substring(0, seriesBody.length() - 1) + ",\"frequency\":\"WEEKLY\"}";
+		String seriesBody = "{\"frequency\":\"WEEKLY\",\"startsOn\":\"" + LocalDate.now(java.time.ZoneOffset.UTC)
+				+ "\",\"customerId\":\"" + customer
+				+ "\",\"contractedHours\":4,\"participantIds\":[\"" + ana + "\",\"" + bruno + "\"]}";
 		mvc.perform(request("/api/v1/recurrence-series", seriesBody))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.pricingPreview.participants[0].allocatedAmount").value(50));
@@ -282,7 +295,7 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 		people.save(org, people.findById(org, ana).orElseThrow().update("Ana", null, new BigDecimal("30")));
 		mvc.perform(request("/api/v1/work-orders", input("")))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.allocationPolicyVersion").value(1))
+			.andExpect(jsonPath("$.pricing.allocationPolicyVersion").value(1))
 			.andExpect(jsonPath("$.assignments[0].allocatedAmount").value(60))
 			.andExpect(jsonPath("$.assignments[1].allocatedAmount").value(60));
 	}

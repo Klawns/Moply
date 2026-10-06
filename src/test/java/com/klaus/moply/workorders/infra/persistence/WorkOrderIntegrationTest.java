@@ -211,13 +211,13 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	}
 
 	String body(UUID customerId, UUID locationId, List<UUID> participants, String extras) {
-		return "{\"customerId\":\"" + customerId + "\",\"customerLocationId\":"
+		return "{\"serviceDate\":\"2026-09-28\",\"conditions\":{\"customerId\":\"" + customerId + "\",\"customerLocationId\":"
 				+ (locationId == null ? "null" : "\"" + locationId + "\"")
-				+ ",\"serviceDate\":\"2026-09-28\",\"contractedHours\":3,\"hourlyRate\":11.50,\"participantIds\":"
+				+ ",\"contractedHours\":3,\"hourlyRate\":11.50,\"participantIds\":"
 				+ participants.stream()
 					.map(id -> "\"" + id + "\"")
 					.collect(java.util.stream.Collectors.joining(",", "[", "]"))
-				+ extras + "}";
+				+ extras + "}}";
 	}
 
 	@Test
@@ -231,14 +231,14 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 							+ foreignAccount + "\"")))
 			.andExpect(status().isCreated())
 			.andExpect(header().exists("Location"))
-			.andExpect(jsonPath("$.customer").value("Original"))
+			.andExpect(jsonPath("$.customer.name").value("Original"))
 			.andExpect(jsonPath("$.customerLocationId").value(location.toString()))
-			.andExpect(jsonPath("$.totalAmount").value(34.50))
-			.andExpect(jsonPath("$.currencyCode").value("GBP"))
+			.andExpect(jsonPath("$.pricing.totalAmount").value(34.50))
+			.andExpect(jsonPath("$.pricing.currencyCode").value("GBP"))
 			.andExpect(jsonPath("$.status").value("COMPLETED"))
 			.andExpect(jsonPath("$.version").value(0))
 			.andExpect(jsonPath("$.participantCount").value(2))
-			.andExpect(jsonPath("$.allocationPolicyVersion").value(1))
+			.andExpect(jsonPath("$.pricing.allocationPolicyVersion").value(1))
 			.andExpect(jsonPath("$.assignments[0].collaboratorId").value(second.toString()))
 			.andExpect(jsonPath("$.assignments[0].inclusionPosition").value(0))
 			.andExpect(jsonPath("$.assignments[0].allocatedAmount").value(17.25))

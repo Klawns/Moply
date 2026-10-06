@@ -27,13 +27,15 @@ import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrders;
 import com.klaus.moply.workorders.application.usecase.PreviewWorkOrderPricing;
-import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
-import com.klaus.moply.workorders.application.usecase.dto.PricingPreviewOutput;
-import com.klaus.moply.workorders.application.usecase.dto.WorkOrderOutput;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 import com.klaus.moply.workorders.infra.web.api.WorkOrderApi;
 import com.klaus.moply.workorders.infra.web.dto.request.CancelRequest;
+import com.klaus.moply.workorders.infra.web.dto.request.CreateWorkOrderRequest;
 import com.klaus.moply.workorders.infra.web.dto.request.RescheduleRequest;
+import com.klaus.moply.workorders.infra.web.dto.response.PricingPreviewResponse;
+import com.klaus.moply.workorders.infra.web.dto.response.WorkOrderResponse;
+
+import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,13 +48,6 @@ public class WorkOrderController implements WorkOrderApi {
 
 	private final PreviewWorkOrderPricing preview;
 
-	@PostMapping("/pricing-preview")
-	@Override
-	public PricingPreviewOutput preview(@AuthenticationPrincipal AccountPrincipal principal,
-			@RequestBody CreateWorkOrderInput input) {
-		return preview.execute(new Context(principal.getOrganizationId()), input);
-	}
-
 	private final FindWorkOrderById findById;
 
 	private final FindWorkOrders find;
@@ -62,6 +57,14 @@ public class WorkOrderController implements WorkOrderApi {
 	private final RescheduleSelectedWorkOrder reschedule;
 
 	private final CancelSelectedWorkOrder cancel;
+
+	@PostMapping("/pricing-preview")
+	@Override
+	public PricingPreviewResponse preview(@AuthenticationPrincipal AccountPrincipal principal,
+			@Valid @RequestBody CreateWorkOrderRequest request) {
+		return PricingPreviewResponse
+			.from(preview.execute(new Context(principal.getOrganizationId()), request.toInput()));
+	}
 
 	@PostMapping("/{id}/complete")
 	@Override
@@ -91,28 +94,28 @@ public class WorkOrderController implements WorkOrderApi {
 
 	@PostMapping
 	@Override
-	public ResponseEntity<WorkOrderOutput> create(@AuthenticationPrincipal AccountPrincipal principal,
-			@RequestBody CreateWorkOrderInput input) {
-		var output = create.execute(new Context(principal.getOrganizationId()), input);
-		return ResponseEntity.created(URI.create("/api/v1/work-orders/" + output.id())).body(output);
+	public ResponseEntity<WorkOrderResponse> create(@AuthenticationPrincipal AccountPrincipal principal,
+			@Valid @RequestBody CreateWorkOrderRequest request) {
+		var output = create.execute(new Context(principal.getOrganizationId()), request.toInput());
+		return ResponseEntity.created(URI.create("/api/v1/work-orders/" + output.id())).body(WorkOrderResponse.from(output));
 	}
 
 	@GetMapping("/{id}")
 	@Override
-	public WorkOrderOutput get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
-		return findById.execute(new Context(principal.getOrganizationId()), id);
+	public WorkOrderResponse get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
+		return WorkOrderResponse.from(findById.execute(new Context(principal.getOrganizationId()), id));
 	}
 
 	@GetMapping
 	@Override
-	public PageResponse<WorkOrderOutput> list(@AuthenticationPrincipal AccountPrincipal principal,
+	public PageResponse<WorkOrderResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestParam(required = false) LocalDate from, @RequestParam(required = false) LocalDate to,
 			@RequestParam(required = false) UUID customerId, @RequestParam(required = false) WorkOrderStatus status,
 			@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
 			@RequestParam(required = false) String sort, @RequestParam(required = false) String direction) {
 		return PageResponse
 			.from(find.execute(new Context(principal.getOrganizationId()), new FindWorkOrders.Filter(from, to,
-					customerId, status, PageQueryRequest.toQuery(page, size, sort, direction))), value -> value);
+					customerId, status, PageQueryRequest.toQuery(page, size, sort, direction))), WorkOrderResponse::from);
 	}
 
 }

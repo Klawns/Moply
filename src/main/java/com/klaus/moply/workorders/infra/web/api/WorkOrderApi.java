@@ -8,12 +8,13 @@ import org.springframework.http.ResponseEntity;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.shared.infra.web.dto.PageResponse;
-import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
-import com.klaus.moply.workorders.application.usecase.dto.PricingPreviewOutput;
-import com.klaus.moply.workorders.application.usecase.dto.WorkOrderOutput;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 import com.klaus.moply.workorders.infra.web.dto.request.CancelRequest;
+import com.klaus.moply.workorders.infra.web.dto.request.CreateWorkOrderRequest;
 import com.klaus.moply.workorders.infra.web.dto.request.RescheduleRequest;
+import com.klaus.moply.workorders.infra.web.dto.response.PricingPreviewResponse;
+import com.klaus.moply.workorders.infra.web.dto.response.PricingProblemResponse;
+import com.klaus.moply.workorders.infra.web.dto.response.WorkOrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -47,7 +48,7 @@ public interface WorkOrderApi {
 	@ApiResponse(responseCode = "404", description = "Recurso não encontrado.",
 			content = @Content(mediaType = "application/problem+json",
 					schema = @Schema(implementation = ProblemDetail.class)))
-	PricingPreviewOutput preview(@Parameter(hidden = true) AccountPrincipal principal, CreateWorkOrderInput input);
+	PricingPreviewResponse preview(@Parameter(hidden = true) AccountPrincipal principal, CreateWorkOrderRequest input);
 
 	@SecurityRequirements({ @SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "csrfToken") })
 	@Operation(summary = "Concluir trabalho", operationId = "workOrder_complete")
@@ -95,25 +96,25 @@ public interface WorkOrderApi {
 	@ApiResponse(responseCode = "409",
 			description = "Confirmação de preços necessária (PRICING_ACCEPTANCE_REQUIRED), ou conflito com o estado atual. O erro de preços inclui pricingPreview.",
 			content = @Content(mediaType = "application/problem+json",
-					schema = @Schema(implementation = ProblemDetail.class)))
+					schema = @Schema(anyOf = { ProblemDetail.class, PricingProblemResponse.class })))
 	@ApiResponse(responseCode = "422",
 			description = "Bases individuais excedem o total (PRICING_BASES_EXCEED_TOTAL). Inclui code e pricingPreview.",
 			content = @Content(mediaType = "application/problem+json",
-					schema = @Schema(implementation = ProblemDetail.class)))
-	ResponseEntity<WorkOrderOutput> create(@Parameter(hidden = true) AccountPrincipal principal,
-			CreateWorkOrderInput input);
+					schema = @Schema(implementation = PricingProblemResponse.class)))
+	ResponseEntity<WorkOrderResponse> create(@Parameter(hidden = true) AccountPrincipal principal,
+			CreateWorkOrderRequest input);
 
 	@Operation(summary = "Consultar trabalho", operationId = "workOrder_get")
 	@ApiResponse(responseCode = "200", description = "Operação concluída.", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Recurso não encontrado.",
 			content = @Content(mediaType = "application/problem+json",
 					schema = @Schema(implementation = ProblemDetail.class)))
-	WorkOrderOutput get(@Parameter(hidden = true) AccountPrincipal principal,
+	WorkOrderResponse get(@Parameter(hidden = true) AccountPrincipal principal,
 			@Parameter(description = "Identificador do recurso.") UUID id);
 
 	@Operation(summary = "Listar trabalhos", operationId = "workOrder_list")
 	@ApiResponse(responseCode = "200", description = "Operação concluída.", useReturnTypeSchema = true)
-	PageResponse<WorkOrderOutput> list(@Parameter(hidden = true) AccountPrincipal principal,
+	PageResponse<WorkOrderResponse> list(@Parameter(hidden = true) AccountPrincipal principal,
 			@Parameter(description = "Data inicial (inclusive).") LocalDate from,
 			@Parameter(description = "Data final (inclusive).") LocalDate to,
 			@Parameter(description = "Identificador do cliente.") UUID customerId,

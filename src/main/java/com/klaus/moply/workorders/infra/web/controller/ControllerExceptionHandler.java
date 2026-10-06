@@ -3,6 +3,7 @@ package com.klaus.moply.workorders.infra.web.controller;
 import java.util.UUID;
 
 import com.klaus.moply.workorders.application.usecase.exception.PricingAcceptanceException;
+import com.klaus.moply.workorders.infra.web.dto.response.PricingPreviewResponse;
 
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -97,7 +98,7 @@ public class ControllerExceptionHandler {
 		var problem = ProblemDetail.forStatusAndDetail(status, error.getMessage());
 		problem.setProperty("code",
 				error.preview().canCreate() ? "PRICING_ACCEPTANCE_REQUIRED" : "PRICING_BASES_EXCEED_TOTAL");
-		problem.setProperty("pricingPreview", error.preview());
+		problem.setProperty("pricingPreview", PricingPreviewResponse.from(error.preview()));
 		return ResponseEntity.status(status).body(problem);
 	}
 
