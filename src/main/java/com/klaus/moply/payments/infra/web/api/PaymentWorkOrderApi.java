@@ -6,8 +6,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
-import com.klaus.moply.payments.infra.web.dto.PaymentResponse;
-import com.klaus.moply.payments.infra.web.dto.RecordPaymentRequest;
+import com.klaus.moply.payments.infra.web.dto.response.PaymentResponse;
+import com.klaus.moply.payments.infra.web.dto.request.RecordPaymentRequest;
 import com.klaus.moply.shared.infra.web.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

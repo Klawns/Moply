@@ -600,7 +600,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(jsonPath("$.amount").value(34.50))
 			.andExpect(jsonPath("$.currencyCode").value("GBP"))
 			.andExpect(jsonPath("$.status").value("RECORDED"))
-			.andExpect(jsonPath("$.recordedBy").value(principal.getUserId().toString()))
+			.andExpect(jsonPath("$.recording.by").value(principal.getUserId().toString()))
 			.andReturn();
 		var paymentId = UUID
 			.fromString(com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.id"));
@@ -663,7 +663,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.content("{\"confirmNoMoneyReceived\":true,\"reason\":\"Lançamento incorreto\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("REVERSED"))
-			.andExpect(jsonPath("$.reversedBy").value(principal.getUserId().toString()));
+			.andExpect(jsonPath("$.reversal.by").value(principal.getUserId().toString()));
 		var reversed = payments.findById(account, payment.id()).orElseThrow();
 		assertEquals(payment.amount(), reversed.amount());
 		assertEquals(payment.recordedAt(), reversed.recordedAt());
@@ -847,7 +847,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.content("{\"confirmNotActuallyPaid\":true,\"reason\":\"Recorded in error\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("REVERSED"))
-			.andExpect(jsonPath("$.reversalReason").value("Recorded in error"));
+			.andExpect(jsonPath("$.reversal.reason").value("Recorded in error"));
 		mvc.perform(post(base).with(user(principal))
 			.with(csrf())
 			.header("Idempotency-Key", "collab-payment-3")
@@ -862,10 +862,10 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(status().isNoContent());
 		mvc.perform(get("/api/v1/collaborators/" + person + "/payments/summary").with(user(principal)))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.allocatedAmount").value(17.25))
-			.andExpect(jsonPath("$.recordedAmount").value(17.25))
-			.andExpect(jsonPath("$.remainingAmount").value(0.00))
-			.andExpect(jsonPath("$.requiresAttention").value(false));
+			.andExpect(jsonPath("$.balance.allocatedAmount").value(17.25))
+			.andExpect(jsonPath("$.balance.recordedAmount").value(17.25))
+			.andExpect(jsonPath("$.balance.remainingAmount").value(0.00))
+			.andExpect(jsonPath("$.balance.requiresAttention").value(false));
 		mvc.perform(post("/api/v1/work-orders/" + saved.id() + "/cancel").with(user(principal)).with(csrf()))
 			.andExpect(status().isConflict());
 		mvc.perform(get(base).with(user(principal)))
@@ -901,11 +901,11 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		mvc.perform(get("/api/v1/collaborators/" + person + "/payments/summary").with(user(principal)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.currencyCode").value("GBP"))
-			.andExpect(jsonPath("$.remainingAmount").value(69.00))
+			.andExpect(jsonPath("$.balance.remainingAmount").value(69.00))
 			.andExpect(jsonPath("$.workOrders[0].workOrderId").value(due.id().toString()))
-			.andExpect(jsonPath("$.workOrders[0].requiresAttention").value(true))
+			.andExpect(jsonPath("$.workOrders[0].balance.requiresAttention").value(true))
 			.andExpect(jsonPath("$.workOrders[1].workOrderId").value(future.id().toString()))
-			.andExpect(jsonPath("$.workOrders[1].requiresAttention").value(false));
+			.andExpect(jsonPath("$.workOrders[1].balance.requiresAttention").value(false));
 		mvc.perform(get("/api/v1/collaborators/" + person + "/payments/summary").with(user(foreignPrincipal)))
 			.andExpect(status().isNotFound());
 	}

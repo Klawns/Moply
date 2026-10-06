@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.payments.application.usecase.ReverseWorkOrderPayment;
 import com.klaus.moply.payments.infra.web.api.PaymentApi;
-import com.klaus.moply.payments.infra.web.dto.PaymentResponse;
-import com.klaus.moply.payments.infra.web.dto.ReversePaymentRequest;
+import com.klaus.moply.payments.infra.web.dto.response.PaymentResponse;
+import com.klaus.moply.payments.infra.web.dto.request.ReversePaymentRequest;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import jakarta.validation.Valid;

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.payments.application.usecase.GetCollaboratorPaymentSummary;
 import com.klaus.moply.payments.infra.web.api.PaymentCollaboratorApi;
-import com.klaus.moply.payments.infra.web.dto.CollaboratorPaymentSummaryResponse;
+import com.klaus.moply.payments.infra.web.dto.response.CollaboratorPaymentSummaryResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.klaus.moply.payments.infra.web.dto;
+package com.klaus.moply.payments.infra.web.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 

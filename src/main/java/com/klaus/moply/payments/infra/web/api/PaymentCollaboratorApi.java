@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.http.ProblemDetail;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
-import com.klaus.moply.payments.infra.web.dto.CollaboratorPaymentSummaryResponse;
+import com.klaus.moply.payments.infra.web.dto.response.CollaboratorPaymentSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
