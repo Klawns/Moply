@@ -22,11 +22,12 @@ import com.klaus.moply.collaborators.application.usecase.FindCollaboratorById;
 import com.klaus.moply.collaborators.application.usecase.UpdateCollaborator;
 import com.klaus.moply.collaborators.application.usecase.dto.CreateCollaboratorInput;
 import com.klaus.moply.collaborators.application.usecase.dto.UpdateCollaboratorInput;
+import com.klaus.moply.collaborators.infra.web.api.CollaboratorApi;
 import com.klaus.moply.collaborators.infra.web.dto.CollaboratorRequest;
 import com.klaus.moply.collaborators.infra.web.dto.CollaboratorResponse;
+import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.infra.web.PageQueryRequest;
 import com.klaus.moply.shared.infra.web.dto.PageResponse;
-import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import jakarta.validation.Valid;
 
@@ -35,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/collaborators")
 @RequiredArgsConstructor
-public class CollaboratorController {
+public class CollaboratorController implements CollaboratorApi {
 
 	private final CreateCollaborator create;
 
@@ -48,6 +49,7 @@ public class CollaboratorController {
 	private final DeactivateCollaborator deactivate;
 
 	@PostMapping
+	@Override
 	public ResponseEntity<UUID> create(@AuthenticationPrincipal AccountPrincipal principal,
 			@Valid @RequestBody CollaboratorRequest request) {
 		var id = create.execute(new Context(principal.getOrganizationId()),
@@ -56,6 +58,7 @@ public class CollaboratorController {
 	}
 
 	@GetMapping
+	@Override
 	public PageResponse<CollaboratorResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestParam(required = false) Boolean active, @RequestParam(required = false) Integer page,
 			@RequestParam(required = false) Integer size, @RequestParam(required = false) String sort,
@@ -67,11 +70,13 @@ public class CollaboratorController {
 	}
 
 	@GetMapping("/{id}")
+	@Override
 	public CollaboratorResponse find(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
 		return CollaboratorResponse.from(findById.execute(new Context(principal.getOrganizationId()), id));
 	}
 
 	@PutMapping("/{id}")
+	@Override
 	public CollaboratorResponse update(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
 			@Valid @RequestBody CollaboratorRequest request) {
 		return CollaboratorResponse
@@ -80,6 +85,7 @@ public class CollaboratorController {
 	}
 
 	@PostMapping("/{id}/deactivate")
+	@Override
 	public ResponseEntity<Void> deactivate(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
 		deactivate.execute(new Context(principal.getOrganizationId()), id);
 		return ResponseEntity.noContent().build();
