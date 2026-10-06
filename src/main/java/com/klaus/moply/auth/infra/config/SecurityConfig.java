@@ -28,6 +28,12 @@ import jakarta.servlet.http.HttpServletResponse;
 @Configuration
 public class SecurityConfig {
 
+	@Value("${springdoc.api-docs.enabled:false}")
+	private boolean apiDocsEnabled;
+
+	@Value("${springdoc.swagger-ui.enabled:false}")
+	private boolean swaggerUiEnabled;
+
 	private static final String LOGIN_URL = "/api/v1/auth/login";
 
 	@Bean
@@ -55,21 +61,30 @@ public class SecurityConfig {
 	}
 
 	private void configureAuthorization(HttpSecurity http) {
-		http.authorizeHttpRequests(authorize -> authorize.dispatcherTypeMatchers(DispatcherType.ERROR)
-			.permitAll()
-			.requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf")
-			.permitAll()
-			.requestMatchers(HttpMethod.POST, "/api/v1/accounts", LOGIN_URL)
-			.permitAll()
-			.requestMatchers("/api/v1/accounts/me", "/api/v1/accounts/me/preferences", "/api/v1/auth/me")
-			.authenticated()
-			.requestMatchers("/api/v1/customers", "/api/v1/customers/**", "/api/v1/work-orders",
-					"/api/v1/work-orders/**", "/api/v1/payments/**", "/api/v1/collaborators",
-					"/api/v1/collaborators/**", "/api/v1/recurrence-series", "/api/v1/recurrence-series/**",
-					"/api/v1/reports/**")
-			.authenticated()
-			.anyRequest()
-			.denyAll());
+		http.authorizeHttpRequests(authorize -> {
+			if (apiDocsEnabled) {
+				authorize.requestMatchers(HttpMethod.GET, "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml")
+					.permitAll();
+			}
+			if (apiDocsEnabled && swaggerUiEnabled) {
+				authorize.requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**").permitAll();
+			}
+			authorize.dispatcherTypeMatchers(DispatcherType.ERROR)
+				.permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf")
+				.permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/v1/accounts", LOGIN_URL)
+				.permitAll()
+				.requestMatchers("/api/v1/accounts/me", "/api/v1/accounts/me/preferences", "/api/v1/auth/me")
+				.authenticated()
+				.requestMatchers("/api/v1/customers", "/api/v1/customers/**", "/api/v1/work-orders",
+						"/api/v1/work-orders/**", "/api/v1/payments/**", "/api/v1/collaborators",
+						"/api/v1/collaborators/**", "/api/v1/recurrence-series", "/api/v1/recurrence-series/**",
+						"/api/v1/reports/**")
+				.authenticated()
+				.anyRequest()
+				.denyAll();
+		});
 	}
 
 	private void configureLogin(HttpSecurity http, JwtCookieService jwt) {

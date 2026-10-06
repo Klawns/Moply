@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -33,6 +34,7 @@ import com.klaus.moply.auth.infra.security.JwtCookieService;
 import com.klaus.moply.auth.infra.web.AuthController;
 
 @WebMvcTest(AuthController.class)
+@ActiveProfiles("test")
 @Import({ SecurityConfig.class, SecurityConfigTest.WebSecurity.class })
 class SecurityConfigTest {
 
@@ -44,6 +46,15 @@ class SecurityConfigTest {
 
 	@MockitoBean
 	UserDetailsService users;
+
+	@Test
+	void shouldDenyDocumentationWhenDisabled() throws Exception {
+		for (String path : new String[] { "/v3/api-docs", "/v3/api-docs/swagger-config", "/swagger-ui.html",
+				"/swagger-ui/index.html" }) {
+			mvc.perform(get(path)).andExpect(status().isUnauthorized());
+			mvc.perform(get(path).with(user("manager"))).andExpect(status().isForbidden());
+		}
+	}
 
 	@Test
 	void shouldExposeCsrfTokenWithHttpOnlyCookie() throws Exception {
