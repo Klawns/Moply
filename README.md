@@ -21,3 +21,17 @@ A tarifa padrão da conta pode preencher o cadastro de um novo trabalho e pode s
 
 Quando existem tarifas próprias diferentes da tarifa do trabalho, a API apresenta uma prévia das bases individuais e da divisão da sobra, exigindo confirmação antes de salvar. Se as bases ultrapassarem o preço do serviço, o usuário precisa ajustar os valores. Alterar uma tarifa cadastral não modifica trabalhos nem condições de séries já aprovadas.
 
+## Documentação da API
+
+No perfil `dev`, acesse [Swagger UI](http://localhost:8080/swagger-ui.html). A especificação JSON está em [OpenAPI](http://localhost:8080/v3/api-docs). A documentação é organizada por recurso, com filtros, corpos das requisições e respostas de cada operação.
+
+Para testar pelo Swagger no mesmo servidor da API:
+
+1. Execute `GET /api/v1/auth/csrf` e copie o campo `token` da resposta.
+2. Em **Authorize**, preencha `csrfToken` com esse valor. O cookie CSRF é mantido pelo navegador.
+3. Cadastre uma conta em `POST /api/v1/accounts`, se necessário.
+4. Execute `POST /api/v1/auth/login` com `email` e `password` no formulário. O navegador recebe o cookie de autenticação automaticamente; não é necessário preencher `cookieAuth`.
+5. Obtenha um novo token CSRF e atualize **Authorize** antes de executar operações de escrita. As consultas autenticadas já usam o cookie recebido.
+6. Para sair, execute `POST /api/v1/auth/logout`. Obtenha novamente o token CSRF antes de iniciar outro login.
+
+Swagger UI e OpenAPI ficam desabilitados em produção e nos testes comuns. Somente os testes específicos de documentação ativam esses recursos. O Swagger não altera a autenticação nem a proteção CSRF da aplicação.
