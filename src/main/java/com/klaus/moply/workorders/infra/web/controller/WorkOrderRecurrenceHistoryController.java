@@ -15,17 +15,19 @@ import com.klaus.moply.recurrence.application.usecase.dto.OccurrenceHistoryOutpu
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.infra.web.PageQueryRequest;
 import com.klaus.moply.shared.infra.web.dto.PageResponse;
+import com.klaus.moply.workorders.infra.web.api.WorkOrderRecurrenceHistoryApi;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/work-orders")
 @RequiredArgsConstructor
-public class WorkOrderRecurrenceHistoryController {
+public class WorkOrderRecurrenceHistoryController implements WorkOrderRecurrenceHistoryApi {
 
 	private final FindOccurrenceHistory history;
 
 	@GetMapping("/{id}/recurrence-history")
+	@Override
 	public PageResponse<OccurrenceHistoryOutput> history(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID id, @RequestParam(required = false) Integer page,
 			@RequestParam(required = false) Integer size, @RequestParam(required = false) String sort,

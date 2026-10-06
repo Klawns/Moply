@@ -1,9 +1,5 @@
 package com.klaus.moply.workorders.infra.web.controller;
 
-import com.klaus.moply.workorders.application.usecase.dto.PricingPreviewOutput;
-
-import com.klaus.moply.workorders.application.usecase.PreviewWorkOrderPricing;
-
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -30,9 +26,12 @@ import com.klaus.moply.workorders.application.usecase.CompleteWorkOrder;
 import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrderById;
 import com.klaus.moply.workorders.application.usecase.FindWorkOrders;
+import com.klaus.moply.workorders.application.usecase.PreviewWorkOrderPricing;
 import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
+import com.klaus.moply.workorders.application.usecase.dto.PricingPreviewOutput;
 import com.klaus.moply.workorders.application.usecase.dto.WorkOrderOutput;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
+import com.klaus.moply.workorders.infra.web.api.WorkOrderApi;
 import com.klaus.moply.workorders.infra.web.dto.request.CancelRequest;
 import com.klaus.moply.workorders.infra.web.dto.request.RescheduleRequest;
 
@@ -41,13 +40,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/work-orders")
 @RequiredArgsConstructor
-public class WorkOrderController {
+public class WorkOrderController implements WorkOrderApi {
 
 	private final CreateWorkOrder create;
 
 	private final PreviewWorkOrderPricing preview;
 
 	@PostMapping("/pricing-preview")
+	@Override
 	public PricingPreviewOutput preview(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestBody CreateWorkOrderInput input) {
 		return preview.execute(new Context(principal.getOrganizationId()), input);
@@ -64,12 +64,14 @@ public class WorkOrderController {
 	private final CancelSelectedWorkOrder cancel;
 
 	@PostMapping("/{id}/complete")
+	@Override
 	public ResponseEntity<Void> complete(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
 		complete.execute(new Context(principal.getOrganizationId()), id);
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{id}/reschedule")
+	@Override
 	public ResponseEntity<Void> reschedule(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
 			@RequestBody RescheduleRequest request) {
 		reschedule.execute(new Context(principal.getOrganizationId()),
@@ -79,6 +81,7 @@ public class WorkOrderController {
 	}
 
 	@PostMapping("/{id}/cancel")
+	@Override
 	public ResponseEntity<Void> cancel(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
 			@RequestBody(required = false) CancelRequest request) {
 		cancel.execute(new Context(principal.getOrganizationId()), new CancelSelectedWorkOrderInput(id,
@@ -87,6 +90,7 @@ public class WorkOrderController {
 	}
 
 	@PostMapping
+	@Override
 	public ResponseEntity<WorkOrderOutput> create(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestBody CreateWorkOrderInput input) {
 		var output = create.execute(new Context(principal.getOrganizationId()), input);
@@ -94,11 +98,13 @@ public class WorkOrderController {
 	}
 
 	@GetMapping("/{id}")
+	@Override
 	public WorkOrderOutput get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
 		return findById.execute(new Context(principal.getOrganizationId()), id);
 	}
 
 	@GetMapping
+	@Override
 	public PageResponse<WorkOrderOutput> list(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestParam(required = false) LocalDate from, @RequestParam(required = false) LocalDate to,
 			@RequestParam(required = false) UUID customerId, @RequestParam(required = false) WorkOrderStatus status,
