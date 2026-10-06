@@ -35,3 +35,5 @@ Para testar pelo Swagger no mesmo servidor da API:
 6. Para sair, execute `POST /api/v1/auth/logout`. Obtenha novamente o token CSRF antes de iniciar outro login.
 
 Swagger UI e OpenAPI ficam desabilitados em produção e nos testes comuns. Somente os testes específicos de documentação ativam esses recursos. O Swagger não altera a autenticação nem a proteção CSRF da aplicação.
+
+Os formatos de entrada e resposta estão descritos em [Contratos HTTP](docs/contratos-http.md).
