@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.reports.application.usecase.FindCollaboratorsReport;
 import com.klaus.moply.reports.infra.web.api.CollaboratorsReportApi;
-import com.klaus.moply.reports.infra.web.dto.CollaboratorReportPeriodRequest;
-import com.klaus.moply.reports.infra.web.dto.CollaboratorsReportResponse;
+import com.klaus.moply.reports.infra.web.dto.request.CollaboratorReportPeriodRequest;
+import com.klaus.moply.reports.infra.web.dto.response.CollaboratorsReportResponse;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
 import jakarta.validation.Valid;

@@ -1,4 +1,4 @@
-package com.klaus.moply.reports.infra.web.dto;
+package com.klaus.moply.reports.infra.web.dto.request;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -11,9 +11,11 @@ import jakarta.validation.constraints.NotNull;
 
 public record CollaboratorReportPeriodRequest(@NotNull LocalDate from, @NotNull LocalDate to, UUID customerId,
 		UUID collaboratorId, Integer page, Integer size, String sort, String direction) {
+
 	public CollaboratorsReportInput toInput() {
 		return new CollaboratorsReportInput(
 				new ReportPeriod(from, to, customerId, PageQueryRequest.toQuery(page, size, sort, direction)),
 				collaboratorId);
 	}
+
 }

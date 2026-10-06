@@ -226,7 +226,7 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(
 					org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.works.totalElements")
 						.value(2))
-			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.realizedAmount")
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.summary.realizedAmount")
 				.value(80.00));
 		assertEquals(new BigDecimal("75.00"), collaboratorsResult.realizedPendingTotal());
 		var firstAssignment = collaboratorsResult.assignments()

@@ -4,8 +4,8 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ProblemDetail;
 
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
-import com.klaus.moply.reports.infra.web.dto.CustomerPaymentsReportResponse;
-import com.klaus.moply.reports.infra.web.dto.ReportPeriodRequest;
+import com.klaus.moply.reports.infra.web.dto.response.CustomerPaymentsReportResponse;
+import com.klaus.moply.reports.infra.web.dto.request.ReportPeriodRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
