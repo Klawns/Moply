@@ -74,7 +74,7 @@ class OpenApiIntegrationTest {
 				documentedOperations.add(path + ":" + verb);
 			}));
 		});
-		assertThat(controllers).hasSize(16);
+		assertThat(controllers).hasSize(17);
 		Set<String> actualOperations = new HashSet<>();
 		paths.forEach(
 				(path, operations) -> operations.keySet().forEach(verb -> actualOperations.add(path + ":" + verb)));

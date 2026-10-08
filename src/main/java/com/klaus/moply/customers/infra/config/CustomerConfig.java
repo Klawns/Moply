@@ -17,6 +17,12 @@ import com.klaus.moply.customers.application.usecase.UpdateCustomerLocation;
 public class CustomerConfig {
 
 	@Bean
+	public com.klaus.moply.customers.application.usecase.FindAllLocations findAllLocations(
+			com.klaus.moply.customers.application.ports.LocationReadRepository repo) {
+		return new com.klaus.moply.customers.application.usecase.FindAllLocations(repo);
+	}
+
+	@Bean
 	public CreateCustomer createCustomer(CustomerRepository repo) {
 		return new CreateCustomer(repo);
 	}

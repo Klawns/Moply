@@ -86,6 +86,19 @@ class CustomerApiIntegrationTest {
 		});
 	}
 
+	@Test
+	void shouldListGlobalLocationsWithSearchAndPaginationValidation() throws Exception {
+		var id = createCustomer();
+		mvc.perform(get("/api/v1/locations").param("q", " MARIA ").param("size", "1"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].name").value("Casa"))
+			.andExpect(jsonPath("$.content[0].customerName").value("Maria"))
+			.andExpect(jsonPath("$.content[0].customerId").value(id))
+			.andExpect(jsonPath("$.totalElements").value(1));
+		mvc.perform(get("/api/v1/locations").param("size", "101")).andExpect(status().isBadRequest());
+		mvc.perform(get("/api/v1/locations").param("sort", "customerName")).andExpect(status().isBadRequest());
+	}
+
 	private String createCustomer() throws Exception {
 		return mvc.perform(post("/api/v1/customers").contentType(MediaType.APPLICATION_JSON).content("""
 				{"name":"  Maria  ","phone":"123","email":"a@b","locations":[{"name":"Casa"}]}

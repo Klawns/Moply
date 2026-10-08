@@ -77,8 +77,8 @@ public class SecurityConfig {
 				.permitAll()
 				.requestMatchers("/api/v1/accounts/me", "/api/v1/accounts/me/preferences", "/api/v1/auth/me")
 				.authenticated()
-				.requestMatchers("/api/v1/customers", "/api/v1/customers/**", "/api/v1/work-orders",
-						"/api/v1/work-orders/**", "/api/v1/payments/**", "/api/v1/collaborators",
+				.requestMatchers("/api/v1/locations", "/api/v1/customers", "/api/v1/customers/**",
+						"/api/v1/work-orders", "/api/v1/work-orders/**", "/api/v1/payments/**", "/api/v1/collaborators",
 						"/api/v1/collaborators/**", "/api/v1/recurrence-series", "/api/v1/recurrence-series/**",
 						"/api/v1/reports/**")
 				.authenticated()

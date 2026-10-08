@@ -194,7 +194,12 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 		String lb = json(mvc.perform(get("/api/v1/customers/" + cb).cookie(b)).andReturn(), "$.locations[0].id");
 		String oa = order(a, ta, ca);
 		String ob = order(b, tb, cb);
-		for (String path : new String[] { "/api/v1/customers", "/api/v1/customers/" + ca,
+		mvc.perform(get("/api/v1/locations").cookie(a))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.totalElements").value(1))
+			.andExpect(jsonPath("$.content[0].id").value(la))
+			.andExpect(jsonPath("$.content[0].customerId").value(ca));
+		for (String path : new String[] { "/api/v1/customers", "/api/v1/locations", "/api/v1/customers/" + ca,
 				"/api/v1/customers/" + ca + "/locations", "/api/v1/work-orders/" + oa }) {
 			mvc.perform(get(path)).andExpect(status().isUnauthorized());
 		}
@@ -328,18 +333,27 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 				.content("{\"name\":\"Worker\"}"))
 			.andExpect(status().isCreated())
 			.andReturn(), "$");
+		String input = orderBody(customer).replace("00000000-0000-0000-0000-000000000099", participant);
+		String fingerprint = json(mvc
+			.perform(post("/api/v1/work-orders/pricing-preview").cookie(auth, csrf.cookie())
+				.header(csrf.header(), csrf.value())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(input))
+			.andExpect(status().isOk())
+			.andReturn(), "$.pricingFingerprint");
+		input = input.substring(0, input.length() - 1) + ",\"acceptedPricingFingerprint\":\"" + fingerprint + "\"}";
 		return json(mvc
 			.perform(post("/api/v1/work-orders").cookie(auth, csrf.cookie())
 				.header(csrf.header(), csrf.value())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(orderBody(customer).replace("00000000-0000-0000-0000-000000000099", participant)))
+				.content(input))
 			.andExpect(status().isCreated())
 			.andReturn(), "$.id");
 	}
 
 	private String orderBody(String customer) {
-		return "{\"customerId\":\"" + customer
-				+ "\",\"contractedHours\":4,\"hourlyRate\":10,\"participantIds\":[\"00000000-0000-0000-0000-000000000099\"],\"serviceDate\":\"2026-09-28\"}";
+		return "{\"serviceDate\":\"2026-09-28\",\"conditions\":{\"customerId\":\"" + customer
+				+ "\",\"contractedHours\":4,\"hourlyRate\":10,\"participantIds\":[\"00000000-0000-0000-0000-000000000099\"]}}";
 	}
 
 	@Test
