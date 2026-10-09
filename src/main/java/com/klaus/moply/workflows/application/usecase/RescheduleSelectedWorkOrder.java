@@ -2,7 +2,7 @@ package com.klaus.moply.workflows.application.usecase;
 
 import com.klaus.moply.recurrence.domain.ChangeScope;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.OccurrenceSelection;
 import com.klaus.moply.workflows.application.usecase.dto.RescheduleOccurrenceInput;
 import com.klaus.moply.workflows.application.usecase.dto.RescheduleSelectedWorkOrderInput;
@@ -28,7 +28,7 @@ public class RescheduleSelectedWorkOrder implements Usecase.Contextual<Reschedul
 					input.serviceDate(), input.startTime()));
 		}
 		if (input.scope() == ChangeScope.THIS_AND_FOLLOWING)
-			throw new DomainException("Trabalho avulso não possui próximas ocorrências.");
+			throw new ApplicationException("Trabalho avulso não possui próximas ocorrências.");
 		return standalone.execute(context,
 				new RescheduleWorkOrderInput(input.workId(), input.serviceDate(), input.startTime()));
 	}

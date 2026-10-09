@@ -84,6 +84,8 @@ class OpenApiIntegrationTest {
 		Map<String, Object> components = value(document, "components");
 		Map<String, Object> schemas = value(components, "schemas");
 		assertThat(schemas).containsKeys("ProblemDetail", "RegistrationRequest", "PreferencesRequest", "CsrfResponse");
+		Map<String, Object> problemDetail = value(schemas, "ProblemDetail");
+		assertThat(value(problemDetail, "properties", Map.class)).containsKeys("category", "code", "requestId");
 		assertSchemaReferencesResolve(document, schemas);
 	}
 
@@ -147,17 +149,19 @@ class OpenApiIntegrationTest {
 		assertThat(value(schemas.get("WorkOrderResponse"), "properties", Map.class))
 			.containsKeys("customer", "schedule", "pricing", "recurrence", "assignments")
 			.doesNotContainKeys("customerId", "totalAmount", "recurrenceSeriesId");
-		assertThat(value(schemas.get("SeriesResponse"), "properties", Map.class))
-			.containsOnlyKeys("id", "frequency", "period", "conditions", "lineage");
+		assertThat(value(schemas.get("SeriesResponse"), "properties", Map.class)).containsOnlyKeys("id", "frequency",
+				"period", "conditions", "lineage");
 		assertThat(value(schemas.get("PricingPreviewResponse"), "properties", Map.class))
-			.containsKeys("pricing", "summary", "participants").doesNotContainKeys("baseTotal", "totalAmount");
-		assertThat(value(schemas.get("PricingProblemResponse"), "properties", Map.class))
-			.containsKeys("code", "pricingPreview");
-		assertThat(value(schemas.get("PaymentResponse"), "properties", Map.class))
-			.containsKeys("recording", "reversal").doesNotContainKeys("recordedAt", "reversedBy");
+			.containsKeys("pricing", "summary", "participants")
+			.doesNotContainKeys("baseTotal", "totalAmount");
+		assertThat(value(schemas.get("PricingProblemResponse"), "properties", Map.class)).containsKeys("code",
+				"pricingPreview");
+		assertThat(value(schemas.get("PaymentResponse"), "properties", Map.class)).containsKeys("recording", "reversal")
+			.doesNotContainKeys("recordedAt", "reversedBy");
 		for (String report : List.of("WorkOrders", "CustomerPayments", "Collaborators")) {
 			assertThat(value(schemas.get(report + "ReportResponse"), "properties", Map.class))
-				.containsKeys("period", "context", "summary").doesNotContainKeys("from", "timezone");
+				.containsKeys("period", "context", "summary")
+				.doesNotContainKeys("from", "timezone");
 		}
 		assertThat(schemas).containsKeys("CustomerReferenceResponse", "CollaboratorReferenceResponse",
 				"WorkAssignmentResponse", "CollaboratorsReportAssignmentResponse",

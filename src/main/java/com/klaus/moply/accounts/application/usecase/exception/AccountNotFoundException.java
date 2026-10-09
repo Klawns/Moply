@@ -1,9 +1,11 @@
 package com.klaus.moply.accounts.application.usecase.exception;
 
-public class AccountNotFoundException extends RuntimeException {
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
+
+public class AccountNotFoundException extends ApplicationException {
 
 	public AccountNotFoundException() {
-		super("Conta não encontrada.");
+		super("ACCOUNT_NOT_FOUND", "Conta não encontrada.");
 	}
 
 }

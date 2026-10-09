@@ -38,9 +38,15 @@ public class TransactionalGenerateSeries extends GenerateSeries {
 			.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
 				@Override
 				public void afterCommit() {
-					log.info("recurrence committed account={} series={} from={} until={} created={} existing={}",
-							result.organizationId(), result.seriesId(), result.from(), result.until(), result.created(),
-							result.existing());
+					log.atInfo()
+						.addKeyValue("event", "recurrence.committed")
+						.addKeyValue("accountId", result.organizationId())
+						.addKeyValue("seriesId", result.seriesId())
+						.addKeyValue("from", result.from())
+						.addKeyValue("until", result.until())
+						.addKeyValue("created", result.created())
+						.addKeyValue("existing", result.existing())
+						.log("Recorrência confirmada");
 				}
 			});
 		return result;

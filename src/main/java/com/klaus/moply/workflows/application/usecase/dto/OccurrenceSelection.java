@@ -3,7 +3,7 @@ package com.klaus.moply.workflows.application.usecase.dto;
 import java.util.UUID;
 
 import com.klaus.moply.recurrence.domain.ChangeScope;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 /**
  * Validates the key used by the PostgreSQL recurrence command history to detect replays
@@ -13,7 +13,8 @@ public record OccurrenceSelection(UUID workId, UUID actorId, ChangeScope scope, 
 	public OccurrenceSelection {
 		if (workId == null || actorId == null || scope == null || idempotencyKey == null || idempotencyKey.isBlank()
 				|| idempotencyKey.length() > 255) {
-			throw new DomainException("Ocorrência, responsável, alcance e chave de idempotência são obrigatórios.");
+			throw new ApplicationException(
+					"Ocorrência, responsável, alcance e chave de idempotência são obrigatórios.");
 		}
 		idempotencyKey = idempotencyKey.strip();
 	}

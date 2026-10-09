@@ -7,7 +7,7 @@ import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.application.usecase.exception.WorkOrderNotFoundException;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
@@ -35,7 +35,7 @@ public class ListCollaboratorPayments
 
 	private void validateInput(ListCollaboratorPaymentsInput input) {
 		if (input == null || input.workOrderId() == null || input.collaboratorId() == null) {
-			throw new DomainException("Trabalho e colaborador são obrigatórios.");
+			throw new ApplicationException("Trabalho e colaborador são obrigatórios.");
 		}
 	}
 
@@ -50,7 +50,7 @@ public class ListCollaboratorPayments
 			.anyMatch(assignment -> assignment.collaboratorId().equals(collaboratorId));
 
 		if (!isAssigned) {
-			throw new DomainException("Colaborador não participa deste trabalho.");
+			throw new ApplicationException("Colaborador não participa deste trabalho.");
 		}
 	}
 

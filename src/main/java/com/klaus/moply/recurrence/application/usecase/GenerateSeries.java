@@ -74,8 +74,15 @@ public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeriesRe
 			occurrences.link(context.organizationId(), work.id(), series.getId(), date);
 		}
 		catch (RuntimeException error) {
-			log.error("recurrence rollback account={} series={} from={} until={} occurrence={}",
-					context.organizationId(), series.getId(), window.from(), window.until(), date, error);
+			log.atError()
+				.addKeyValue("event", "recurrence.rollback")
+				.addKeyValue("accountId", context.organizationId())
+				.addKeyValue("seriesId", series.getId())
+				.addKeyValue("from", window.from())
+				.addKeyValue("until", window.until())
+				.addKeyValue("occurrence", date)
+				.setCause(error)
+				.log("Falha ao gerar ocorrência de recorrência; transação revertida");
 			throw error;
 		}
 	}

@@ -23,7 +23,7 @@ import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
 import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 class FindCollaboratorsReportTest {
 
@@ -84,7 +84,7 @@ class FindCollaboratorsReportTest {
 	@Test
 	void shouldRejectMissingInputBeforeQueryingRepositories() {
 		assertEquals("Informe o período.",
-				assertThrows(DomainException.class, () -> usecase.execute(context, null)).getMessage());
+				assertThrows(ApplicationException.class, () -> usecase.execute(context, null)).getMessage());
 		verifyNoInteractions(reads, resolver);
 	}
 

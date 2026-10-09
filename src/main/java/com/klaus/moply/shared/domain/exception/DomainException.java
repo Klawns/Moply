@@ -1,9 +1,16 @@
 package com.klaus.moply.shared.domain.exception;
 
-public class DomainException extends RuntimeException {
+import com.klaus.moply.shared.exception.ErrorCategory;
+import com.klaus.moply.shared.exception.CoreException;
+
+public class DomainException extends CoreException {
 
 	public DomainException(String msg) {
-		super(msg);
+		this("DOMAIN_ERROR", msg);
+	}
+
+	public DomainException(String code, String msg) {
+		super(ErrorCategory.DOMAIN_ERROR, code, msg);
 	}
 
 }

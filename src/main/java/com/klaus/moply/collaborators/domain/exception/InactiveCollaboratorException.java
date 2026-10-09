@@ -1,9 +1,11 @@
 package com.klaus.moply.collaborators.domain.exception;
 
-public class InactiveCollaboratorException extends RuntimeException {
+import com.klaus.moply.shared.domain.exception.DomainException;
+
+public class InactiveCollaboratorException extends DomainException {
 
 	public InactiveCollaboratorException() {
-		super("Colaborador desativado não pode ser editado.");
+		super("INACTIVE_COLLABORATOR", "Colaborador desativado não pode ser editado.");
 	}
 
 }

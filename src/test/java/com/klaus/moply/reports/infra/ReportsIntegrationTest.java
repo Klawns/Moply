@@ -60,7 +60,7 @@ import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.pagination.SortQuery;
 import com.klaus.moply.shared.application.pagination.SortQuery.Direction;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
@@ -229,7 +229,8 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(
 					org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.works.totalElements")
 						.value(2))
-			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.summary.realizedAmount")
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+				.jsonPath("$.summary.realizedAmount")
 				.value(80.00));
 		assertEquals(new BigDecimal("75.00"), collaboratorsResult.realizedPendingTotal());
 		var firstAssignment = collaboratorsResult.assignments()
@@ -417,7 +418,7 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 				assertEquals(page, result.page());
 			}
 		}
-		assertThrows(DomainException.class,
+		assertThrows(ApplicationException.class,
 				() -> query.apply(new PageQuery(0, 2, new SortQuery("unknown", Direction.ASC))));
 	}
 

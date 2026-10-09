@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import com.klaus.moply.payments.application.usecase.dto.ListWorkOrderPaymentsInput;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 class ListWorkOrderPaymentsTest {
 
@@ -16,8 +16,8 @@ class ListWorkOrderPaymentsTest {
 	void shouldRejectMissingWorkOrderInput() {
 		var usecase = new ListWorkOrderPayments(null, null);
 
-		assertThrows(DomainException.class, () -> usecase.execute(new Context(UUID.randomUUID()), null));
-		assertThrows(DomainException.class,
+		assertThrows(ApplicationException.class, () -> usecase.execute(new Context(UUID.randomUUID()), null));
+		assertThrows(ApplicationException.class,
 				() -> usecase.execute(new Context(UUID.randomUUID()), new ListWorkOrderPaymentsInput(null)));
 	}
 

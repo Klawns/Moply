@@ -4,7 +4,7 @@ import com.klaus.moply.accounts.application.usecase.GetOrganizationDate;
 import com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.RescheduleWorkOrderInput;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 
@@ -39,7 +39,7 @@ public class RescheduleWorkOrder implements Usecase.Contextual<RescheduleWorkOrd
 
 	private void validateInput(RescheduleWorkOrderInput input) {
 		if (input == null) {
-			throw new DomainException("Trabalho e data obrigatórios.");
+			throw new ApplicationException("Trabalho e data obrigatórios.");
 		}
 	}
 

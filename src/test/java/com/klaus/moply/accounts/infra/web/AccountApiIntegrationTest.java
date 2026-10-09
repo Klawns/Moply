@@ -432,7 +432,9 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 		for (String path : new String[] { "/api/v1/accounts/me", "/api/v1/accounts/me/preferences" }) {
 			mvc.perform(get(path).with(user(principal)))
 				.andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.detail").value("Conta não encontrada."));
+				.andExpect(jsonPath("$.detail").value("Conta não encontrada."))
+				.andExpect(jsonPath("$.category").value("APPLICATION_ERROR"))
+				.andExpect(jsonPath("$.code").value("ACCOUNT_NOT_FOUND"));
 		}
 		var token = csrf(null);
 		mvc.perform(put("/api/v1/accounts/me/preferences").with(user(principal))
@@ -441,7 +443,9 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.contentType(MediaType.APPLICATION_JSON)
 			.content("{\"timezone\":\"UTC\",\"defaultWorkStatus\":\"COMPLETED\"}"))
 			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.detail").value("Conta não encontrada."));
+			.andExpect(jsonPath("$.detail").value("Conta não encontrada."))
+			.andExpect(jsonPath("$.category").value("APPLICATION_ERROR"))
+			.andExpect(jsonPath("$.code").value("ACCOUNT_NOT_FOUND"));
 	}
 
 	@Test
@@ -492,7 +496,8 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 		assertTrue(orders.findAll(bid, new WorkOrderDateRange(null, null), original.getId()).isEmpty());
 		assertTrue(orders.findAll(bid, new WorkOrderDateRange(savedOrder.serviceDate(), savedOrder.serviceDate()), null)
 			.isEmpty());
-		assertThrows(com.klaus.moply.shared.domain.exception.DomainException.class, () -> orders.save(bid, savedOrder));
+		assertThrows(org.springframework.dao.InvalidDataAccessApiUsageException.class,
+				() -> orders.save(bid, savedOrder));
 		var ready = new java.util.concurrent.CountDownLatch(2);
 		var start = new java.util.concurrent.CountDownLatch(1);
 		try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {

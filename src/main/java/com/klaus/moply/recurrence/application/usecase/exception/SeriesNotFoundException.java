@@ -1,9 +1,11 @@
 package com.klaus.moply.recurrence.application.usecase.exception;
 
-public class SeriesNotFoundException extends RuntimeException {
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
+
+public class SeriesNotFoundException extends ApplicationException {
 
 	public SeriesNotFoundException() {
-		super("Série não encontrada.");
+		super("SERIES_NOT_FOUND", "Série não encontrada.");
 	}
 
 }

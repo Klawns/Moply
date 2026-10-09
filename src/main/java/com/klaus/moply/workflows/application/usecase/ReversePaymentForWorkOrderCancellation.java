@@ -7,7 +7,7 @@ import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
 
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class ReversePaymentForWorkOrderCancellation implements Usecase.Contextua
 			throw new PaymentConflictException("Confirme que o dinheiro não foi recebido para reverter o pagamento.");
 		}
 		if (input.actorId() == null || input.reason() == null || input.reason().isBlank()) {
-			throw new DomainException("Responsável e motivo da reversão são obrigatórios.");
+			throw new ApplicationException("Responsável e motivo da reversão são obrigatórios.");
 		}
 		payments.update(activePayment.get().reverse(input.actorId(), input.reason(), clock.instant()));
 		return null;

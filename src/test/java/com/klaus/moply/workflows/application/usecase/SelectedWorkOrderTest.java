@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import com.klaus.moply.recurrence.domain.ChangeScope;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.CancelOccurrenceInput;
 import com.klaus.moply.workflows.application.usecase.dto.CancelSelectedWorkOrderInput;
 import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
@@ -75,17 +75,17 @@ class SelectedWorkOrderTest {
 	@Test
 	void shouldRequireRecurringOptionsAndValidKeys() {
 		reference(true);
-		assertThrows(DomainException.class,
+		assertThrows(ApplicationException.class,
 				() -> selectedCancel.execute(context, new CancelSelectedWorkOrderInput(id, actor, null)));
 		for (String key : new String[] { null, "", "  ", "x".repeat(256) }) {
-			assertThrows(DomainException.class, () -> selectedCancel
+			assertThrows(ApplicationException.class, () -> selectedCancel
 				.execute(context, new CancelSelectedWorkOrderInput(id, actor,
 						new CancelSelectedWorkOrderInput.Options(null, null, ChangeScope.THIS_OCCURRENCE, key, null))));
-			assertThrows(DomainException.class,
+			assertThrows(ApplicationException.class,
 					() -> selectedReschedule.execute(context, new RescheduleSelectedWorkOrderInput(id, actor,
 							LocalDate.now(), null, ChangeScope.THIS_OCCURRENCE, key)));
 		}
-		assertThrows(DomainException.class, () -> selectedReschedule.execute(context,
+		assertThrows(ApplicationException.class, () -> selectedReschedule.execute(context,
 				new RescheduleSelectedWorkOrderInput(id, actor, LocalDate.now(), null, null, "key")));
 		verifyNoInteractions(cancel, cancelRecurring, reschedule, rescheduleRecurring);
 	}
@@ -93,10 +93,10 @@ class SelectedWorkOrderTest {
 	@Test
 	void shouldRejectCollectiveScopeForStandaloneOperations() {
 		reference(false);
-		assertThrows(DomainException.class, () -> selectedCancel
+		assertThrows(ApplicationException.class, () -> selectedCancel
 			.execute(context, new CancelSelectedWorkOrderInput(id, actor,
 					new CancelSelectedWorkOrderInput.Options(null, null, ChangeScope.THIS_AND_FOLLOWING, null, null))));
-		assertThrows(DomainException.class,
+		assertThrows(ApplicationException.class,
 				() -> selectedReschedule.execute(context, new RescheduleSelectedWorkOrderInput(id, actor,
 						LocalDate.now(), null, ChangeScope.THIS_AND_FOLLOWING, null)));
 		verifyNoInteractions(cancel, cancelRecurring, reschedule, rescheduleRecurring);

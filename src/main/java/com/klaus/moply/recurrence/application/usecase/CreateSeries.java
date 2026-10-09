@@ -9,7 +9,7 @@ import com.klaus.moply.recurrence.domain.WorkTemplate;
 import com.klaus.moply.recurrence.domain.vo.RecurrenceParticipants;
 import com.klaus.moply.recurrence.domain.vo.RecurrencePeriod;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.service.WorkOrderPreparation;
 import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
 import com.klaus.moply.workorders.domain.entity.WorkAssignment;
@@ -44,7 +44,7 @@ public class CreateSeries implements Usecase.Contextual<CreateSeriesInput, Recur
 
 	private static void validateInput(CreateSeriesInput input) {
 		if (input == null || input.work() == null) {
-			throw new DomainException("Condições da série obrigatórias.");
+			throw new ApplicationException("Condições da série obrigatórias.");
 		}
 	}
 

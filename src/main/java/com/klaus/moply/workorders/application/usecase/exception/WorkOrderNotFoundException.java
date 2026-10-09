@@ -2,10 +2,12 @@ package com.klaus.moply.workorders.application.usecase.exception;
 
 import java.util.UUID;
 
-public class WorkOrderNotFoundException extends RuntimeException {
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
+
+public class WorkOrderNotFoundException extends ApplicationException {
 
 	public WorkOrderNotFoundException(UUID id) {
-		super("Trabalho não encontrado: " + id);
+		super("WORK_ORDER_NOT_FOUND", "Trabalho não encontrado: " + id);
 	}
 
 }

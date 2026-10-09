@@ -9,7 +9,7 @@ import org.springframework.data.domain.Sort;
 import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.pagination.SortQuery;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 /** Translation boundary between application-owned paging contracts and Spring Data. */
 public final class PageableMapper {
@@ -21,7 +21,7 @@ public final class PageableMapper {
 		var requested = query.sort();
 		var field = requested == null ? defaultField : requested.field();
 		if (!allowedFields.contains(field))
-			throw new DomainException("Campo de ordenação não permitido.");
+			throw new ApplicationException("SORT_FIELD_NOT_ALLOWED", "Campo de ordenação não permitido.");
 		var direction = requested == null || requested.direction() == SortQuery.Direction.ASC ? Sort.Direction.ASC
 				: Sort.Direction.DESC;
 		var sort = Sort.by(direction, field);

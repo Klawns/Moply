@@ -9,7 +9,7 @@ import java.util.UUID;
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 import com.klaus.moply.recurrence.domain.ChangeScope;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.OccurrenceSelection;
 import com.klaus.moply.workflows.application.usecase.dto.SelectedWork;
 import com.klaus.moply.workflows.application.usecase.dto.SelectionContext;
@@ -31,7 +31,7 @@ public class RecurringWorkSelection {
 	public SelectionContext lockFamily(Context context, OccurrenceSelection input) {
 		var reference = occurrences.reference(context.organizationId(), input.workId());
 		if (reference.seriesId() == null) {
-			throw new DomainException("Trabalho não recorrente.");
+			throw new ApplicationException("Trabalho não recorrente.");
 		}
 		var versions = series.lockFamily(context.organizationId(), reference.seriesId());
 		var anchor = versions.stream()

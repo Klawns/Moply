@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
+import com.klaus.moply.shared.exception.ErrorCategory;
+import com.klaus.moply.shared.infra.web.ApiProblemDetails;
 
 @RestControllerAdvice(assignableTypes = CollaboratorController.class)
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -17,18 +19,20 @@ public class CollaboratorExceptionHandler {
 
 	@ExceptionHandler(CollaboratorNotFoundException.class)
 	public ProblemDetail notFound(CollaboratorNotFoundException exception) {
-		return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+		return ApiProblemDetails.from(HttpStatus.NOT_FOUND, exception);
 	}
 
 	@ExceptionHandler(InactiveCollaboratorException.class)
 	public ProblemDetail inactive(InactiveCollaboratorException exception) {
-		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+		return ApiProblemDetails.from(HttpStatus.CONFLICT, exception);
 	}
 
 	@ExceptionHandler(OptimisticLockingFailureException.class)
 	public ProblemDetail concurrentUpdate(OptimisticLockingFailureException exception) {
-		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-				"O colaborador foi alterado por outra operação. Recarregue e tente novamente.");
+		return ApiProblemDetails.withCode(
+				ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+						"O colaborador foi alterado por outra operação. Recarregue e tente novamente."),
+				ErrorCategory.APPLICATION_ERROR, "CONCURRENT_UPDATE");
 	}
 
 }

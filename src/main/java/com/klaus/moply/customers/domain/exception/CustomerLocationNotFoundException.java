@@ -7,7 +7,7 @@ import com.klaus.moply.shared.domain.exception.DomainException;
 public class CustomerLocationNotFoundException extends DomainException {
 
 	public CustomerLocationNotFoundException(UUID id) {
-		super("Local não encontrado no cliente: " + id);
+		super("CUSTOMER_LOCATION_NOT_FOUND", "Local não encontrado no cliente: " + id);
 	}
 
 }

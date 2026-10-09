@@ -7,7 +7,7 @@ import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentNotFoundException;
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 
@@ -42,7 +42,7 @@ public class ReverseCollaboratorPayment implements Usecase.Contextual<ReverseCol
 			if (entry.payment().status() == Payment.Status.REVERSED)
 				return entry.payment();
 			if (work.status() == WorkOrderStatus.CANCELLED)
-				throw new DomainException("Acerto de trabalho cancelado não pode ser revertido.");
+				throw new ApplicationException("Acerto de trabalho cancelado não pode ser revertido.");
 			var reversed = entry.payment().reverse(input.actorId(), input.reason(), clock.instant());
 			payments.update(reversed);
 			return reversed;
@@ -52,11 +52,11 @@ public class ReverseCollaboratorPayment implements Usecase.Contextual<ReverseCol
 	private void validate(ReverseCollaboratorPaymentInput input) {
 		if (input == null || input.workOrderId() == null || input.collaboratorId() == null || input.paymentId() == null
 				|| input.actorId() == null)
-			throw new DomainException("Acerto e responsável são obrigatórios.");
+			throw new ApplicationException("Acerto e responsável são obrigatórios.");
 		if (!input.confirmNotActuallyPaid())
-			throw new DomainException("Confirme que o valor não foi efetivamente entregue ao colaborador.");
+			throw new ApplicationException("Confirme que o valor não foi efetivamente entregue ao colaborador.");
 		if (input.reason() == null || input.reason().isBlank())
-			throw new DomainException("Motivo da reversão é obrigatório.");
+			throw new ApplicationException("Motivo da reversão é obrigatório.");
 	}
 
 }

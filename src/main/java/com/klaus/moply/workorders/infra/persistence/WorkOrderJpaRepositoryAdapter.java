@@ -21,7 +21,6 @@ import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
-import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.shared.infra.persistence.PageableMapper;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
@@ -48,7 +47,7 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 	public WorkOrder save(UUID organizationId, WorkOrder work) {
 		Objects.requireNonNull(organizationId);
 		if (work.id() != null)
-			throw new DomainException("Somente criação de trabalhos é suportada.");
+			throw new IllegalStateException("Somente criação de trabalhos é suportada.");
 		validateCustomer(organizationId, work);
 		validateCollaborators(organizationId, work);
 		return repo.saveAndFlush(WorkOrderEntity.from(organizationId, work)).toDomain();

@@ -7,7 +7,7 @@ import com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentNotFoundException;
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 
 import lombok.RequiredArgsConstructor;
@@ -45,15 +45,15 @@ public class ReverseWorkOrderPayment implements Usecase.Contextual<ReverseWorkOr
 
 	private void validate(ReverseWorkOrderPaymentInput input) {
 		if (input == null || input.paymentId() == null || input.actorId() == null) {
-			throw new DomainException("Pagamento e responsável são obrigatórios.");
+			throw new ApplicationException("Pagamento e responsável são obrigatórios.");
 		}
 
 		if (!input.confirmNoMoneyReceived()) {
-			throw new DomainException("Confirme que o dinheiro não foi efetivamente recebido.");
+			throw new ApplicationException("Confirme que o dinheiro não foi efetivamente recebido.");
 		}
 
 		if (input.reason() == null || input.reason().isBlank()) {
-			throw new DomainException("Motivo da reversão é obrigatório.");
+			throw new ApplicationException("Motivo da reversão é obrigatório.");
 		}
 	}
 

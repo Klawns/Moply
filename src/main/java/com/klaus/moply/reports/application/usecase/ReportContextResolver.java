@@ -15,7 +15,7 @@ import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 public final class ReportContextResolver {
 
@@ -48,7 +48,7 @@ public final class ReportContextResolver {
 
 	private void validatePeriod(ReportPeriod period) {
 		if (period == null) {
-			throw new DomainException("Informe o período.");
+			throw new ApplicationException("Informe o período.");
 		}
 	}
 

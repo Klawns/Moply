@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.payments.application.usecase.exception.PaymentNotFoundException;
+import com.klaus.moply.shared.infra.web.ApiProblemDetails;
 
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -19,13 +20,13 @@ public class PaymentExceptionHandler {
 	public ResponseEntity<ProblemDetail> notFound(PaymentNotFoundException exception) {
 		var problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
 		problem.setTitle(exception.getMessage());
+		ApiProblemDetails.withCode(problem, exception.category(), exception.code());
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
 	}
 
 	@ExceptionHandler(PaymentConflictException.class)
 	public ResponseEntity<ProblemDetail> conflict(PaymentConflictException exception) {
-		return ResponseEntity.status(HttpStatus.CONFLICT)
-			.body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage()));
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiProblemDetails.from(HttpStatus.CONFLICT, exception));
 	}
 
 }

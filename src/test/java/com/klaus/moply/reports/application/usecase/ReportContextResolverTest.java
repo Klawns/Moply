@@ -26,7 +26,7 @@ import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 class ReportContextResolverTest {
 
@@ -82,7 +82,7 @@ class ReportContextResolverTest {
 	@Test
 	void shouldRejectMissingPeriodBeforeQueryingRepositories() {
 		assertEquals("Informe o período.",
-				assertThrows(DomainException.class, () -> resolver.resolve(context, null, null)).getMessage());
+				assertThrows(ApplicationException.class, () -> resolver.resolve(context, null, null)).getMessage());
 		verifyNoInteractions(organizations, customers, collaborators);
 	}
 

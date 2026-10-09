@@ -13,7 +13,7 @@ import com.klaus.moply.recurrence.application.usecase.GenerateSeries;
 import com.klaus.moply.recurrence.domain.ChangeScope;
 import com.klaus.moply.recurrence.domain.RecurrenceSeries;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
 import com.klaus.moply.workflows.application.usecase.dto.CheckRecurrenceCommandReplayInput;
 import com.klaus.moply.workflows.application.usecase.dto.RecordRecurrenceCommandInput;
@@ -75,7 +75,7 @@ public class RescheduleRecurringWork implements Usecase.Contextual<RescheduleOcc
 
 	private void validateInput(RescheduleOccurrenceInput input) {
 		if (input == null) {
-			throw new DomainException("Seleção e nova data são obrigatórias.");
+			throw new ApplicationException("Seleção e nova data são obrigatórias.");
 		}
 	}
 

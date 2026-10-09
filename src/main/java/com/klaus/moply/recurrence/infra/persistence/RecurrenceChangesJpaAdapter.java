@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.pagination.SortQuery;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import org.springframework.data.domain.PageRequest;
 
 @Repository
@@ -84,10 +84,11 @@ public class RecurrenceChangesJpaAdapter implements RecurrenceChanges {
 		var sort = page.sort();
 		String field = sort == null ? "at" : sort.field();
 		if (!Set.of("at", "id").contains(field))
-			throw new DomainException("Campo de ordenação não permitido.");
+			throw new ApplicationException("SORT_FIELD_NOT_ALLOWED", "Campo de ordenação não permitido.");
 		long offset = (long) page.page() * page.size();
 		if (offset > Integer.MAX_VALUE)
-			throw new DomainException("Offset do histórico deve ser menor ou igual a 2147483647.");
+			throw new ApplicationException("HISTORY_OFFSET_TOO_LARGE",
+					"Offset do histórico deve ser menor ou igual a 2147483647.");
 		String direction = sort == null || sort.direction() == SortQuery.Direction.ASC ? "asc" : "desc";
 		var pageable = PageRequest.of(page.page(), page.size());
 		var entities = switch (field + direction) {

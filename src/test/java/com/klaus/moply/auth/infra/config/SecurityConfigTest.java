@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -70,7 +71,11 @@ class SecurityConfigTest {
 			.andExpect(status().isUnauthorized())
 			.andExpect(content().contentTypeCompatibleWith("application/problem+json"))
 			.andExpect(jsonPath("$.status").value(401))
-			.andExpect(jsonPath("$.title").value("Autenticação necessária."));
+			.andExpect(jsonPath("$.title").value("Autenticação necessária."))
+			.andExpect(jsonPath("$.category").value("SECURITY_ERROR"))
+			.andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
+			.andExpect(jsonPath("$.requestId").isNotEmpty())
+			.andExpect(header().exists("X-Request-ID"));
 		var principal = new AccountPrincipal(
 				new AppUser(UUID.randomUUID(), UUID.randomUUID(), new LoginEmail("owner@example.com"), "encoded"));
 		mvc.perform(get("/api/v1/auth/me").with(user(principal)))
@@ -80,7 +85,11 @@ class SecurityConfigTest {
 			.andExpect(jsonPath("$.email").value("owner@example.com"));
 		mvc.perform(get("/unlisted").with(user("manager")))
 			.andExpect(status().isForbidden())
-			.andExpect(jsonPath("$.title").value("Acesso negado."));
+			.andExpect(jsonPath("$.title").value("Acesso negado."))
+			.andExpect(jsonPath("$.category").value("SECURITY_ERROR"))
+			.andExpect(jsonPath("$.code").value("ACCESS_DENIED"))
+			.andExpect(jsonPath("$.requestId").isNotEmpty())
+			.andExpect(header().exists("X-Request-ID"));
 	}
 
 	@Test
@@ -108,7 +117,11 @@ class SecurityConfigTest {
 		assertNull(result.getRequest().getSession(false));
 		mvc.perform(postWithCsrf("/api/v1/auth/login").param("email", "owner@example.com").param("password", "wrong"))
 			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.title").value("Credenciais inválidas."));
+			.andExpect(jsonPath("$.title").value("Credenciais inválidas."))
+			.andExpect(jsonPath("$.category").value("SECURITY_ERROR"))
+			.andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
+			.andExpect(jsonPath("$.requestId").isNotEmpty())
+			.andExpect(header().exists("X-Request-ID"));
 	}
 
 	@Test

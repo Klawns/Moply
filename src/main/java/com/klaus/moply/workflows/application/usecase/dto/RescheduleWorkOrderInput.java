@@ -4,12 +4,12 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 public record RescheduleWorkOrderInput(UUID id, LocalDate serviceDate, LocalTime startTime) {
 	public RescheduleWorkOrderInput {
 		if (id == null || serviceDate == null) {
-			throw new DomainException("Trabalho e data obrigatórios.");
+			throw new ApplicationException("Trabalho e data obrigatórios.");
 		}
 	}
 }

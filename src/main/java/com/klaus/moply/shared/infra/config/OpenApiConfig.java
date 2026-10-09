@@ -52,6 +52,16 @@ public class OpenApiConfig {
 	@Bean
 	OpenApiCustomizer securityFilterOperations() {
 		return api -> {
+			var schemas = api.getComponents().getSchemas();
+			if (schemas != null && schemas.get("ProblemDetail") != null) {
+				var problemDetail = schemas.get("ProblemDetail");
+				problemDetail.addProperty("category",
+						new StringSchema().description("Categoria estável do erro, como APPLICATION_ERROR."));
+				problemDetail.addProperty("code",
+						new StringSchema().description("Código estável específico para tratamento pelo cliente."));
+				problemDetail.addProperty("requestId",
+						new StringSchema().description("Identificador de correlação, presente em falhas internas."));
+			}
 			// Annotation requirements are alternatives; writes require cookie AND CSRF.
 			api.getPaths().values().forEach(path -> path.readOperations().forEach(operation -> {
 				var requirements = operation.getSecurity();

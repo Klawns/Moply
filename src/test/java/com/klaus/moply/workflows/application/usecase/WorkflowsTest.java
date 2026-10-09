@@ -32,7 +32,7 @@ import com.klaus.moply.recurrence.domain.WorkTemplate;
 import com.klaus.moply.recurrence.domain.vo.RecurrenceParticipants;
 import com.klaus.moply.recurrence.domain.vo.RecurrencePeriod;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.CancelOccurrenceInput;
 import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
 import com.klaus.moply.workflows.application.usecase.dto.OccurrenceSelection;
@@ -155,10 +155,10 @@ class WorkflowsTest {
 
 	@Test
 	void shouldRejectInvalidInputsBeforeAnyWorkOrderUpdate() {
-		assertThrows(DomainException.class, () -> cancel.execute(context, null));
-		assertThrows(DomainException.class, () -> reschedule.execute(context, null));
-		assertThrows(DomainException.class, () -> new CancelWorkOrderInput(null, null, false, null));
-		assertThrows(DomainException.class, () -> new RescheduleWorkOrderInput(work.id(), null, null));
+		assertThrows(ApplicationException.class, () -> cancel.execute(context, null));
+		assertThrows(ApplicationException.class, () -> reschedule.execute(context, null));
+		assertThrows(ApplicationException.class, () -> new CancelWorkOrderInput(null, null, false, null));
+		assertThrows(ApplicationException.class, () -> new RescheduleWorkOrderInput(work.id(), null, null));
 		verifyNoInteractions(operations);
 	}
 
@@ -237,16 +237,18 @@ class WorkflowsTest {
 		var occurrence = new OccurrenceSelection(work.id(), actorId, ChangeScope.THIS_AND_FOLLOWING, "key");
 		var confirmation = new com.klaus.moply.workflows.application.usecase.dto.PaymentConfirmation(UUID.randomUUID(),
 				true, "reason");
-		assertThrows(DomainException.class, () -> cancelRecurring.execute(context, null));
-		assertThrows(DomainException.class,
+		assertThrows(ApplicationException.class, () -> cancelRecurring.execute(context, null));
+		assertThrows(ApplicationException.class,
 				() -> cancelRecurring.execute(context, new CancelOccurrenceInput(null, null)));
-		assertThrows(DomainException.class, () -> cancelRecurring.execute(context,
+		assertThrows(ApplicationException.class, () -> cancelRecurring.execute(context,
 				new CancelOccurrenceInput(occurrence, java.util.Collections.singletonList(null))));
-		assertThrows(DomainException.class, () -> cancelRecurring.execute(context,
+		assertThrows(ApplicationException.class, () -> cancelRecurring.execute(context,
 				new CancelOccurrenceInput(occurrence, List.of(confirmation, confirmation))));
-		assertThrows(DomainException.class, () -> cancelRecurring.execute(context, new CancelOccurrenceInput(occurrence,
-				List.of(new com.klaus.moply.workflows.application.usecase.dto.PaymentConfirmation(UUID.randomUUID(),
-						false, "reason")))));
+		assertThrows(ApplicationException.class,
+				() -> cancelRecurring.execute(context,
+						new CancelOccurrenceInput(occurrence,
+								List.of(new com.klaus.moply.workflows.application.usecase.dto.PaymentConfirmation(
+										UUID.randomUUID(), false, "reason")))));
 		verifyNoInteractions(selection, changes, operations, payments, settlements, series);
 	}
 

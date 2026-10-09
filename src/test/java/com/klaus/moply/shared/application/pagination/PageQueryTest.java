@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 class PageQueryTest {
 
@@ -18,10 +18,10 @@ class PageQueryTest {
 
 	@Test
 	void shouldRejectInvalidPageSizeAndSortDirection() {
-		assertThrows(DomainException.class, () -> new PageQuery(-1, 20, null));
-		assertThrows(DomainException.class, () -> new PageQuery(0, 0, null));
-		assertThrows(DomainException.class, () -> new PageQuery(0, 101, null));
-		assertThrows(DomainException.class, () -> SortQuery.Direction.parse("sideways"));
+		assertThrows(ApplicationException.class, () -> new PageQuery(-1, 20, null));
+		assertThrows(ApplicationException.class, () -> new PageQuery(0, 0, null));
+		assertThrows(ApplicationException.class, () -> new PageQuery(0, 101, null));
+		assertThrows(ApplicationException.class, () -> SortQuery.Direction.parse("sideways"));
 	}
 
 }

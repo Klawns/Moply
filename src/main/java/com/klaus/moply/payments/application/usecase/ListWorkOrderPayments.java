@@ -5,7 +5,7 @@ import com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository;
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.shared.application.usecase.Usecase;
 import com.klaus.moply.shared.application.pagination.PageResult;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.application.usecase.exception.WorkOrderNotFoundException;
 
@@ -29,7 +29,7 @@ public class ListWorkOrderPayments implements Usecase.Contextual<ListWorkOrderPa
 
 	private void validate(ListWorkOrderPaymentsInput input) {
 		if (input == null || input.workOrderId() == null)
-			throw new DomainException("Trabalho é obrigatório.");
+			throw new ApplicationException("Trabalho é obrigatório.");
 	}
 
 }

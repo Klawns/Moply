@@ -15,7 +15,7 @@ import com.klaus.moply.payments.application.usecase.exception.PaymentConflictExc
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.payments.domain.PaymentAmount;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.PaymentConfirmation;
 import com.klaus.moply.workflows.application.usecase.dto.ValidateRecurringCancellationPaymentsInput;
 import com.klaus.moply.workflows.application.usecase.support.CancellationConfirmations;
@@ -68,7 +68,8 @@ class ValidateRecurringCancellationPaymentsTest {
 		assertThrows(PaymentConflictException.class,
 				() -> usecase.execute(new Context(organizationId), new ValidateRecurringCancellationPaymentsInput(
 						List.of(), CancellationConfirmations.from(List.of(confirmation)))));
-		assertThrows(DomainException.class, () -> CancellationConfirmations.from(List.of(confirmation, confirmation)));
+		assertThrows(ApplicationException.class,
+				() -> CancellationConfirmations.from(List.of(confirmation, confirmation)));
 		verify(payments, never()).update(any());
 	}
 

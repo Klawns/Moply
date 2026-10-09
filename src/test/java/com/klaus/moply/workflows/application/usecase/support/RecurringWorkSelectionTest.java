@@ -13,7 +13,7 @@ import com.klaus.moply.recurrence.domain.ChangeScope;
 import com.klaus.moply.recurrence.domain.RecurrenceSeries;
 import com.klaus.moply.recurrence.domain.vo.SeriesVersion;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.OccurrenceSelection;
 import com.klaus.moply.workflows.application.usecase.dto.SelectedWork;
 import com.klaus.moply.workflows.application.usecase.dto.SelectionContext;
@@ -48,7 +48,7 @@ class RecurringWorkSelectionTest {
 	void shouldRejectNonRecurringWorkBeforeLockingFamily() {
 		when(occurrences.reference(organizationId, workId))
 			.thenReturn(new WorkOrderOccurrences.Reference(workId, null, null));
-		assertThrows(DomainException.class,
+		assertThrows(ApplicationException.class,
 				() -> service.lockFamily(new Context(organizationId), input(ChangeScope.THIS_OCCURRENCE)));
 		verifyNoInteractions(series, operations);
 	}

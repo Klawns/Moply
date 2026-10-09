@@ -1,6 +1,6 @@
 package com.klaus.moply.shared.application.pagination;
 
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 /** Zero-based application pagination. Invalid bounds fail before reaching persistence. */
 public record PageQuery(int page, int size, SortQuery sort) {
@@ -13,9 +13,9 @@ public record PageQuery(int page, int size, SortQuery sort) {
 
 	public PageQuery {
 		if (page < 0)
-			throw new DomainException("Página deve ser maior ou igual a zero.");
+			throw new ApplicationException("Página deve ser maior ou igual a zero.");
 		if (size < 1 || size > MAX_SIZE)
-			throw new DomainException("Tamanho deve estar entre 1 e " + MAX_SIZE + ".");
+			throw new ApplicationException("Tamanho deve estar entre 1 e " + MAX_SIZE + ".");
 	}
 
 	public static PageQuery defaults() {

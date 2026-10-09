@@ -47,7 +47,7 @@ import com.klaus.moply.recurrence.domain.*;
 import com.klaus.moply.recurrence.infra.scheduler.RecurrenceScheduler;
 import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.*;
 import com.klaus.moply.workflows.application.usecase.dto.*;
 import com.klaus.moply.workorders.application.ports.*;
@@ -702,7 +702,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		setTime("2027-03-02T12:00:00Z");
 		generate.execute(context, successor("month"));
 		assertTrue(active().stream().anyMatch(w -> w.serviceDate().equals(LocalDate.of(2027, 3, 30))));
-		assertThrows(DomainException.class,
+		assertThrows(com.klaus.moply.shared.domain.exception.DomainException.class,
 				() -> move(work.id(), ChangeScope.THIS_AND_FOLLOWING, "invalid-end", LocalDate.of(2027, 4, 1)));
 	}
 
@@ -758,7 +758,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 			response.andExpect(content().contentTypeCompatibleWith("application/problem+json"))
 				.andExpect(jsonPath("$.title").value(message));
 			assertEquals(message,
-					assertThrows(DomainException.class, () -> changes.history(account, id, query)).getMessage());
+					assertThrows(ApplicationException.class, () -> changes.history(account, id, query)).getMessage());
 		}
 		else {
 			var expectedCount = page == 0 ? 1 : 0;

@@ -1,9 +1,11 @@
 package com.klaus.moply.workorders.domain.exception;
 
-public class WorkOrderStateException extends RuntimeException {
+import com.klaus.moply.shared.domain.exception.DomainException;
+
+public class WorkOrderStateException extends DomainException {
 
 	public WorkOrderStateException(String message) {
-		super(message);
+		super("WORK_ORDER_STATE_ERROR", message);
 	}
 
 }

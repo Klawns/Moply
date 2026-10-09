@@ -1,7 +1,7 @@
 package com.klaus.moply.workflows.application.usecase;
 
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 
@@ -27,7 +27,7 @@ public class CancelWorkOrder implements Usecase.Contextual<CancelWorkOrderInput,
 
 	private void validateInput(CancelWorkOrderInput input) {
 		if (input == null) {
-			throw new DomainException("Trabalho obrigatório.");
+			throw new ApplicationException("Trabalho obrigatório.");
 		}
 	}
 

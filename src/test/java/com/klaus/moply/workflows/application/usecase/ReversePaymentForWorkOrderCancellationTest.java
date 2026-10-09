@@ -17,7 +17,7 @@ import com.klaus.moply.payments.application.usecase.exception.PaymentConflictExc
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.payments.domain.PaymentAmount;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,9 +67,9 @@ class ReversePaymentForWorkOrderCancellationTest {
 		when(payments.findActiveByWork(organizationId, workId)).thenReturn(Optional.of(payment()));
 		assertThrows(PaymentConflictException.class, () -> usecase.execute(new Context(organizationId),
 				new CancelWorkOrderInput(workId, actorId, false, "reason")));
-		assertThrows(DomainException.class, () -> usecase.execute(new Context(organizationId),
+		assertThrows(ApplicationException.class, () -> usecase.execute(new Context(organizationId),
 				new CancelWorkOrderInput(workId, null, true, "reason")));
-		assertThrows(DomainException.class, () -> usecase.execute(new Context(organizationId),
+		assertThrows(ApplicationException.class, () -> usecase.execute(new Context(organizationId),
 				new CancelWorkOrderInput(workId, actorId, true, " ")));
 		verify(payments, never()).update(any());
 	}

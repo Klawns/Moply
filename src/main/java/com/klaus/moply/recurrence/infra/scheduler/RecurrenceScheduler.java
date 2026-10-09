@@ -43,20 +43,36 @@ public class RecurrenceScheduler {
 				try {
 					var result = generate.execute(new Context(ref.organizationId()), ref.id());
 					succeeded++;
-					log.info("recurrence account={} series={} from={} until={} created={} existing={} durationMs={}",
-							ref.organizationId(), ref.id(), result.from(), result.until(), result.created(),
-							result.existing(), (System.nanoTime() - seriesStarted) / 1_000_000);
+					log.atInfo()
+						.addKeyValue("event", "recurrence.generated")
+						.addKeyValue("accountId", ref.organizationId())
+						.addKeyValue("seriesId", ref.id())
+						.addKeyValue("from", result.from())
+						.addKeyValue("until", result.until())
+						.addKeyValue("created", result.created())
+						.addKeyValue("existing", result.existing())
+						.addKeyValue("durationMs", (System.nanoTime() - seriesStarted) / 1_000_000)
+						.log("Recorrência gerada");
 				}
 				catch (RuntimeException error) {
 					failed++;
-					log.error("recurrence failed account={} series={} durationMs={}", ref.organizationId(), ref.id(),
-							(System.nanoTime() - seriesStarted) / 1_000_000, error);
+					log.atError()
+						.addKeyValue("event", "recurrence.failed")
+						.addKeyValue("accountId", ref.organizationId())
+						.addKeyValue("seriesId", ref.id())
+						.addKeyValue("durationMs", (System.nanoTime() - seriesStarted) / 1_000_000)
+						.setCause(error)
+						.log("Falha ao gerar recorrência");
 				}
 			}
 			after = batch.getLast().id();
 		}
-		log.info("recurrence batch succeeded={} failed={} durationMs={}", succeeded, failed,
-				(System.nanoTime() - started) / 1_000_000);
+		log.atInfo()
+			.addKeyValue("event", "recurrence.batch.completed")
+			.addKeyValue("succeeded", succeeded)
+			.addKeyValue("failed", failed)
+			.addKeyValue("durationMs", (System.nanoTime() - started) / 1_000_000)
+			.log("Lote de recorrências concluído");
 	}
 
 }

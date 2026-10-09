@@ -24,7 +24,8 @@ public class RegisterAccount implements Usecase<RegisterAccountInput, RegisterAc
 	@Override
 	public RegisterAccountOutput execute(RegisterAccountInput input) {
 		if (input == null) {
-			throw new com.klaus.moply.shared.domain.exception.DomainException("Dados da conta obrigatórios.");
+			throw new com.klaus.moply.shared.application.usecase.exception.ApplicationException(
+					"Dados da conta obrigatórios.");
 		}
 		PasswordPolicy.validate(input.password());
 

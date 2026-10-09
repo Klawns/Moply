@@ -8,7 +8,7 @@ import com.klaus.moply.recurrence.application.ports.RecurrenceChanges;
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 import com.klaus.moply.recurrence.domain.ChangeScope;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.CancelOccurrenceInput;
 import com.klaus.moply.workflows.application.usecase.dto.CancelWorkOrderInput;
 import com.klaus.moply.workflows.application.usecase.dto.CheckRecurrenceCommandReplayInput;
@@ -69,7 +69,7 @@ public class CancelRecurringWork implements Usecase.Contextual<CancelOccurrenceI
 
 	private void validateInput(CancelOccurrenceInput input) {
 		if (input == null || input.selection() == null) {
-			throw new DomainException("Entrada de cancelamento é obrigatória.");
+			throw new ApplicationException("Entrada de cancelamento é obrigatória.");
 		}
 	}
 

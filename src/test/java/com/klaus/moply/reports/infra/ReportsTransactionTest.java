@@ -29,7 +29,7 @@ import com.klaus.moply.reports.application.usecase.FindCustomerPaymentsReport;
 import com.klaus.moply.reports.application.usecase.FindWorkOrdersReport;
 import com.klaus.moply.reports.infra.config.ReportsConfig;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 class ReportsTransactionTest {
 
@@ -57,11 +57,11 @@ class ReportsTransactionTest {
 			assertEquals(1, application.getBeansOfType(FindWorkOrdersReport.class).size());
 			assertEquals(1, application.getBeansOfType(FindCustomerPaymentsReport.class).size());
 			assertEquals(1, application.getBeansOfType(FindCollaboratorsReport.class).size());
-			assertThrows(DomainException.class,
+			assertThrows(ApplicationException.class,
 					() -> application.getBean(FindWorkOrdersReport.class).execute(context, null));
-			assertThrows(DomainException.class,
+			assertThrows(ApplicationException.class,
 					() -> application.getBean(FindCustomerPaymentsReport.class).execute(context, null));
-			assertThrows(DomainException.class,
+			assertThrows(ApplicationException.class,
 					() -> application.getBean(FindCollaboratorsReport.class).execute(context, null));
 			verify(transactions, times(3)).getTransaction(argThat(definition -> definition.isReadOnly()
 					&& definition.getIsolationLevel() == TransactionDefinition.ISOLATION_REPEATABLE_READ));

@@ -20,7 +20,7 @@ import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
 import com.klaus.moply.workorders.application.usecase.dto.PricingPreviewOutput;
 import com.klaus.moply.workorders.application.usecase.exception.PricingAcceptanceException;
@@ -94,7 +94,7 @@ public class WorkOrderPreparation {
 		var status = input.initialStatus() == null ? WorkOrderStatus.valueOf(organization.defaultWorkStatus().name())
 				: input.initialStatus();
 		if (status == WorkOrderStatus.CANCELLED)
-			throw new DomainException("Estado inicial inválido.");
+			throw new ApplicationException("Estado inicial inválido.");
 		var individualHours = hours.value()
 			.divide(BigDecimal.valueOf(input.participantIds().size()), 8, RoundingMode.HALF_EVEN);
 		var rows = result.assignments()
@@ -112,7 +112,7 @@ public class WorkOrderPreparation {
 
 	private List<Collaborator> validateReferences(Usecase.Context context, CreateWorkOrderInput input) {
 		if (input == null || input.customerId() == null)
-			throw new DomainException("Cliente obrigatório.");
+			throw new ApplicationException("Cliente obrigatório.");
 		new WorkOrderSchedule(input.serviceDate(), input.startTime());
 		new WorkOrderDescription(input.description());
 		var customer = customers.findById(context.organizationId(), input.customerId())
@@ -122,7 +122,7 @@ public class WorkOrderPreparation {
 		if (input.participantIds() == null || input.participantIds().isEmpty()
 				|| input.participantIds().stream().anyMatch(Objects::isNull)
 				|| new HashSet<>(input.participantIds()).size() != input.participantIds().size())
-			throw new DomainException("Participantes devem ter IDs não nulos e únicos.");
+			throw new ApplicationException("Participantes devem ter IDs não nulos e únicos.");
 		var participants = new ArrayList<Collaborator>();
 		for (var id : input.participantIds()) {
 			var person = collaborators.findById(context.organizationId(), id)

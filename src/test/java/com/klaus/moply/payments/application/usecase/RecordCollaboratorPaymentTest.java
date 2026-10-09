@@ -28,8 +28,8 @@ import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.payments.domain.Payment;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
@@ -124,9 +124,9 @@ class RecordCollaboratorPaymentTest {
 
 	@Test
 	void shouldRejectFutureRecordedDateAndCanceledWork() {
-		assertThrows(DomainException.class, () -> usecase.execute(new Context(organizationId),
+		assertThrows(ApplicationException.class, () -> usecase.execute(new Context(organizationId),
 				input(new BigDecimal("5.00"), LocalDate.of(2026, 10, 4), "future-paid-on")));
-		assertThrows(DomainException.class, () -> usecase.execute(new Context(organizationId),
+		assertThrows(ApplicationException.class, () -> usecase.execute(new Context(organizationId),
 				input(new BigDecimal("5.00"), LocalDate.of(2026, 10, 2), "before-service")));
 		work = work.cancel();
 		assertThrows(PaymentConflictException.class, () -> usecase.execute(new Context(organizationId),

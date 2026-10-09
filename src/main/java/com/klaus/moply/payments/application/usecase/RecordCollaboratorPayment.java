@@ -13,7 +13,7 @@ import com.klaus.moply.payments.application.usecase.exception.PaymentConflictExc
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.payments.domain.PaymentAmount;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 
@@ -54,7 +54,7 @@ public class RecordCollaboratorPayment implements Usecase.Contextual<RecordColla
 			if (work.serviceDate().isAfter(today))
 				throw new PaymentConflictException("Trabalho futuro não pode receber acertos.");
 			if (input.paidOn().isBefore(work.serviceDate()) || input.paidOn().isAfter(today))
-				throw new DomainException("Data do acerto deve estar entre a data do trabalho e hoje.");
+				throw new ApplicationException("Data do acerto deve estar entre a data do trabalho e hoje.");
 
 			var paid = payments.findRecordedTotalsByCollaborator(organizationId, input.collaboratorId())
 				.stream()
@@ -86,9 +86,9 @@ public class RecordCollaboratorPayment implements Usecase.Contextual<RecordColla
 		if (input == null || input.workOrderId() == null || input.collaboratorId() == null || input.actorId() == null
 				|| input.amount() == null || input.paidOn() == null || input.idempotencyKey() == null
 				|| input.idempotencyKey().isBlank() || input.idempotencyKey().length() > 128)
-			throw new DomainException("Trabalho, colaborador, valor, data, chave e responsável são obrigatórios.");
+			throw new ApplicationException("Trabalho, colaborador, valor, data, chave e responsável são obrigatórios.");
 		if (input.amount().signum() <= 0 || input.amount().scale() > 2)
-			throw new DomainException("O valor do acerto deve ser positivo e ter até duas casas decimais.");
+			throw new ApplicationException("O valor do acerto deve ser positivo e ter até duas casas decimais.");
 	}
 
 }

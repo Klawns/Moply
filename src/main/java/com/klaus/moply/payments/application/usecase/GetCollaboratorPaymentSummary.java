@@ -14,7 +14,7 @@ import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorN
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
@@ -37,7 +37,7 @@ public class GetCollaboratorPaymentSummary implements Usecase.Contextual<UUID, C
 	@Override
 	public CollaboratorPaymentSummary execute(Usecase.Context context, UUID collaboratorId) {
 		if (collaboratorId == null)
-			throw new DomainException("Colaborador é obrigatório.");
+			throw new ApplicationException("Colaborador é obrigatório.");
 		var organizationId = context.organizationId();
 		collaborators.findById(organizationId, collaboratorId)
 			.orElseThrow(() -> new CollaboratorNotFoundException(collaboratorId));

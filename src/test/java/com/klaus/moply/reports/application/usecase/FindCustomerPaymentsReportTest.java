@@ -19,8 +19,8 @@ import com.klaus.moply.reports.application.usecase.dto.CustomerPaymentsReport;
 import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
 import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
-import com.klaus.moply.shared.domain.exception.DomainException;
 
 class FindCustomerPaymentsReportTest {
 
@@ -57,8 +57,8 @@ class FindCustomerPaymentsReportTest {
 
 	@Test
 	void shouldStopBeforeReadingPaymentsWhenPeriodIsMissing() {
-		when(resolver.resolve(context, null, null)).thenThrow(new DomainException("Informe o período."));
-		assertThrows(DomainException.class, () -> usecase.execute(context, null));
+		when(resolver.resolve(context, null, null)).thenThrow(new ApplicationException("Informe o período."));
+		assertThrows(ApplicationException.class, () -> usecase.execute(context, null));
 		verifyNoInteractions(reads);
 	}
 

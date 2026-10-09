@@ -13,7 +13,7 @@ import com.klaus.moply.payments.application.usecase.exception.PaymentConflictExc
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.payments.domain.PaymentAmount;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
 import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
@@ -62,7 +62,7 @@ public class RecordWorkOrderPayment implements Usecase.Contextual<RecordWorkOrde
 
 	private void validateInput(RecordWorkOrderPaymentInput input) {
 		if (input == null || input.workOrderId() == null || input.paidOn() == null || input.actorId() == null) {
-			throw new DomainException("Trabalho, data e responsável são obrigatórios.");
+			throw new ApplicationException("Trabalho, data e responsável são obrigatórios.");
 		}
 	}
 
@@ -77,7 +77,7 @@ public class RecordWorkOrderPayment implements Usecase.Contextual<RecordWorkOrde
 		}
 
 		if (paidOn.isBefore(work.serviceDate()) || paidOn.isAfter(today)) {
-			throw new DomainException("Data do pagamento deve estar entre a data do trabalho e hoje.");
+			throw new ApplicationException("Data do pagamento deve estar entre a data do trabalho e hoje.");
 		}
 	}
 

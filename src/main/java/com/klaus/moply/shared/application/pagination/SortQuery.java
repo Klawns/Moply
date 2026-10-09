@@ -3,7 +3,7 @@ package com.klaus.moply.shared.application.pagination;
 import java.util.Locale;
 import java.util.Objects;
 
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 /** Application-owned ordering request; fields are validated by the module adapter. */
 public record SortQuery(String field, Direction direction) {
@@ -12,7 +12,7 @@ public record SortQuery(String field, Direction direction) {
 		Objects.requireNonNull(field, "field");
 		Objects.requireNonNull(direction, "direction");
 		if (field.isBlank())
-			throw new DomainException("Campo de ordenação é obrigatório.");
+			throw new ApplicationException("Campo de ordenação é obrigatório.");
 	}
 
 	public enum Direction {
@@ -24,7 +24,7 @@ public record SortQuery(String field, Direction direction) {
 				return valueOf(value.toUpperCase(Locale.ROOT));
 			}
 			catch (RuntimeException exception) {
-				throw new DomainException("Direção de ordenação inválida.");
+				throw new ApplicationException("Direção de ordenação inválida.");
 			}
 		}
 

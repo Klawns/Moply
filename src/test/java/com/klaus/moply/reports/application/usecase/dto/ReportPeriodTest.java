@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 import com.klaus.moply.shared.application.pagination.PageQuery;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 class ReportPeriodTest {
 
@@ -22,15 +22,15 @@ class ReportPeriodTest {
 
 	@Test
 	void shouldRejectMissingOrReversedDates() {
-		assertThrows(DomainException.class, () -> new ReportPeriod(null, date, null));
-		assertThrows(DomainException.class, () -> new ReportPeriod(date, null, null));
-		assertThrows(DomainException.class, () -> new ReportPeriod(date, date.minusDays(1), null));
+		assertThrows(ApplicationException.class, () -> new ReportPeriod(null, date, null));
+		assertThrows(ApplicationException.class, () -> new ReportPeriod(date, null, null));
+		assertThrows(ApplicationException.class, () -> new ReportPeriod(date, date.minusDays(1), null));
 	}
 
 	@Test
 	void shouldRejectMissingCollaboratorReportPeriod() {
 		assertEquals("Informe o período.",
-				assertThrows(DomainException.class, () -> new CollaboratorsReportInput(null, null)).getMessage());
+				assertThrows(ApplicationException.class, () -> new CollaboratorsReportInput(null, null)).getMessage());
 	}
 
 }

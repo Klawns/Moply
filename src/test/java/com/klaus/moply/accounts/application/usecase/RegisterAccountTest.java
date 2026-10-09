@@ -6,6 +6,7 @@ import com.klaus.moply.accounts.application.usecase.dto.RegisterAccountInput;
 import com.klaus.moply.accounts.application.ports.*;
 import com.klaus.moply.accounts.domain.entities.AppUser;
 import com.klaus.moply.accounts.domain.vo.Organization;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -56,7 +57,7 @@ class RegisterAccountTest {
 
 	@Test
 	void shouldRejectNullRegistrationInputBeforeUsingDependencies() {
-		assertThrows(DomainException.class, () -> usecase.execute(null));
+		assertThrows(ApplicationException.class, () -> usecase.execute(null));
 		verifyNoInteractions(passwords, registration);
 	}
 

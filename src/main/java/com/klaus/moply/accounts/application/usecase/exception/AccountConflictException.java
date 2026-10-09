@@ -1,9 +1,11 @@
 package com.klaus.moply.accounts.application.usecase.exception;
 
-public class AccountConflictException extends RuntimeException {
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
+
+public class AccountConflictException extends ApplicationException {
 
 	public AccountConflictException() {
-		super("Cadastro de conta em conflito.");
+		super("ACCOUNT_CONFLICT", "Cadastro de conta em conflito.");
 	}
 
 }

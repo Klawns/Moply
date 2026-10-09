@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 import com.klaus.moply.workflows.application.usecase.dto.PaymentConfirmation;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,7 +18,7 @@ class CancellationConfirmationsTest {
 				new PaymentConfirmation(UUID.randomUUID(), false, "reason"),
 				new PaymentConfirmation(UUID.randomUUID(), true, null),
 				new PaymentConfirmation(UUID.randomUUID(), true, " "))) {
-			assertThrows(DomainException.class,
+			assertThrows(ApplicationException.class,
 					() -> CancellationConfirmations.from(java.util.Collections.singletonList(confirmation)));
 		}
 	}
@@ -31,7 +31,8 @@ class CancellationConfirmationsTest {
 		source.clear();
 		assertEquals(confirmation, confirmations.byPayment().get(confirmation.paymentId()));
 		assertThrows(UnsupportedOperationException.class, () -> confirmations.byPayment().clear());
-		assertThrows(DomainException.class, () -> CancellationConfirmations.from(List.of(confirmation, confirmation)));
+		assertThrows(ApplicationException.class,
+				() -> CancellationConfirmations.from(List.of(confirmation, confirmation)));
 	}
 
 }

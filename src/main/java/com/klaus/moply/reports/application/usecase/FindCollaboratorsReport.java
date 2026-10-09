@@ -10,7 +10,7 @@ import com.klaus.moply.reports.application.usecase.dto.CollaboratorsReportInput;
 import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.usecase.Usecase;
-import com.klaus.moply.shared.domain.exception.DomainException;
+import com.klaus.moply.shared.application.usecase.exception.ApplicationException;
 
 public class FindCollaboratorsReport implements Usecase.Contextual<CollaboratorsReportInput, CollaboratorsReport> {
 
@@ -44,7 +44,7 @@ public class FindCollaboratorsReport implements Usecase.Contextual<Collaborators
 
 	private void validateInput(CollaboratorsReportInput input) {
 		if (input == null) {
-			throw new DomainException("Informe o período.");
+			throw new ApplicationException("Informe o período.");
 		}
 	}
 
