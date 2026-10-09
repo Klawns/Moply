@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.payments.application.usecase.dto.ListCollaboratorPaymentsInput;
+import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
+import com.klaus.moply.payments.application.usecase.dto.ReverseCollaboratorPaymentInput;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.payments.application.usecase.ListCollaboratorPayments;
 import com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment;
@@ -47,7 +50,7 @@ public class PaymentWorkOrderCollaboratorController implements PaymentWorkOrderC
 			@RequestHeader("Idempotency-Key") String idempotencyKey,
 			@Valid @RequestBody RecordCollaboratorPaymentRequest request) {
 		var payment = record.execute(new Context(principal.getOrganizationId()),
-				new RecordCollaboratorPayment.Input(workOrderId, collaboratorId, request.amount(), request.paidOn(),
+				new RecordCollaboratorPaymentInput(workOrderId, collaboratorId, request.amount(), request.paidOn(),
 						idempotencyKey, principal.getUserId()));
 		return ResponseEntity.created(URI.create("/api/v1/payments/" + payment.id()))
 			.body(PaymentResponse.from(payment));
@@ -62,7 +65,7 @@ public class PaymentWorkOrderCollaboratorController implements PaymentWorkOrderC
 			@org.springframework.web.bind.annotation.RequestParam(required = false) String sort,
 			@org.springframework.web.bind.annotation.RequestParam(required = false) String direction) {
 		return PageResponse.from(
-				list.execute(new Context(principal.getOrganizationId()), new ListCollaboratorPayments.Input(workOrderId,
+				list.execute(new Context(principal.getOrganizationId()), new ListCollaboratorPaymentsInput(workOrderId,
 						collaboratorId, PageQueryRequest.toQuery(page, size, sort, direction))),
 				PaymentResponse::from);
 	}
@@ -73,7 +76,7 @@ public class PaymentWorkOrderCollaboratorController implements PaymentWorkOrderC
 			@PathVariable UUID collaboratorId, @PathVariable UUID paymentId,
 			@Valid @RequestBody ReverseCollaboratorPaymentRequest request) {
 		return PaymentResponse.from(reverse.execute(new Context(principal.getOrganizationId()),
-				new ReverseCollaboratorPayment.Input(workOrderId, collaboratorId, paymentId,
+				new ReverseCollaboratorPaymentInput(workOrderId, collaboratorId, paymentId,
 						request.confirmNotActuallyPaid(), request.reason(), principal.getUserId())));
 	}
 

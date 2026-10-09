@@ -1,4 +1,4 @@
-package com.klaus.moply.accounts.application.exception;
+package com.klaus.moply.accounts.application.usecase.exception;
 
 public class AccountNotFoundException extends RuntimeException {
 

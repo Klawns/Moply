@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundException;

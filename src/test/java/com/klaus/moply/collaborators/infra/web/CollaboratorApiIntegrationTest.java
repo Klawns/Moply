@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import com.jayway.jsonpath.JsonPath;
 import com.klaus.moply.auth.infra.security.JwtCookieService;
 import com.klaus.moply.shared.application.pagination.PageQuery;
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.application.usecase.FindEligibleCollaborators;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;

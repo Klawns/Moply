@@ -7,7 +7,7 @@ import java.util.function.UnaryOperator;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.accounts.infra.persistence.OrganizationJpaRepository;

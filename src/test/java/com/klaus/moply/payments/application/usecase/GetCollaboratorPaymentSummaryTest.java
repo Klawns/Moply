@@ -1,4 +1,4 @@
-package com.klaus.moply.payments.application;
+package com.klaus.moply.payments.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -23,7 +23,6 @@ import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
-import com.klaus.moply.payments.application.usecase.GetCollaboratorPaymentSummary;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;

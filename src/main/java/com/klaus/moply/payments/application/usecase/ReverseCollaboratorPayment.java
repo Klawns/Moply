@@ -1,8 +1,8 @@
 package com.klaus.moply.payments.application.usecase;
 
 import java.time.Clock;
-import java.util.UUID;
 
+import com.klaus.moply.payments.application.usecase.dto.ReverseCollaboratorPaymentInput;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentNotFoundException;
 import com.klaus.moply.payments.domain.Payment;
@@ -14,7 +14,7 @@ import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ReverseCollaboratorPayment implements Usecase.Contextual<ReverseCollaboratorPayment.Input, Payment> {
+public class ReverseCollaboratorPayment implements Usecase.Contextual<ReverseCollaboratorPaymentInput, Payment> {
 
 	private final WorkOrderOperations workOrders;
 
@@ -22,12 +22,8 @@ public class ReverseCollaboratorPayment implements Usecase.Contextual<ReverseCol
 
 	private final Clock clock;
 
-	public record Input(UUID workOrderId, UUID collaboratorId, UUID paymentId, boolean confirmNotActuallyPaid,
-			String reason, UUID actorId) {
-	}
-
 	@Override
-	public Payment execute(Usecase.Context context, Input input) {
+	public Payment execute(Usecase.Context context, ReverseCollaboratorPaymentInput input) {
 		validate(input);
 		var organizationId = context.organizationId();
 		var paymentId = input.paymentId();
@@ -53,7 +49,7 @@ public class ReverseCollaboratorPayment implements Usecase.Contextual<ReverseCol
 		});
 	}
 
-	private void validate(Input input) {
+	private void validate(ReverseCollaboratorPaymentInput input) {
 		if (input == null || input.workOrderId() == null || input.collaboratorId() == null || input.paymentId() == null
 				|| input.actorId() == null)
 			throw new DomainException("Acerto e responsável são obrigatórios.");

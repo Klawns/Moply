@@ -3,10 +3,10 @@ package com.klaus.moply.recurrence.application.usecase;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.klaus.moply.recurrence.application.usecase.dto.FindOccurrenceHistoryFilter;
 import com.klaus.moply.recurrence.application.ports.RecurrenceChanges;
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 import com.klaus.moply.recurrence.application.usecase.dto.OccurrenceHistoryOutput;
-import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.usecase.Usecase;
 import com.klaus.moply.workorders.application.ports.WorkOrderOccurrences;
@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class FindOccurrenceHistory
-		implements Usecase.Contextual<FindOccurrenceHistory.Filter, PageResult<OccurrenceHistoryOutput>> {
+		implements Usecase.Contextual<FindOccurrenceHistoryFilter, PageResult<OccurrenceHistoryOutput>> {
 
 	private final RecurrenceChanges changes;
 
@@ -24,7 +24,7 @@ public class FindOccurrenceHistory
 	private final WorkOrderOccurrences occurrences;
 
 	@Override
-	public PageResult<OccurrenceHistoryOutput> execute(Usecase.Context context, Filter input) {
+	public PageResult<OccurrenceHistoryOutput> execute(Usecase.Context context, FindOccurrenceHistoryFilter input) {
 		var organizationId = context.organizationId();
 		var workOrderId = input.workOrderId();
 		occurrences.reference(organizationId, workOrderId);
@@ -53,9 +53,6 @@ public class FindOccurrenceHistory
 			.map(WorkOrderOccurrences.Reference::id)
 			.findFirst()
 			.orElse(null);
-	}
-
-	public record Filter(UUID workOrderId, PageQuery page) {
 	}
 
 }

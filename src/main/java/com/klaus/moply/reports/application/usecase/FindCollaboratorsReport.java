@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.klaus.moply.reports.application.ports.ReportReadRepository;
-import com.klaus.moply.reports.application.usecase.ReportContextResolver.ReportContext;
+import com.klaus.moply.reports.application.usecase.dto.ReportContext;
 import com.klaus.moply.reports.application.usecase.dto.CollaboratorsReport;
 import com.klaus.moply.reports.application.usecase.dto.CollaboratorsReportInput;
 import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;

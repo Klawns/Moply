@@ -3,7 +3,7 @@ package com.klaus.moply.payments.infra.web.dto.response;
 import java.util.List;
 import java.util.UUID;
 
-import com.klaus.moply.payments.application.usecase.CollaboratorPaymentSummary;
+import com.klaus.moply.payments.application.usecase.dto.CollaboratorPaymentSummary;
 
 public record CollaboratorPaymentSummaryResponse(UUID collaboratorId, String currencyCode,
 		PaymentBalanceResponse balance, List<CollaboratorWorkBalanceResponse> workOrders) {

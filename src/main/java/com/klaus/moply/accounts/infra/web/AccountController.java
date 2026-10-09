@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.accounts.application.usecase.dto.RegisterAccountInput;
 import com.klaus.moply.accounts.application.usecase.RegisterAccount;
 import com.klaus.moply.accounts.infra.web.api.AccountApi;
 import com.klaus.moply.accounts.infra.web.dto.RegistrationRequest;
@@ -25,8 +26,8 @@ public class AccountController implements AccountApi {
 	@PostMapping()
 	@Override
 	public ResponseEntity<RegistrationResponse> register(@RequestBody RegistrationRequest request) {
-		var result = register.execute(
-				new RegisterAccount.Input(request.name(), request.timezone(), request.email(), request.password()));
+		var result = register
+			.execute(new RegisterAccountInput(request.name(), request.timezone(), request.email(), request.password()));
 		return ResponseEntity.created(URI.create("/api/v1/accounts/me"))
 			.body(new RegistrationResponse(result.organizationId(), result.userId()));
 	}

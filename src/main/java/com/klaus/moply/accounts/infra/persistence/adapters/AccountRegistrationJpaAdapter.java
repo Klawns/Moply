@@ -6,7 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.klaus.moply.accounts.application.exception.AccountConflictException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountConflictException;
 import com.klaus.moply.accounts.application.ports.AccountRegistration;
 import com.klaus.moply.accounts.domain.entities.AppUser;
 import com.klaus.moply.accounts.domain.vo.Organization;

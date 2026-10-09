@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.payments.application.usecase.dto.ListWorkOrderPaymentsInput;
+import com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.payments.application.usecase.ListWorkOrderPayments;
 import com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment;
@@ -40,7 +42,7 @@ public class PaymentWorkOrderController implements PaymentWorkOrderApi {
 	public ResponseEntity<PaymentResponse> record(@AuthenticationPrincipal AccountPrincipal principal,
 			@PathVariable UUID workOrderId, @Valid @RequestBody RecordPaymentRequest request) {
 		var payment = record.execute(new Context(principal.getOrganizationId()),
-				new RecordWorkOrderPayment.Input(workOrderId, request.paidOn(), principal.getUserId()));
+				new RecordWorkOrderPaymentInput(workOrderId, request.paidOn(), principal.getUserId()));
 		return ResponseEntity.created(URI.create("/api/v1/payments/" + payment.id()))
 			.body(PaymentResponse.from(payment));
 	}
@@ -54,7 +56,7 @@ public class PaymentWorkOrderController implements PaymentWorkOrderApi {
 			@org.springframework.web.bind.annotation.RequestParam(required = false) String sort,
 			@org.springframework.web.bind.annotation.RequestParam(required = false) String direction) {
 		return PageResponse.from(list.execute(new Context(principal.getOrganizationId()),
-				new ListWorkOrderPayments.Input(workOrderId, PageQueryRequest.toQuery(page, size, sort, direction))),
+				new ListWorkOrderPaymentsInput(workOrderId, PageQueryRequest.toQuery(page, size, sort, direction))),
 				PaymentResponse::from);
 	}
 

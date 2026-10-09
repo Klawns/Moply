@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.workorders.application.usecase.dto.FindWorkOrdersFilter;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.infra.web.PageQueryRequest;
@@ -114,7 +115,7 @@ public class WorkOrderController implements WorkOrderApi {
 			@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
 			@RequestParam(required = false) String sort, @RequestParam(required = false) String direction) {
 		return PageResponse
-			.from(find.execute(new Context(principal.getOrganizationId()), new FindWorkOrders.Filter(from, to,
+			.from(find.execute(new Context(principal.getOrganizationId()), new FindWorkOrdersFilter(from, to,
 					customerId, status, PageQueryRequest.toQuery(page, size, sort, direction))), WorkOrderResponse::from);
 	}
 

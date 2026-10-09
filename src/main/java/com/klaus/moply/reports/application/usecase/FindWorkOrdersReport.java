@@ -3,7 +3,7 @@ package com.klaus.moply.reports.application.usecase;
 import java.time.LocalDate;
 
 import com.klaus.moply.reports.application.ports.ReportReadRepository;
-import com.klaus.moply.reports.application.usecase.ReportContextResolver.ReportContext;
+import com.klaus.moply.reports.application.usecase.dto.ReportContext;
 import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
 import com.klaus.moply.reports.application.usecase.dto.WorkOrdersReport;
 import com.klaus.moply.shared.application.pagination.PageResult;

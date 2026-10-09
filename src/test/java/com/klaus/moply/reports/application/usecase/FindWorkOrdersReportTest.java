@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import com.klaus.moply.reports.application.usecase.dto.ReportContext;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.Organization;
@@ -70,8 +71,7 @@ class FindWorkOrdersReportTest {
 		var resolver = mock(ReportContextResolver.class);
 		var row = new ReportReadRepository.WorkRow(UUID.randomUUID(), period.customerId(), "Customer",
 				date.plusDays(days), status, "GBP", BigDecimal.TEN, paid);
-		when(resolver.resolve(context, period, null))
-			.thenReturn(new ReportContextResolver.ReportContext("UTC", "GBP", date));
+		when(resolver.resolve(context, period, null)).thenReturn(new ReportContext("UTC", "GBP", date));
 		when(reads.workRows(context.organizationId(), period.from(), period.to(), period.customerId(), period.page()))
 			.thenReturn(new PageResult<>(List.of(row), 1, 2, 3, 2));
 		when(reads.workTotals(context.organizationId(), period.from(), period.to(), period.customerId(), date))

@@ -1,4 +1,4 @@
-package com.klaus.moply.workorders.application;
+package com.klaus.moply.workorders.application.usecase;
 
 import java.math.BigDecimal;
 import java.time.*;

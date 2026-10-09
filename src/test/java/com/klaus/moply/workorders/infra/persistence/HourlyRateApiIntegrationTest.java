@@ -19,6 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
 import com.jayway.jsonpath.JsonPath;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.*;
@@ -312,9 +313,9 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 		var context = new Context(org);
 		var today = LocalDate.now(java.time.ZoneOffset.UTC);
 		settle.execute(context,
-				new RecordCollaboratorPayment.Input(id, ana, new BigDecimal("20"), today, "partial", actor));
+				new RecordCollaboratorPaymentInput(id, ana, new BigDecimal("20"), today, "partial", actor));
 		assertThrows(PaymentConflictException.class, () -> settle.execute(context,
-				new RecordCollaboratorPayment.Input(id, ana, new BigDecimal("31"), today, "exceeds", actor)));
+				new RecordCollaboratorPaymentInput(id, ana, new BigDecimal("31"), today, "exceeds", actor)));
 		var balance = summary.execute(context, ana);
 		assertEquals(new BigDecimal("50.00"), balance.allocatedAmount());
 		assertEquals(new BigDecimal("30.00"), balance.remainingAmount());
@@ -325,7 +326,7 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 		var clientReport = workReport.execute(context, period);
 		assertEquals(new BigDecimal("120.00"), clientReport.realizedAmount());
 		settle.execute(context,
-				new RecordCollaboratorPayment.Input(id, ana, new BigDecimal("30"), today, "remaining", actor));
+				new RecordCollaboratorPaymentInput(id, ana, new BigDecimal("30"), today, "remaining", actor));
 		assertEquals(new BigDecimal("0.00"), summary.execute(context, ana).remainingAmount());
 	}
 

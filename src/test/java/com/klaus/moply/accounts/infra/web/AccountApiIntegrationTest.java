@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import com.jayway.jsonpath.JsonPath;
-import com.klaus.moply.accounts.application.exception.AccountConflictException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountConflictException;
 import com.klaus.moply.accounts.application.ports.AccountRegistration;
 import com.klaus.moply.accounts.domain.entities.AppUser;
 import com.klaus.moply.accounts.domain.vo.LoginEmail;

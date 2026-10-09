@@ -16,6 +16,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
+import com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput;
+import com.klaus.moply.payments.application.usecase.dto.ReverseCollaboratorPaymentInput;
+import com.klaus.moply.payments.application.usecase.dto.ReverseWorkOrderPaymentInput;
+import com.klaus.moply.recurrence.application.usecase.dto.FindOccurrenceHistoryFilter;
+import com.klaus.moply.recurrence.application.usecase.dto.GenerateSeriesResult;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.*;
 import com.klaus.moply.accounts.domain.vo.LoginEmail;
@@ -143,8 +149,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 
 	Context context;
 
-	private FindOccurrenceHistory.Filter historyFilter(UUID workOrderId) {
-		return new FindOccurrenceHistory.Filter(workOrderId,
+	private FindOccurrenceHistoryFilter historyFilter(UUID workOrderId) {
+		return new FindOccurrenceHistoryFilter(workOrderId,
 				com.klaus.moply.shared.application.pagination.PageQuery.defaults());
 	}
 
@@ -271,9 +277,9 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(0, count("tb_collaborator_payment"));
 		var future = all().get(1);
 		assertThrows(PaymentConflictException.class,
-				() -> pay.execute(context, new RecordWorkOrderPayment.Input(future.id(), today, actor)));
+				() -> pay.execute(context, new RecordWorkOrderPaymentInput(future.id(), today, actor)));
 		assertThrows(PaymentConflictException.class, () -> settle.execute(context,
-				new RecordCollaboratorPayment.Input(future.id(), second, BigDecimal.ONE, today, "future", actor)));
+				new RecordCollaboratorPaymentInput(future.id(), second, BigDecimal.ONE, today, "future", actor)));
 		var balances = summary.execute(context, second);
 		assertEquals(1, balances.workOrders().stream().filter(b -> b.requiresAttention()).count());
 		accounts.updatePreferences(account,
@@ -326,7 +332,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		setTime("2026-11-12T12:00:00Z");
 		var gate = new CountDownLatch(1);
 		try (var executor = Executors.newFixedThreadPool(2)) {
-			Callable<GenerateSeries.Result> task = () -> {
+			Callable<GenerateSeriesResult> task = () -> {
 				assertTrue(gate.await(10, TimeUnit.SECONDS));
 				return generate.execute(context, series.getId());
 			};
@@ -406,24 +412,23 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		var series = create.execute(context, input(today, null, null));
 		var work = all().getFirst();
 		var one = settle.execute(context,
-				new RecordCollaboratorPayment.Input(work.id(), second, new BigDecimal("2.00"), today, "part1", actor));
+				new RecordCollaboratorPaymentInput(work.id(), second, new BigDecimal("2.00"), today, "part1", actor));
 		settle.execute(context,
-				new RecordCollaboratorPayment.Input(work.id(), second, new BigDecimal("3.01"), today, "part2", actor));
+				new RecordCollaboratorPaymentInput(work.id(), second, new BigDecimal("3.01"), today, "part2", actor));
 		assertEquals(2, count("tb_collaborator_payment"));
-		assertThrows(PaymentConflictException.class,
-				() -> settle.execute(context, new RecordCollaboratorPayment.Input(work.id(), second,
-						new BigDecimal("0.01"), today, "excess", actor)));
+		assertThrows(PaymentConflictException.class, () -> settle.execute(context,
+				new RecordCollaboratorPaymentInput(work.id(), second, new BigDecimal("0.01"), today, "excess", actor)));
 		assertThrows(PaymentConflictException.class,
 				() -> cancel.execute(context, new CancelWorkOrderInput(work.id(), null, false, null)));
 		reschedule.execute(context, new RescheduleWorkOrderInput(work.id(), today.plusDays(2), null));
 		assertEquals(one.id(),
 				settle
 					.execute(context,
-							new RecordCollaboratorPayment.Input(work.id(), second, new BigDecimal("2.00"), today,
+							new RecordCollaboratorPaymentInput(work.id(), second, new BigDecimal("2.00"), today,
 									"part1", actor))
 					.id());
 		reverseSettlement.execute(context,
-				new ReverseCollaboratorPayment.Input(work.id(), second, one.id(), true, "Not delivered", actor));
+				new ReverseCollaboratorPaymentInput(work.id(), second, one.id(), true, "Not delivered", actor));
 		setTime("2026-10-10T12:00:00Z");
 		generate.execute(context, series.getId());
 		assertEquals(2, count("tb_collaborator_payment"));
@@ -433,7 +438,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 						"SELECT count(DISTINCT work_order_id) FROM tb_collaborator_payment WHERE organization_id=?",
 						Integer.class, account));
 		var next = all().stream().filter(w -> w.serviceDate().equals(today.plusDays(7))).findFirst().orElseThrow();
-		pay.execute(context, new RecordWorkOrderPayment.Input(next.id(), today.plusDays(7), actor));
+		pay.execute(context, new RecordWorkOrderPaymentInput(next.id(), today.plusDays(7), actor));
 		assertThrows(PaymentConflictException.class,
 				() -> reschedule.execute(context, new RescheduleWorkOrderInput(next.id(), today.plusDays(8), null)));
 		assertEquals(1, count("tb_customer_payment"));
@@ -588,8 +593,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		create.execute(context, input(today, null, null));
 		var old = all();
 		setTime("2026-10-31T12:00:00Z");
-		var p1 = pay.execute(context, new RecordWorkOrderPayment.Input(old.getFirst().id(), today, actor));
-		var p2 = pay.execute(context, new RecordWorkOrderPayment.Input(old.get(1).id(), today.plusDays(7), actor));
+		var p1 = pay.execute(context, new RecordWorkOrderPaymentInput(old.getFirst().id(), today, actor));
+		var p2 = pay.execute(context, new RecordWorkOrderPaymentInput(old.get(1).id(), today.plusDays(7), actor));
 		var c1 = new PaymentConfirmation(p1.id(), true, "Incorrect entry");
 		var c2 = new PaymentConfirmation(p2.id(), true, "Not received");
 		var selection = selection(old.getFirst().id(), ChangeScope.THIS_AND_FOLLOWING, "cancel-paid");
@@ -614,7 +619,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldBlockEntireBatchOnActiveSettlementButPreserveItOnSingleMove() {
 		create.execute(context, input(today, null, null));
 		var old = all();
-		var payment = settle.execute(context, new RecordCollaboratorPayment.Input(old.getFirst().id(), second,
+		var payment = settle.execute(context, new RecordCollaboratorPaymentInput(old.getFirst().id(), second,
 				new BigDecimal("2.00"), today, "partial", actor));
 		assertThrows(PaymentConflictException.class,
 				() -> stop(old.getFirst().id(), ChangeScope.THIS_AND_FOLLOWING, "stop"));
@@ -625,7 +630,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(0, count("tb_recurrence_command"));
 		move(old.getFirst().id(), ChangeScope.THIS_OCCURRENCE, "single", today.plusDays(1));
 		assertEquals(1, count("tb_collaborator_payment"));
-		reverseSettlement.execute(context, new ReverseCollaboratorPayment.Input(old.getFirst().id(), second,
+		reverseSettlement.execute(context, new ReverseCollaboratorPaymentInput(old.getFirst().id(), second,
 				payment.id(), true, "Not delivered", actor));
 		move(old.getFirst().id(), ChangeScope.THIS_AND_FOLLOWING, "move", today.plusDays(2));
 		assertEquals(1, count("tb_collaborator_payment"));
@@ -665,7 +670,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldRollbackPaymentReversalWhenLaterCancellationFails() {
 		create.execute(context, input(today, null, null));
 		var old = all();
-		var payment = pay.execute(context, new RecordWorkOrderPayment.Input(old.getFirst().id(), today, actor));
+		var payment = pay.execute(context, new RecordWorkOrderPaymentInput(old.getFirst().id(), today, actor));
 		doThrow(new org.springframework.dao.DataIntegrityViolationException("audit failure"))
 			.when(org.springframework.test.util.AopTestUtils.<RecurrenceChanges>getUltimateTargetObject(changes))
 			.record(argThat(item -> item.work().equals(old.getFirst().id())));
@@ -782,7 +787,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 						catch (InterruptedException ex) {
 							throw new RuntimeException(ex);
 						}
-						return pay.execute(context, new RecordWorkOrderPayment.Input(id, today, actor));
+						return pay.execute(context, new RecordWorkOrderPaymentInput(id, today, actor));
 					})));
 			assertTrue(workLocked.await(10, TimeUnit.SECONDS));
 			var collective = pool.submit(() -> assertThrows(PaymentConflictException.class,
@@ -818,7 +823,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 						catch (InterruptedException e) {
 							throw new RuntimeException(e);
 						}
-						return settle.execute(context, new RecordCollaboratorPayment.Input(id, second,
+						return settle.execute(context, new RecordCollaboratorPaymentInput(id, second,
 								new BigDecimal("2.00"), today, "race-settlement", actor));
 					})));
 			assertTrue(locked.await(10, TimeUnit.SECONDS));
@@ -854,12 +859,12 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 			var payment = pool.submit(() -> {
 				financialStarted.countDown();
 				return assertThrows(PaymentConflictException.class,
-						() -> pay.execute(context, new RecordWorkOrderPayment.Input(id, today, actor)));
+						() -> pay.execute(context, new RecordWorkOrderPaymentInput(id, today, actor)));
 			});
 			var settlement = pool.submit(() -> {
 				financialStarted.countDown();
 				return assertThrows(PaymentConflictException.class, () -> settle.execute(context,
-						new RecordCollaboratorPayment.Input(id, second, new BigDecimal("1.00"), today, "late", actor)));
+						new RecordCollaboratorPaymentInput(id, second, new BigDecimal("1.00"), today, "late", actor)));
 			});
 			assertTrue(collective.get(15, TimeUnit.SECONDS));
 			assertNotNull(payment.get(15, TimeUnit.SECONDS));
@@ -874,7 +879,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldRejectStaleConfirmationAfterIndependentReversalAndNewPayment() {
 		create.execute(context, input(today, null, null));
 		var id = all().getFirst().id();
-		var firstPayment = pay.execute(context, new RecordWorkOrderPayment.Input(id, today, actor));
+		var firstPayment = pay.execute(context, new RecordWorkOrderPaymentInput(id, today, actor));
 		new org.springframework.transaction.support.TransactionTemplate(transactions)
 			.executeWithoutResult(tx -> operations.withWorkOrder(account, id, w -> {
 				paymentRepository.update(paymentRepository.findActiveByWork(account, id)
@@ -882,7 +887,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 					.reverse(actor, "Incorrect", clock.instant()));
 				return null;
 			}));
-		var next = pay.execute(context, new RecordWorkOrderPayment.Input(id, today, actor));
+		var next = pay.execute(context, new RecordWorkOrderPaymentInput(id, today, actor));
 		var input = new CancelOccurrenceInput(selection(id, ChangeScope.THIS_AND_FOLLOWING, "stale"),
 				List.of(new PaymentConfirmation(firstPayment.id(), true, "Not received")));
 		assertThrows(PaymentConflictException.class, () -> cancelRecurring.execute(context, input));
@@ -895,7 +900,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldKeepIsolatedReschedulePaymentRestrictionAndRepeatedAuditStable() {
 		create.execute(context, input(today, null, null));
 		var id = all().getFirst().id();
-		pay.execute(context, new RecordWorkOrderPayment.Input(id, today, actor));
+		pay.execute(context, new RecordWorkOrderPaymentInput(id, today, actor));
 		assertThrows(PaymentConflictException.class,
 				() -> move(id, ChangeScope.THIS_OCCURRENCE, "paid", today.plusDays(1)));
 		assertThrows(PaymentConflictException.class,
@@ -951,7 +956,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldObserveIndependentReversalCommittedBeforeCollectiveCancellation() throws Exception {
 		create.execute(context, input(today, null, null));
 		var id = all().getFirst().id();
-		var payment = pay.execute(context, new RecordWorkOrderPayment.Input(id, today, actor));
+		var payment = pay.execute(context, new RecordWorkOrderPaymentInput(id, today, actor));
 		var locked = new CountDownLatch(1);
 		var family = new CountDownLatch(1);
 		doAnswer(i -> {
@@ -972,7 +977,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 							throw new RuntimeException(ex);
 						}
 						return reversePayment.execute(context,
-								new ReverseWorkOrderPayment.Input(payment.id(), true, "Independent reversal", actor));
+								new ReverseWorkOrderPaymentInput(payment.id(), true, "Independent reversal", actor));
 					})));
 			assertTrue(locked.await(10, TimeUnit.SECONDS));
 			var collective = pool.submit(() -> {

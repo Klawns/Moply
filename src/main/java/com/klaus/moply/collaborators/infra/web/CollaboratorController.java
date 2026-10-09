@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.collaborators.application.usecase.dto.FindAllCollaboratorsFilter;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.collaborators.application.usecase.CreateCollaborator;
 import com.klaus.moply.collaborators.application.usecase.DeactivateCollaborator;
@@ -65,7 +66,7 @@ public class CollaboratorController implements CollaboratorApi {
 			@RequestParam(required = false) String direction) {
 		return PageResponse.from(
 				findAll.execute(new Context(principal.getOrganizationId()),
-						new FindAllCollaborators.Filter(active, PageQueryRequest.toQuery(page, size, sort, direction))),
+						new FindAllCollaboratorsFilter(active, PageQueryRequest.toQuery(page, size, sort, direction))),
 				CollaboratorResponse::from);
 	}
 

@@ -1,6 +1,6 @@
 package com.klaus.moply.collaborators.application.usecase;
 
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.application.usecase.dto.CollaboratorOutput;
 import com.klaus.moply.collaborators.application.usecase.dto.UpdateCollaboratorInput;

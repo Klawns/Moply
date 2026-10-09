@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.recurrence.application.usecase.dto.FindOccurrenceHistoryFilter;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.recurrence.application.usecase.FindOccurrenceHistory;
 import com.klaus.moply.recurrence.infra.web.dto.response.OccurrenceHistoryResponse;
@@ -34,7 +35,7 @@ public class WorkOrderRecurrenceHistoryController implements WorkOrderRecurrence
 			@RequestParam(required = false) String direction) {
 		return PageResponse.from(
 				history.execute(new Context(principal.getOrganizationId()),
-						new FindOccurrenceHistory.Filter(id, PageQueryRequest.toQuery(page, size, sort, direction))),
+						new FindOccurrenceHistoryFilter(id, PageQueryRequest.toQuery(page, size, sort, direction))),
 				OccurrenceHistoryResponse::from);
 	}
 

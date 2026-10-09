@@ -5,7 +5,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
@@ -20,7 +21,7 @@ import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class RecordWorkOrderPayment implements Usecase.Contextual<RecordWorkOrderPayment.Input, Payment> {
+public class RecordWorkOrderPayment implements Usecase.Contextual<RecordWorkOrderPaymentInput, Payment> {
 
 	private final WorkOrderOperations workOrders;
 
@@ -30,11 +31,8 @@ public class RecordWorkOrderPayment implements Usecase.Contextual<RecordWorkOrde
 
 	private final Clock clock;
 
-	public record Input(UUID workOrderId, LocalDate paidOn, UUID actorId) {
-	}
-
 	@Override
-	public Payment execute(Usecase.Context context, Input input) {
+	public Payment execute(Usecase.Context context, RecordWorkOrderPaymentInput input) {
 		validateInput(input);
 
 		var organizationId = context.organizationId();
@@ -47,7 +45,8 @@ public class RecordWorkOrderPayment implements Usecase.Contextual<RecordWorkOrde
 				work -> recordPayment(organizationId, work, input, today));
 	}
 
-	private Payment recordPayment(UUID organizationId, WorkOrder work, Input input, LocalDate today) {
+	private Payment recordPayment(UUID organizationId, WorkOrder work, RecordWorkOrderPaymentInput input,
+			LocalDate today) {
 
 		validateWorkOrder(work, input.paidOn(), today);
 
@@ -61,7 +60,7 @@ public class RecordWorkOrderPayment implements Usecase.Contextual<RecordWorkOrde
 		return payments.save(work.id(), payment);
 	}
 
-	private void validateInput(Input input) {
+	private void validateInput(RecordWorkOrderPaymentInput input) {
 		if (input == null || input.workOrderId() == null || input.paidOn() == null || input.actorId() == null) {
 			throw new DomainException("Trabalho, data e responsável são obrigatórios.");
 		}

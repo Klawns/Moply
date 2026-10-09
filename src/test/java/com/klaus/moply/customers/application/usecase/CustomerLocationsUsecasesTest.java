@@ -1,4 +1,4 @@
-package com.klaus.moply.customers.application;
+package com.klaus.moply.customers.application.usecase;
 
 import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import com.klaus.moply.customers.application.usecase.dto.FindCustomerLocationsFilter;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.*;
 import com.klaus.moply.customers.application.usecase.dto.*;
@@ -135,7 +136,7 @@ class CustomerLocationsUsecasesTest {
 				new FindCustomerLocationByIdInput(id, UUID.randomUUID())));
 		when(repo.findLocations(ACCOUNT, id, PageQuery.defaults())).thenThrow(new CustomerNotFoundException(id));
 		assertThrows(CustomerNotFoundException.class, () -> new FindCustomerLocations(repo).execute(context(),
-				new FindCustomerLocations.Filter(id, PageQuery.defaults())));
+				new FindCustomerLocationsFilter(id, PageQuery.defaults())));
 		verify(repo, never()).save(org.mockito.ArgumentMatchers.eq(ACCOUNT), any());
 	}
 
@@ -150,7 +151,7 @@ class CustomerLocationsUsecasesTest {
 			.thenReturn(new PageResult<>(List.of(location), 0, 20, 1, 1));
 		assertEquals(List.of(expected),
 				new FindCustomerLocations(repo)
-					.execute(context(), new FindCustomerLocations.Filter(id, PageQuery.defaults()))
+					.execute(context(), new FindCustomerLocationsFilter(id, PageQuery.defaults()))
 					.content());
 		assertEquals(List.of(expected), new FindCustomerById(repo).execute(context(), id).locations());
 		var page = new com.klaus.moply.shared.application.pagination.PageQuery(0, 20, null);
@@ -165,7 +166,7 @@ class CustomerLocationsUsecasesTest {
 	void shouldReturnEmptyLocationsForCustomerWithoutLocations() {
 		var page = PageQuery.defaults();
 		when(repo.findLocations(ACCOUNT, id, page)).thenReturn(new PageResult<>(List.of(), 0, 20, 0, 0));
-		assertTrue(new FindCustomerLocations(repo).execute(context(), new FindCustomerLocations.Filter(id, page))
+		assertTrue(new FindCustomerLocations(repo).execute(context(), new FindCustomerLocationsFilter(id, page))
 			.isEmpty());
 	}
 

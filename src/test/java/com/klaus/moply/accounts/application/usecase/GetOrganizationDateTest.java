@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.Organization;

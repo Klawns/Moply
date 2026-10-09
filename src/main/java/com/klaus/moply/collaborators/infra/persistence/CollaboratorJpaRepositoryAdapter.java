@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;

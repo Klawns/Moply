@@ -1,16 +1,17 @@
-package com.klaus.moply.collaborators.application;
+package com.klaus.moply.collaborators.application.usecase;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import com.klaus.moply.collaborators.application.usecase.dto.FindAllCollaboratorsFilter;
 import com.klaus.moply.collaborators.domain.vo.CollaboratorName;
 import com.klaus.moply.shared.domain.vo.Phone;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.usecase.*;
 import com.klaus.moply.collaborators.application.usecase.dto.*;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
@@ -53,10 +54,10 @@ class CollaboratorUsecasesTest {
 		assertEquals(saved.getId(), new FindCollaboratorById(repo).execute(new Context(account), saved.getId()).id());
 		assertEquals(2,
 				new FindAllCollaborators(repo)
-					.execute(new Context(account), new FindAllCollaborators.Filter(null, PageQuery.defaults()))
+					.execute(new Context(account), new FindAllCollaboratorsFilter(null, PageQuery.defaults()))
 					.totalElements());
 		assertFalse(new FindAllCollaborators(repo)
-			.execute(new Context(account), new FindAllCollaborators.Filter(false, PageQuery.defaults()))
+			.execute(new Context(account), new FindAllCollaboratorsFilter(false, PageQuery.defaults()))
 			.content()
 			.getFirst()
 			.active());

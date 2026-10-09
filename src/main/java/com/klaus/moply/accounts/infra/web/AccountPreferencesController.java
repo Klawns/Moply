@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.accounts.application.usecase.dto.UpdateAccountPreferencesInput;
 import com.klaus.moply.accounts.application.usecase.GetAccountPreferences;
 import com.klaus.moply.accounts.application.usecase.UpdateAccountPreferences;
 import com.klaus.moply.accounts.infra.web.api.AccountPreferencesApi;
@@ -39,9 +40,8 @@ public class AccountPreferencesController implements AccountPreferencesApi {
 	@Override
 	public ResponseEntity<Void> update(@AuthenticationPrincipal AccountPrincipal principal,
 			@RequestBody PreferencesRequest request) {
-		update.execute(new Context(principal.getOrganizationId()),
-				new UpdateAccountPreferences.Input(request.timezone(), request.defaultWorkStatus(),
-						request.defaultHourlyRate(), request.defaultHourlyRateProvided()));
+		update.execute(new Context(principal.getOrganizationId()), new UpdateAccountPreferencesInput(request.timezone(),
+				request.defaultWorkStatus(), request.defaultHourlyRate(), request.defaultHourlyRateProvided()));
 		return ResponseEntity.noContent().build();
 	}
 

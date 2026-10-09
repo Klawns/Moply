@@ -14,7 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
 import com.klaus.moply.customers.application.ports.CustomerRepository;

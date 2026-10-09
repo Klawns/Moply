@@ -2,6 +2,7 @@ package com.klaus.moply.customers.infra.web.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.klaus.moply.customers.application.usecase.dto.FindAllLocationsFilter;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.customers.application.usecase.FindAllLocations;
 import com.klaus.moply.customers.infra.web.api.LocationApi;
@@ -26,7 +27,7 @@ public class LocationController implements LocationApi {
 			@RequestParam(required = false) String direction) {
 		return PageResponse.from(
 				findLocations.execute(new Context(principal.getOrganizationId()),
-						new FindAllLocations.Filter(q, PageQueryRequest.toQuery(page, size, sort, direction))),
+						new FindAllLocationsFilter(q, PageQueryRequest.toQuery(page, size, sort, direction))),
 				LocationSummaryResponse::from);
 	}
 

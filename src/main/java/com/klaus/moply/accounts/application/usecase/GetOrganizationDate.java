@@ -4,7 +4,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.shared.application.usecase.Usecase;
 

@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.UUID;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
@@ -20,7 +20,7 @@ import com.klaus.moply.workorders.domain.entity.WorkOrderStatus;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class RecordCollaboratorPayment implements Usecase.Contextual<RecordCollaboratorPayment.Input, Payment> {
+public class RecordCollaboratorPayment implements Usecase.Contextual<RecordCollaboratorPaymentInput, Payment> {
 
 	private final WorkOrderOperations workOrders;
 
@@ -30,12 +30,8 @@ public class RecordCollaboratorPayment implements Usecase.Contextual<RecordColla
 
 	private final Clock clock;
 
-	public record Input(UUID workOrderId, UUID collaboratorId, BigDecimal amount, LocalDate paidOn,
-			String idempotencyKey, UUID actorId) {
-	}
-
 	@Override
-	public Payment execute(Usecase.Context context, Input input) {
+	public Payment execute(Usecase.Context context, RecordCollaboratorPaymentInput input) {
 		validate(input);
 		var organizationId = context.organizationId();
 		var organization = organizations.findById(organizationId).orElseThrow(AccountNotFoundException::new);
@@ -76,7 +72,8 @@ public class RecordCollaboratorPayment implements Usecase.Contextual<RecordColla
 		});
 	}
 
-	private Payment existingOrConflict(CollaboratorPaymentRepository.RecordedPayment existing, Input input) {
+	private Payment existingOrConflict(CollaboratorPaymentRepository.RecordedPayment existing,
+			RecordCollaboratorPaymentInput input) {
 		if (existing.workOrderId().equals(input.workOrderId())
 				&& existing.collaboratorId().equals(input.collaboratorId())
 				&& existing.payment().amount().value().compareTo(input.amount()) == 0
@@ -85,7 +82,7 @@ public class RecordCollaboratorPayment implements Usecase.Contextual<RecordColla
 		throw new PaymentConflictException("A chave de idempotência já foi usada para outro acerto.");
 	}
 
-	private void validate(Input input) {
+	private void validate(RecordCollaboratorPaymentInput input) {
 		if (input == null || input.workOrderId() == null || input.collaboratorId() == null || input.actorId() == null
 				|| input.amount() == null || input.paidOn() == null || input.idempotencyKey() == null
 				|| input.idempotencyKey().isBlank() || input.idempotencyKey().length() > 128)

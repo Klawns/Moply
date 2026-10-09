@@ -5,7 +5,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.recurrence.application.usecase.dto.GenerateSeriesResult;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.recurrence.application.ports.RecurrenceChanges;
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeries.Result> {
+public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeriesResult> {
 
 	private final RecurrenceRepository repository;
 
@@ -36,12 +37,8 @@ public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeries.R
 
 	private final RecurrenceChanges changes;
 
-	public record Result(UUID organizationId, UUID seriesId, LocalDate from, LocalDate until, int created,
-			int existing) {
-	}
-
 	@Override
-	public Result execute(Usecase.Context context, UUID seriesId) {
+	public GenerateSeriesResult execute(Usecase.Context context, UUID seriesId) {
 		var organizationId = context.organizationId();
 		var series = repository.lock(organizationId, seriesId);
 		var window = generationWindow(organizationId);
@@ -59,7 +56,7 @@ public class GenerateSeries implements Usecase.Contextual<UUID, GenerateSeries.R
 			createOccurrence(context, series, window, date);
 			created++;
 		}
-		return new Result(organizationId, seriesId, window.from(), window.until(), created, existing);
+		return new GenerateSeriesResult(organizationId, seriesId, window.from(), window.until(), created, existing);
 	}
 
 	private GenerationWindow generationWindow(UUID organizationId) {

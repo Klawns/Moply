@@ -1,4 +1,4 @@
-package com.klaus.moply.customers.application;
+package com.klaus.moply.customers.application.usecase;
 
 import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,7 +21,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import com.klaus.moply.customers.application.ports.CustomerRepository;
-import com.klaus.moply.customers.application.usecase.CreateCustomer;
 import com.klaus.moply.customers.application.usecase.dto.CreateCustomerInput;
 import com.klaus.moply.customers.application.usecase.dto.CustomerLocationInput;
 import com.klaus.moply.customers.domain.entities.Customer;

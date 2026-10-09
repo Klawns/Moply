@@ -7,9 +7,10 @@ import java.time.ZoneId;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.payments.application.usecase.dto.CollaboratorPaymentSummary;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
 import com.klaus.moply.shared.application.usecase.Usecase;

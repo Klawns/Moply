@@ -1,5 +1,6 @@
 package com.klaus.moply.recurrence.infra.transaction;
 
+import com.klaus.moply.recurrence.application.usecase.dto.GenerateSeriesResult;
 import com.klaus.moply.recurrence.application.ports.RecurrenceChanges;
 
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
@@ -31,7 +32,7 @@ public class TransactionalGenerateSeries extends GenerateSeries {
 	 */
 	@Override
 	@Transactional
-	public Result execute(Usecase.Context context, UUID id) {
+	public GenerateSeriesResult execute(Usecase.Context context, UUID id) {
 		var result = super.execute(context, id);
 		org.springframework.transaction.support.TransactionSynchronizationManager
 			.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {

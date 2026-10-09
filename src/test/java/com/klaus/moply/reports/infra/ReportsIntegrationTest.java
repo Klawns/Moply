@@ -29,6 +29,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
+import com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput;
+import com.klaus.moply.payments.application.usecase.dto.ReverseCollaboratorPaymentInput;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.AppUser;
 import com.klaus.moply.accounts.domain.vo.LoginEmail;
@@ -162,15 +165,15 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 		var completedFuture = work(today.plusDays(2), WorkOrderStatus.COMPLETED);
 		var scheduled = work(today.plusDays(3), WorkOrderStatus.SCHEDULED);
 		var context = new Context(account);
-		recordCustomerPayment.execute(context, new RecordWorkOrderPayment.Input(done.id(), today, actor));
+		recordCustomerPayment.execute(context, new RecordWorkOrderPaymentInput(done.id(), today, actor));
 		var firstSettlement = recordSettlement.execute(context,
-				new RecordCollaboratorPayment.Input(done.id(), first, new BigDecimal("5.00"), today, "first", actor));
+				new RecordCollaboratorPaymentInput(done.id(), first, new BigDecimal("5.00"), today, "first", actor));
 		recordSettlement.execute(context,
-				new RecordCollaboratorPayment.Input(done.id(), first, new BigDecimal("3.00"), today, "second", actor));
-		reverseSettlement.execute(context, new ReverseCollaboratorPayment.Input(done.id(), first, firstSettlement.id(),
+				new RecordCollaboratorPaymentInput(done.id(), first, new BigDecimal("3.00"), today, "second", actor));
+		reverseSettlement.execute(context, new ReverseCollaboratorPaymentInput(done.id(), first, firstSettlement.id(),
 				true, "Incorrect test entry", actor));
 		recordSettlement.execute(context,
-				new RecordCollaboratorPayment.Input(done.id(), first, new BigDecimal("2.00"), today, "third", actor));
+				new RecordCollaboratorPaymentInput(done.id(), first, new BigDecimal("2.00"), today, "third", actor));
 
 		var workReportResult = workReport.execute(context,
 				new ReportPeriod(today.minusDays(5), today.minusDays(5), null));
@@ -380,8 +383,8 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 							new DurationHours(BigDecimal.valueOf(index == 0 ? 2 : 4)), new HourlyRate(BigDecimal.TEN),
 							List.of(first, second), WorkOrderStatus.COMPLETED));
 			var paidOn = index == 0 ? today.minusDays(1) : today;
-			recordCustomerPayment.execute(context, new RecordWorkOrderPayment.Input(work.id(), paidOn, actor));
-			recordSettlement.execute(context, new RecordCollaboratorPayment.Input(work.id(), first,
+			recordCustomerPayment.execute(context, new RecordWorkOrderPaymentInput(work.id(), paidOn, actor));
+			recordSettlement.execute(context, new RecordCollaboratorPaymentInput(work.id(), first,
 					BigDecimal.valueOf(index == 0 ? 2 : 4), paidOn, "paging-" + index, actor));
 			if (index == 0) {
 				jdbc.update("update tb_order_service set status = 'SCHEDULED' where organization_id = ? and id = ?",

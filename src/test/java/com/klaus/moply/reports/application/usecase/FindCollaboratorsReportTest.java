@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import com.klaus.moply.reports.application.usecase.dto.ReportContext;
 import com.klaus.moply.reports.application.ports.ReportReadRepository;
 import com.klaus.moply.reports.application.usecase.dto.CollaboratorsReport;
 import com.klaus.moply.reports.application.usecase.dto.CollaboratorsReportInput;
@@ -50,8 +51,7 @@ class FindCollaboratorsReportTest {
 		var settlement = new ReportReadRepository.SettlementRow(UUID.randomUUID(), assignment.workOrderId(), customerId,
 				"Customer", assignment.serviceDate(), status, collaboratorId, "Collaborator", date, "GBP",
 				new BigDecimal("3.00"));
-		when(resolver.resolve(context, period, collaboratorId))
-			.thenReturn(new ReportContextResolver.ReportContext("UTC", "GBP", date));
+		when(resolver.resolve(context, period, collaboratorId)).thenReturn(new ReportContext("UTC", "GBP", date));
 		when(reads.assignments(context.organizationId(), period.from(), period.to(), customerId, collaboratorId,
 				period.page()))
 			.thenReturn(new PageResult<>(List.of(assignment), 1, 2, 3, 2));

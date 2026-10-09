@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.payments.application.usecase.dto.ReverseWorkOrderPaymentInput;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.payments.application.usecase.ReverseWorkOrderPayment;
 import com.klaus.moply.payments.infra.web.api.PaymentApi;
@@ -32,7 +33,7 @@ public class PaymentController implements PaymentApi {
 	public PaymentResponse reverse(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id,
 			@Valid @RequestBody ReversePaymentRequest request) {
 		return PaymentResponse
-			.from(reverse.execute(new Context(principal.getOrganizationId()), new ReverseWorkOrderPayment.Input(id,
+			.from(reverse.execute(new Context(principal.getOrganizationId()), new ReverseWorkOrderPaymentInput(id,
 					request.confirmNoMoneyReceived(), request.reason(), principal.getUserId())));
 	}
 

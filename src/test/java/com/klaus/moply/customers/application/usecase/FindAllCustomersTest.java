@@ -1,4 +1,4 @@
-package com.klaus.moply.customers.application;
+package com.klaus.moply.customers.application.usecase;
 
 import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,7 +9,6 @@ import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import org.junit.jupiter.api.Test;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
-import com.klaus.moply.customers.application.usecase.FindAllCustomers;
 import com.klaus.moply.customers.domain.entities.Customer;
 
 class FindAllCustomersTest {

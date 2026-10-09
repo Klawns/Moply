@@ -22,8 +22,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.klaus.moply.accounts.application.exception.AccountConflictException;
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.accounts.application.usecase.dto.UpdateAccountPreferencesInput;
+import com.klaus.moply.accounts.application.usecase.exception.AccountConflictException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.AccountRegistration;
 import com.klaus.moply.accounts.application.ports.AppUserRepository;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
@@ -140,7 +141,7 @@ class AccountRepositoryIntegrationTest extends PostgresSpringIntegrationTest {
 			}
 		};
 		new UpdateAccountPreferences(interleaved).execute(new Context(organization.id()),
-				new UpdateAccountPreferences.Input("Europe/London", DefaultWorkStatus.COMPLETED));
+				new UpdateAccountPreferencesInput("Europe/London", DefaultWorkStatus.COMPLETED));
 		var stored = organizations.findById(organization.id()).orElseThrow();
 		assertEquals(new BigDecimal("20.00"), stored.defaultHourlyRate());
 		assertEquals("Europe/London", stored.timezone());
@@ -165,7 +166,7 @@ class AccountRepositoryIntegrationTest extends PostgresSpringIntegrationTest {
 			try {
 				assertTrue(locked.await(5, TimeUnit.SECONDS), "First transaction must acquire the organization lock");
 				var omittedOrNull = executor.submit(() -> new UpdateAccountPreferences(organizations)
-					.execute(new Context(organization.id()), new UpdateAccountPreferences.Input("Europe/London",
+					.execute(new Context(organization.id()), new UpdateAccountPreferencesInput("Europe/London",
 							DefaultWorkStatus.COMPLETED, null, rateProvided)));
 				assertOrganizationUpdateWaitingForLock();
 				assertFalse(omittedOrNull.isDone());
@@ -192,10 +193,10 @@ class AccountRepositoryIntegrationTest extends PostgresSpringIntegrationTest {
 		registration.register(other, manager(other, "other@example.com"));
 		var update = new UpdateAccountPreferences(organizations);
 		assertThrows(DomainException.class, () -> update.execute(new Context(organization.id()),
-				new UpdateAccountPreferences.Input("invalid", DefaultWorkStatus.COMPLETED, null, true)));
+				new UpdateAccountPreferencesInput("invalid", DefaultWorkStatus.COMPLETED, null, true)));
 		assertEquals(organization, organizations.findById(organization.id()).orElseThrow());
 		update.execute(new Context(organization.id()),
-				new UpdateAccountPreferences.Input("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("30"), true));
+				new UpdateAccountPreferencesInput("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("30"), true));
 		assertEquals(new BigDecimal("30.00"),
 				organizations.findById(organization.id()).orElseThrow().defaultHourlyRate());
 		assertEquals(other, organizations.findById(other.id()).orElseThrow());

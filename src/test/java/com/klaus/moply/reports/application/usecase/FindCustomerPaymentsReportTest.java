@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import com.klaus.moply.reports.application.usecase.dto.ReportContext;
 import com.klaus.moply.reports.application.ports.ReportReadRepository;
 import com.klaus.moply.reports.application.usecase.dto.CustomerPaymentsReport;
 import com.klaus.moply.reports.application.usecase.dto.ReportPeriod;
@@ -39,8 +40,7 @@ class FindCustomerPaymentsReportTest {
 		var period = new ReportPeriod(date, date, customerId, new PageQuery(1, 2, null));
 		var row = new ReportReadRepository.PaymentRow(UUID.randomUUID(), UUID.randomUUID(), customerId, "Customer",
 				date, "GBP", BigDecimal.TEN);
-		when(resolver.resolve(context, period, null))
-			.thenReturn(new ReportContextResolver.ReportContext("UTC", "GBP", date));
+		when(resolver.resolve(context, period, null)).thenReturn(new ReportContext("UTC", "GBP", date));
 		when(reads.customerPayments(context.organizationId(), date, date, customerId, period.page()))
 			.thenReturn(new PageResult<>(List.of(row), 1, 2, 3, 2));
 		when(reads.customerPaymentTotal(context.organizationId(), date, date, customerId))

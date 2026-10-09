@@ -1,4 +1,4 @@
-package com.klaus.moply.accounts.application;
+package com.klaus.moply.accounts.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,9 +14,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
-import com.klaus.moply.accounts.application.usecase.GetAccountPreferences;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.Organization;
 

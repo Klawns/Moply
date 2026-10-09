@@ -7,8 +7,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.klaus.moply.accounts.application.exception.AccountConflictException;
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountConflictException;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 
 @RestControllerAdvice(assignableTypes = { AccountController.class, AccountPreferencesController.class })
 @Order(Ordered.HIGHEST_PRECEDENCE)

@@ -2,6 +2,8 @@ package com.klaus.moply.accounts.application.usecase;
 
 import java.util.UUID;
 
+import com.klaus.moply.accounts.application.usecase.dto.RegisterAccountInput;
+import com.klaus.moply.accounts.application.usecase.dto.RegisterAccountOutput;
 import com.klaus.moply.accounts.application.ports.AccountRegistration;
 import com.klaus.moply.accounts.application.ports.PasswordHasher;
 import com.klaus.moply.accounts.domain.entities.AppUser;
@@ -13,14 +15,14 @@ import com.klaus.moply.shared.application.usecase.Usecase;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class RegisterAccount implements Usecase<RegisterAccount.Input, RegisterAccount.Output> {
+public class RegisterAccount implements Usecase<RegisterAccountInput, RegisterAccountOutput> {
 
 	private final AccountRegistration registration;
 
 	private final PasswordHasher passwords;
 
 	@Override
-	public Output execute(Input input) {
+	public RegisterAccountOutput execute(RegisterAccountInput input) {
 		if (input == null) {
 			throw new com.klaus.moply.shared.domain.exception.DomainException("Dados da conta obrigatórios.");
 		}
@@ -31,29 +33,18 @@ public class RegisterAccount implements Usecase<RegisterAccount.Input, RegisterA
 
 		registration.register(organization, manager);
 
-		return new Output(organization.id(), manager.getId());
+		return new RegisterAccountOutput(organization.id(), manager.getId());
 	}
 
-	private Organization createOrganization(Input input) {
+	private Organization createOrganization(RegisterAccountInput input) {
 		return Organization.create(input.name(), input.timezone());
 	}
 
-	private AppUser createManager(Input input, Organization organization) {
+	private AppUser createManager(RegisterAccountInput input, Organization organization) {
 		var email = new LoginEmail(input.email());
 		var passwordHash = passwords.encode(input.password());
 
 		return new AppUser(UUID.randomUUID(), organization.id(), email, passwordHash);
-	}
-
-	public record Input(String name, String timezone, String email, String password) {
-
-		@Override
-		public String toString() {
-			return "RegisterAccount.Input[redacted]";
-		}
-	}
-
-	public record Output(UUID organizationId, UUID userId) {
 	}
 
 }

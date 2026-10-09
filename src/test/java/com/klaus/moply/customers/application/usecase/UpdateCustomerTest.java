@@ -1,4 +1,4 @@
-package com.klaus.moply.customers.application;
+package com.klaus.moply.customers.application.usecase;
 
 import static com.klaus.moply.factory.AccountFixture.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
-import com.klaus.moply.customers.application.usecase.UpdateCustomer;
 import com.klaus.moply.customers.application.usecase.dto.UpdateCustomerInput;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
 import com.klaus.moply.customers.domain.entities.Customer;

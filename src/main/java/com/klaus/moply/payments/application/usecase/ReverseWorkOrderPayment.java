@@ -1,8 +1,8 @@
 package com.klaus.moply.payments.application.usecase;
 
 import java.time.Clock;
-import java.util.UUID;
 
+import com.klaus.moply.payments.application.usecase.dto.ReverseWorkOrderPaymentInput;
 import com.klaus.moply.payments.application.ports.WorkOrderPaymentRepository;
 import com.klaus.moply.payments.application.usecase.exception.PaymentNotFoundException;
 import com.klaus.moply.payments.domain.Payment;
@@ -13,7 +13,7 @@ import com.klaus.moply.workorders.application.ports.WorkOrderOperations;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ReverseWorkOrderPayment implements Usecase.Contextual<ReverseWorkOrderPayment.Input, Payment> {
+public class ReverseWorkOrderPayment implements Usecase.Contextual<ReverseWorkOrderPaymentInput, Payment> {
 
 	private final WorkOrderOperations workOrders;
 
@@ -21,11 +21,8 @@ public class ReverseWorkOrderPayment implements Usecase.Contextual<ReverseWorkOr
 
 	private final Clock clock;
 
-	public record Input(UUID paymentId, boolean confirmNoMoneyReceived, String reason, UUID actorId) {
-	}
-
 	@Override
-	public Payment execute(Usecase.Context context, Input input) {
+	public Payment execute(Usecase.Context context, ReverseWorkOrderPaymentInput input) {
 		validate(input);
 
 		var organizationId = context.organizationId();
@@ -46,7 +43,7 @@ public class ReverseWorkOrderPayment implements Usecase.Contextual<ReverseWorkOr
 		});
 	}
 
-	private void validate(Input input) {
+	private void validate(ReverseWorkOrderPaymentInput input) {
 		if (input == null || input.paymentId() == null || input.actorId() == null) {
 			throw new DomainException("Pagamento e responsável são obrigatórios.");
 		}

@@ -1,4 +1,4 @@
-package com.klaus.moply.collaborators.application.exception;
+package com.klaus.moply.collaborators.application.usecase.exception;
 
 import java.util.UUID;
 

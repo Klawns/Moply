@@ -5,10 +5,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
 
-import com.klaus.moply.accounts.application.exception.AccountNotFoundException;
+import com.klaus.moply.reports.application.usecase.dto.ReportContext;
+import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundException;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.vo.Organization;
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.customers.application.ports.CustomerRepository;
 import com.klaus.moply.customers.application.usecase.exception.CustomerNotFoundException;
@@ -80,9 +81,6 @@ public final class ReportContextResolver {
 		var referenceDate = LocalDate.now(clock.withZone(ZoneId.of(timezone)));
 
 		return new ReportContext(timezone, organization.currencyCode(), referenceDate);
-	}
-
-	public record ReportContext(String timezone, String currencyCode, LocalDate referenceDate) {
 	}
 
 }

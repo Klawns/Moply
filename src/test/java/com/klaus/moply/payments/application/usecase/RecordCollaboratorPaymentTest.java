@@ -1,4 +1,4 @@
-package com.klaus.moply.payments.application;
+package com.klaus.moply.payments.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,11 +21,11 @@ import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.payments.application.ports.CollaboratorPaymentRepository;
-import com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment;
 import com.klaus.moply.payments.application.usecase.exception.PaymentConflictException;
 import com.klaus.moply.payments.domain.Payment;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
@@ -86,7 +86,7 @@ class RecordCollaboratorPaymentTest {
 
 	@Test
 	void shouldRecordPartialAmountAndReturnSameRecordForAnIdempotentRetry() {
-		var input = new RecordCollaboratorPayment.Input(workOrderId, collaboratorId, new BigDecimal("10.00"),
+		var input = new RecordCollaboratorPaymentInput(workOrderId, collaboratorId, new BigDecimal("10.00"),
 				LocalDate.of(2026, 10, 3), "request-1", actorId);
 
 		var recorded = usecase.execute(new Context(organizationId), input);
@@ -133,8 +133,8 @@ class RecordCollaboratorPaymentTest {
 				input(new BigDecimal("5.00"), LocalDate.of(2026, 10, 3), "cancelled-work")));
 	}
 
-	private RecordCollaboratorPayment.Input input(BigDecimal amount, LocalDate date, String key) {
-		return new RecordCollaboratorPayment.Input(workOrderId, collaboratorId, amount, date, key, actorId);
+	private RecordCollaboratorPaymentInput input(BigDecimal amount, LocalDate date, String key) {
+		return new RecordCollaboratorPaymentInput(workOrderId, collaboratorId, amount, date, key, actorId);
 	}
 
 }

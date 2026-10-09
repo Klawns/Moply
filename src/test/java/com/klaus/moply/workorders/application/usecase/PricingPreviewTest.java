@@ -1,4 +1,4 @@
-package com.klaus.moply.workorders.application;
+package com.klaus.moply.workorders.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

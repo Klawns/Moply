@@ -23,6 +23,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
+import com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.AppUser;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
@@ -631,14 +633,14 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		var completed = orders.save(account, work(todayInLondon.minusDays(1), customer, "3", "11.50"));
 		complete.execute(new Context(account), completed.id());
 		var completedPayment = recordPayment.execute(new Context(account),
-				new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(completed.id(),
+				new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(completed.id(),
 						todayInLondon, principal.getUserId()));
 		assertEquals(com.klaus.moply.payments.domain.Payment.Status.RECORDED, completedPayment.status());
 		var cancelled = orders.save(account, work(todayInLondon.minusDays(1), customer, "3", "11.50"));
 		cancel.execute(new Context(account), new CancelWorkOrderInput(cancelled.id(), null, false, null));
 		assertThrows(com.klaus.moply.payments.application.usecase.exception.PaymentConflictException.class,
 				() -> recordPayment.execute(new Context(account),
-						new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(cancelled.id(),
+						new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(cancelled.id(),
 								todayInLondon, principal.getUserId())));
 	}
 
@@ -646,7 +648,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	void shouldReverseWithAuditAndCancelAtomicallyOnlyAfterConfirmation() throws Exception {
 		var saved = orders.save(account, work(LocalDate.of(2026, 9, 30), customer, "3", "11.50"));
 		var payment = recordPayment.execute(new Context(account),
-				new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+				new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(saved.id(),
 						LocalDate.of(2026, 9, 30), principal.getUserId()));
 		var cancelPath = "/api/v1/work-orders/" + saved.id() + "/cancel";
 		mvc.perform(post(cancelPath).with(user(principal)).with(csrf())).andExpect(status().isConflict());
@@ -673,7 +675,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(payment.recordedAt(), reversed.recordedAt());
 		assertEquals("Lançamento incorreto", reversed.reversal().reason());
 		var replacement = recordPayment.execute(new Context(account),
-				new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+				new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(saved.id(),
 						LocalDate.of(2026, 9, 30), principal.getUserId()));
 		assertNotEquals(payment.id(), replacement.id());
 		assertEquals(2, payments.findAllByWork(account, saved.id()).size());
@@ -707,7 +709,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(start);
 				try {
 					recordPayment.execute(new Context(account),
-							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+							new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(saved.id(),
 									LocalDate.of(2026, 9, 30), principal.getUserId()));
 					return "paid";
 				}
@@ -746,7 +748,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(start);
 				try {
 					recordPayment.execute(new Context(account),
-							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+							new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(saved.id(),
 									LocalDate.of(2026, 9, 30), principal.getUserId()));
 					return true;
 				}
@@ -758,7 +760,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(start);
 				try {
 					recordPayment.execute(new Context(account),
-							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(saved.id(),
+							new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(saved.id(),
 									LocalDate.of(2026, 9, 30), principal.getUserId()));
 					return true;
 				}
@@ -782,7 +784,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(race);
 				try {
 					recordPayment.execute(new Context(account),
-							new com.klaus.moply.payments.application.usecase.RecordWorkOrderPayment.Input(another.id(),
+							new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(another.id(),
 									LocalDate.of(2026, 9, 30), principal.getUserId()));
 				}
 				catch (RuntimeException ignored) {
@@ -924,7 +926,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(gate);
 				try {
 					recordCollaboratorPayment.execute(context,
-							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(saved.id(),
+							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(saved.id(),
 									person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30), "concurrent-1",
 									principal.getUserId()));
 					return true;
@@ -937,7 +939,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(gate);
 				try {
 					recordCollaboratorPayment.execute(context,
-							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(saved.id(),
+							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(saved.id(),
 									person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30), "concurrent-2",
 									principal.getUserId()));
 					return true;
@@ -962,7 +964,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(race);
 				try {
 					recordCollaboratorPayment.execute(context,
-							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(
+							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(
 									racingCancel.id(), person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30),
 									"cancel-race", principal.getUserId()));
 					return true;
@@ -999,7 +1001,7 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(rescheduleGate);
 				try {
 					return recordCollaboratorPayment.execute(context,
-							new com.klaus.moply.payments.application.usecase.RecordCollaboratorPayment.Input(
+							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(
 									rescheduling.id(), person, new BigDecimal("5.00"), LocalDate.of(2026, 9, 30),
 									"before-reschedule", principal.getUserId()));
 				}

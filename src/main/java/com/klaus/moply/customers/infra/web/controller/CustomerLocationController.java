@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.klaus.moply.customers.application.usecase.dto.FindCustomerLocationsFilter;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.customers.application.usecase.AddCustomerLocation;
 import com.klaus.moply.customers.application.usecase.FindCustomerLocationById;
@@ -65,7 +66,7 @@ public class CustomerLocationController implements CustomerLocationApi {
 			@org.springframework.web.bind.annotation.RequestParam(required = false) String direction) {
 		return PageResponse.from(
 				findLocations.execute(new Context(principal.getOrganizationId()),
-						new FindCustomerLocations.Filter(customerId,
+						new FindCustomerLocationsFilter(customerId,
 								PageQueryRequest.toQuery(page, size, sort, direction))),
 				CustomerLocationResponse::from);
 	}

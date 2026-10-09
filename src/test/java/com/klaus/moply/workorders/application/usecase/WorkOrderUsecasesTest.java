@@ -1,4 +1,4 @@
-package com.klaus.moply.workorders.application;
+package com.klaus.moply.workorders.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -9,10 +9,11 @@ import java.util.*;
 
 import org.junit.jupiter.api.*;
 
+import com.klaus.moply.workorders.application.usecase.dto.FindWorkOrdersFilter;
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.entities.DefaultWorkStatus;
 import com.klaus.moply.accounts.domain.vo.Organization;
-import com.klaus.moply.collaborators.application.exception.CollaboratorNotFoundException;
+import com.klaus.moply.collaborators.application.usecase.exception.CollaboratorNotFoundException;
 import com.klaus.moply.collaborators.application.ports.CollaboratorRepository;
 import com.klaus.moply.collaborators.domain.entities.Collaborator;
 import com.klaus.moply.collaborators.domain.exception.InactiveCollaboratorException;
@@ -110,14 +111,14 @@ class WorkOrderUsecasesTest {
 	@Test
 	void shouldCombineFiltersAndRejectInvertedDates() {
 		var date = LocalDate.now();
-		var filter = new FindWorkOrders.Filter(date, date, customer);
+		var filter = new FindWorkOrdersFilter(date, date, customer);
 		when(orders.search(account, new WorkOrderDateRange(date, date), customer, null,
 				com.klaus.moply.shared.application.pagination.PageQuery.defaults()))
 			.thenReturn(new com.klaus.moply.shared.application.pagination.PageResult<>(List.of(), 0, 20, 0, 0));
 		assertTrue(new FindWorkOrders(orders, customers).execute(context, filter).content().isEmpty());
 		verify(orders).search(account, new WorkOrderDateRange(date, date), customer, null,
 				com.klaus.moply.shared.application.pagination.PageQuery.defaults());
-		assertThrows(DomainException.class, () -> new FindWorkOrders.Filter(date, date.minusDays(1), null));
+		assertThrows(DomainException.class, () -> new FindWorkOrdersFilter(date, date.minusDays(1), null));
 	}
 
 }
