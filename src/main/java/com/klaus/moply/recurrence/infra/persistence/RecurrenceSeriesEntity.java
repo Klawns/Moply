@@ -1,5 +1,6 @@
 package com.klaus.moply.recurrence.infra.persistence;
 
+import java.util.Objects;
 import com.klaus.moply.shared.domain.vo.Money;
 
 import com.klaus.moply.workorders.domain.vo.WorkOrderAssignments;
@@ -140,8 +141,9 @@ public class RecurrenceSeriesEntity {
 		return RecurrenceSeries.restore(id, organizationId, frequency, new RecurrencePeriod(startsOn, endsOn),
 				new WorkTemplate(customerId, customerLocationId, startTime, description,
 						new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
-						new RecurrenceParticipants(
-								members.stream().map(RecurrenceMemberEntity::getCollaboratorId).toList()),
+						new RecurrenceParticipants(members.stream()
+							.map(entity -> Objects.requireNonNull(entity).getCollaboratorId())
+							.toList()),
 						initialStatus, frozenPricing()),
 				new SeriesVersion(familyId, previousSeriesId, firstPosition, untilPosition));
 	}
@@ -152,7 +154,8 @@ public class RecurrenceSeriesEntity {
 		return new FrozenWorkPricing(
 				new WorkOrderPricing(new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
 						new Money(totalAmount), allocationPolicyVersion),
-				new WorkOrderAssignments(members.stream().map(RecurrenceMemberEntity::assignment).toList()));
+				new WorkOrderAssignments(
+						members.stream().map(entity -> Objects.requireNonNull(entity).assignment()).toList()));
 	}
 
 }

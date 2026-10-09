@@ -1,6 +1,7 @@
 package com.klaus.moply.payments.infra.persistence;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,31 +43,33 @@ public class PaymentJpaAdapter implements WorkOrderPaymentRepository {
 	public Optional<Payment> findActiveByWork(UUID organizationId, UUID workOrderId) {
 		return repository
 			.findByOrganizationIdAndWorkOrderIdAndStatus(organizationId, workOrderId, Payment.Status.RECORDED)
-			.map(PaymentEntity::toDomain);
+			.map(entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
 	public Optional<Payment> findById(UUID organizationId, UUID paymentId) {
-		return repository.findByOrganizationIdAndId(organizationId, paymentId).map(PaymentEntity::toDomain);
+		return repository.findByOrganizationIdAndId(organizationId, paymentId)
+			.map(entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
 	public Optional<UUID> findWorkOrderIdByPayment(UUID organizationId, UUID paymentId) {
-		return repository.findByOrganizationIdAndId(organizationId, paymentId).map(PaymentEntity::getWorkOrderId);
+		return repository.findByOrganizationIdAndId(organizationId, paymentId)
+			.map(entity -> Objects.requireNonNull(entity).getWorkOrderId());
 	}
 
 	@Override
 	public PageResult<Payment> findAllByWork(UUID organizationId, UUID workOrderId, PageQuery page) {
 		var result = repository.findAllByOrganizationIdAndWorkOrderId(organizationId, workOrderId, PageableMapper
 			.toPageable(page, java.util.Set.of("recordedAt", "paidOn", "amount", "status", "id"), "recordedAt"));
-		return PageableMapper.toResult(result, PaymentEntity::toDomain);
+		return PageableMapper.toResult(result, entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
 	public List<Payment> findAllByWork(UUID organizationId, UUID workOrderId) {
 		return repository.findAllByOrganizationIdAndWorkOrderIdOrderByRecordedAtAsc(organizationId, workOrderId)
 			.stream()
-			.map(PaymentEntity::toDomain)
+			.map(entity -> Objects.requireNonNull(entity).toDomain())
 			.toList();
 	}
 

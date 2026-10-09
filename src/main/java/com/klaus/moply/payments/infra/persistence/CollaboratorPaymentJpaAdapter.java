@@ -1,6 +1,7 @@
 package com.klaus.moply.payments.infra.persistence;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +55,7 @@ public class CollaboratorPaymentJpaAdapter implements CollaboratorPaymentReposit
 	@Override
 	public Optional<UUID> findWorkOrderIdByPayment(UUID organizationId, UUID paymentId) {
 		return repository.findByOrganizationIdAndId(organizationId, paymentId)
-			.map(CollaboratorPaymentEntity::getWorkOrderId);
+			.map(entity -> Objects.requireNonNull(entity).getWorkOrderId());
 	}
 
 	@Override
@@ -62,7 +63,7 @@ public class CollaboratorPaymentJpaAdapter implements CollaboratorPaymentReposit
 		var result = repository.findAllByOrganizationIdAndWorkOrderIdAndCollaboratorId(organizationId, workOrderId,
 				collaboratorId, PageableMapper.toPageable(page,
 						java.util.Set.of("recordedAt", "paidOn", "amount", "status", "id"), "recordedAt"));
-		return PageableMapper.toResult(result, CollaboratorPaymentEntity::toDomain);
+		return PageableMapper.toResult(result, entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
@@ -71,7 +72,7 @@ public class CollaboratorPaymentJpaAdapter implements CollaboratorPaymentReposit
 			.findAllByOrganizationIdAndWorkOrderIdAndCollaboratorIdOrderByRecordedAtAsc(organizationId, workOrderId,
 					collaboratorId)
 			.stream()
-			.map(CollaboratorPaymentEntity::toDomain)
+			.map(entity -> Objects.requireNonNull(entity).toDomain())
 			.toList();
 	}
 

@@ -2,6 +2,7 @@ package com.klaus.moply.customers.infra.persistence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.klaus.moply.customers.domain.entities.Customer;
@@ -73,7 +74,8 @@ public class CustomerEntity {
 
 	public Customer toDomain() {
 		return Customer
-			.restore(id, name, phone, email, notes, locations.stream().map(CustomerLocationEntity::toDomain).toList())
+			.restore(id, name, phone, email, notes,
+					locations.stream().map(entity -> Objects.requireNonNull(entity).toDomain()).toList())
 			.withPersistence(organizationId, version);
 	}
 

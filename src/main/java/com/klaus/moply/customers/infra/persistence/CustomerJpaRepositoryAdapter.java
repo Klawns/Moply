@@ -1,5 +1,6 @@
 package com.klaus.moply.customers.infra.persistence;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,7 +65,7 @@ public class CustomerJpaRepositoryAdapter implements CustomerRepository {
 	@Override
 	public Optional<Customer> findById(UUID organizationId, UUID id) {
 		return repo.findByOrganizationIdAndId(java.util.Objects.requireNonNull(organizationId), id)
-			.map(CustomerEntity::toDomain);
+			.map(entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
@@ -74,7 +75,7 @@ public class CustomerJpaRepositoryAdapter implements CustomerRepository {
 			.equal(root.get("organizationId"), account);
 		var result = repo.findAll(specification,
 				PageableMapper.toPageable(page, java.util.Set.of("name", "id"), "name"));
-		return PageableMapper.toResult(result, CustomerEntity::toDomain);
+		return PageableMapper.toResult(result, entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
@@ -85,7 +86,7 @@ public class CustomerJpaRepositoryAdapter implements CustomerRepository {
 			throw new CustomerNotFoundException(customerId);
 		var result = locations.findByOrganizationIdAndCustomerId(account, customerId,
 				PageableMapper.toPageable(page, java.util.Set.of("name", "id"), "name"));
-		return PageableMapper.toResult(result, CustomerLocationEntity::toDomain);
+		return PageableMapper.toResult(result, entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 }

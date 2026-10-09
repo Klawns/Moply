@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.klaus.moply.shared.domain.vo.Money;
@@ -121,11 +122,11 @@ public class WorkOrderEntity {
 
 	public WorkOrder toDomain() {
 		return WorkOrder.restore(id, customerId, customerLocationId, new WorkOrderSchedule(serviceDate, startTime),
-				new WorkOrderDescription(description),
-				new WorkOrderPricing(new DurationHours(contractedHours), new HourlyRate(hourlyRate), currencyCode,
-						new Money(totalAmount), allocationPolicyVersion),
+				new WorkOrderDescription(description), new WorkOrderPricing(new DurationHours(contractedHours),
+						new HourlyRate(hourlyRate), currencyCode, new Money(totalAmount), allocationPolicyVersion),
 				status, version,
-				new WorkOrderAssignments(assignments.stream().map(WorkAssignmentEntity::toDomain).toList()),
+				new WorkOrderAssignments(
+						assignments.stream().map(entity -> Objects.requireNonNull(entity).toDomain()).toList()),
 				recurrenceSeriesId == null ? null : new OccurrenceIdentity(recurrenceSeriesId, occurrenceDate));
 	}
 

@@ -1,8 +1,8 @@
 package com.klaus.moply.collaborators.infra.persistence;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -49,7 +49,7 @@ public class CollaboratorJpaRepositoryAdapter implements CollaboratorRepository 
 	@Override
 	public Optional<Collaborator> findById(UUID organizationId, UUID id) {
 		return repo.findByOrganizationIdAndId(Objects.requireNonNull(organizationId), id)
-			.map(CollaboratorEntity::toDomain);
+			.map(entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class CollaboratorJpaRepositoryAdapter implements CollaboratorRepository 
 			specification = specification.and((root, query, builder) -> builder.equal(root.get("active"), active));
 		var result = repo.findAll(specification,
 				PageableMapper.toPageable(page, java.util.Set.of("name", "active", "id"), "name"));
-		return PageableMapper.toResult(result, CollaboratorEntity::toDomain);
+		return PageableMapper.toResult(result, entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class CollaboratorJpaRepositoryAdapter implements CollaboratorRepository 
 			.findAll(specification,
 					org.springframework.data.domain.Sort.by("name").and(org.springframework.data.domain.Sort.by("id")))
 			.stream()
-			.map(CollaboratorEntity::toDomain)
+			.map(entity -> Objects.requireNonNull(entity).toDomain())
 			.toList();
 	}
 

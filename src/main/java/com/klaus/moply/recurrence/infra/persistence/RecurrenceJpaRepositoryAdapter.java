@@ -1,5 +1,6 @@
 package com.klaus.moply.recurrence.infra.persistence;
 
+import java.util.Objects;
 import com.klaus.moply.recurrence.application.ports.RecurrenceRepository;
 
 import com.klaus.moply.recurrence.application.usecase.exception.SeriesNotFoundException;
@@ -28,7 +29,8 @@ public class RecurrenceJpaRepositoryAdapter implements RecurrenceRepository {
 	}
 
 	public Optional<RecurrenceSeries> find(UUID account, UUID id) {
-		return repository.findByOrganizationIdAndId(account, id).map(RecurrenceSeriesEntity::toDomain);
+		return repository.findByOrganizationIdAndId(account, id)
+			.map(entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Transactional(propagation = Propagation.MANDATORY)

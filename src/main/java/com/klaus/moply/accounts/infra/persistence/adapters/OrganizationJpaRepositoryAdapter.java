@@ -1,5 +1,6 @@
 package com.klaus.moply.accounts.infra.persistence.adapters;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
@@ -11,7 +12,6 @@ import com.klaus.moply.accounts.application.usecase.exception.AccountNotFoundExc
 import com.klaus.moply.accounts.application.ports.OrganizationRepository;
 import com.klaus.moply.accounts.domain.vo.Organization;
 import com.klaus.moply.accounts.infra.persistence.OrganizationJpaRepository;
-import com.klaus.moply.accounts.infra.persistence.entities.OrganizationEntity;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,7 @@ public class OrganizationJpaRepositoryAdapter implements OrganizationRepository 
 	@Override
 	@Transactional(readOnly = true)
 	public Optional<Organization> findById(UUID id) {
-		return repo.findById(id).map(OrganizationEntity::toDomain);
+		return repo.findById(id).map(entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override

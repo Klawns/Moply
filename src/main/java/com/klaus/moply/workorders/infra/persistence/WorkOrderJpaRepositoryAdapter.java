@@ -100,7 +100,7 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 	@Override
 	public Optional<WorkOrder> findById(UUID organizationId, UUID id) {
 		return repo.findByOrganizationIdAndId(Objects.requireNonNull(organizationId), id)
-			.map(WorkOrderEntity::toDomain);
+			.map(entity -> Objects.requireNonNull(entity).toDomain());
 	}
 
 	@Override
@@ -108,7 +108,7 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 		return repo
 			.findAllByCollaborator(Objects.requireNonNull(organizationId), Objects.requireNonNull(collaboratorId))
 			.stream()
-			.map(WorkOrderEntity::toDomain)
+			.map(entity -> Objects.requireNonNull(entity).toDomain())
 			.toList();
 	}
 
@@ -120,7 +120,7 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 			.findAll(WorkOrderSpecifications.filters(organizationId, dateRange, customerId, status),
 					Sort.by("serviceDate", "id"))
 			.stream()
-			.map(WorkOrderEntity::toDomain)
+			.map(entity -> Objects.requireNonNull(entity).toDomain())
 			.toList();
 	}
 
@@ -138,11 +138,14 @@ public class WorkOrderJpaRepositoryAdapter implements WorkOrderRepository, WorkO
 		if (selected.isEmpty())
 			return new PageResult<>(List.of(), selected.getNumber(), selected.getSize(), selected.getTotalElements(),
 					selected.getTotalPages());
-		var ids = selected.getContent().stream().map(WorkOrderEntity::getId).toList();
+		var ids = selected.getContent().stream().map(entity -> Objects.requireNonNull(entity).getId()).toList();
 		var loadedById = repo.findAllByOrganizationIdAndIdIn(organizationId, ids)
 			.stream()
-			.collect(Collectors.toMap(WorkOrderEntity::getId, Function.identity()));
-		var ordered = ids.stream().map(loadedById::get).map(WorkOrderEntity::toDomain).toList();
+			.collect(Collectors.toMap(entity -> Objects.requireNonNull(entity).getId(), Function.identity()));
+		var ordered = ids.stream()
+			.map(loadedById::get)
+			.map(entity -> Objects.requireNonNull(entity).toDomain())
+			.toList();
 		return new PageResult<>(ordered, selected.getNumber(), selected.getSize(), selected.getTotalElements(),
 				selected.getTotalPages());
 	}
