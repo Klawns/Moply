@@ -158,7 +158,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 		var c = customers.findById(account, customer).orElseThrow();
 		customers.save(account, c.update("Renamed", null, null, null));
 		collaborators.save(account, collaborators.findById(account, person).orElseThrow().deactivate());
-		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.COMPLETED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.COMPLETED));
 		var output = find.execute(new Context(account), saved.id());
 		assertEquals("Renamed", output.customer());
 		assertEquals(WorkOrderStatus.SCHEDULED, output.status());
@@ -222,7 +223,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Test
 	void shouldReturnFullRepresentationAndUseServerControlledValues() throws Exception {
-		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.COMPLETED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.COMPLETED));
 		var result = mvc.perform(post("/api/v1/work-orders").with(user(principal))
 			.with(csrf())
 			.contentType(MediaType.APPLICATION_JSON)
@@ -490,8 +492,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 			.with(csrf())
 			.contentType(MediaType.APPLICATION_JSON)
 			.content("{\"serviceDate\":\"2026-10-01\",\"startTime\":\"09:30:00\"}")).andExpect(status().isNoContent());
-		accounts.update(
-				accounts.findById(account).orElseThrow().withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
 		// At 23:30 UTC it is already October 1st in London: completed work cannot move
 		// again.
 		mvc.perform(post(base + "/reschedule").with(user(principal))
@@ -536,7 +538,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	@Test
 	void shouldRescheduleFutureCreatedFromPreferenceAndKeepExistingStatesAfterPreferenceChange() {
 		var context = new Context(account);
-		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.COMPLETED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.COMPLETED));
 		var date = LocalDate.of(2026, 10, 10);
 		var input = new com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput(customer, location,
 				date, null, "Future", BigDecimal.ONE, BigDecimal.TEN, List.of(person, second), null);
@@ -546,7 +549,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				new com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput(customer, null, date, null,
 						null, BigDecimal.ONE, BigDecimal.TEN, List.of(person), WorkOrderStatus.SCHEDULED));
 		assertEquals(WorkOrderStatus.SCHEDULED, override.status());
-		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.SCHEDULED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.SCHEDULED));
 		assertEquals(WorkOrderStatus.COMPLETED, find.execute(context, future.id()).status());
 		reschedule.execute(context, new RescheduleWorkOrderInput(future.id(), date.plusDays(1), LocalTime.NOON));
 		var updated = find.execute(context, future.id());
@@ -574,8 +578,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Test
 	void shouldRecordIntegralPaymentWithinAccountDateAndProtectPaymentRoutes() throws Exception {
-		accounts.update(
-				accounts.findById(account).orElseThrow().withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
 		var todayInLondon = LocalDate.of(2026, 10, 1);
 		var saved = orders.save(account, work(todayInLondon, customer, "3", "11.50"));
 		var path = "/api/v1/work-orders/" + saved.id() + "/payments";
@@ -885,8 +889,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Test
 	void shouldIncludeOnlyActiveWorksAndSignalCompletedOutstandingWorkAfterItsDate() throws Exception {
-		accounts.update(
-				accounts.findById(account).orElseThrow().withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
 		var today = LocalDate.of(2026, 10, 1);
 		var due = orders.save(account,
 				WorkOrder.create(customer, null, new WorkOrderSchedule(today, null), new WorkOrderDescription(null),

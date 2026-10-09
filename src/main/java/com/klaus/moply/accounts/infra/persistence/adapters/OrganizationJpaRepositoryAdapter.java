@@ -2,6 +2,7 @@ package com.klaus.moply.accounts.infra.persistence.adapters;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,9 +29,9 @@ public class OrganizationJpaRepositoryAdapter implements OrganizationRepository 
 
 	@Override
 	@Transactional
-	public Organization update(Organization organization) {
-		var entity = repo.findById(organization.id()).orElseThrow(AccountNotFoundException::new);
-		entity.updatePreferences(organization);
+	public Organization updatePreferences(UUID id, UnaryOperator<Organization> change) {
+		var entity = repo.findByIdForUpdate(id).orElseThrow(AccountNotFoundException::new);
+		entity.updatePreferences(change.apply(entity.toDomain()));
 		return repo.save(entity).toDomain();
 	}
 

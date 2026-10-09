@@ -84,9 +84,8 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 		customer = customers.save(org, Customer.create("Client")).getId();
 		ana = people.save(org, Collaborator.create(org, "Ana", null, new BigDecimal("20"))).getId();
 		bruno = people.save(org, Collaborator.create(org, "Bruno", null)).getId();
-		organizations.update(organizations.findById(org)
-			.orElseThrow()
-			.withPreferences("UTC", DefaultWorkStatus.SCHEDULED, new BigDecimal("30")));
+		organizations.updatePreferences(org,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.SCHEDULED, new BigDecimal("30")));
 		principal = principal(org);
 	}
 
@@ -173,9 +172,8 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 			.getContentAsString();
 		UUID id = UUID.fromString(JsonPath.read(saved, "$.id"));
 		people.save(org, people.findById(org, ana).orElseThrow().update("Ana", null, new BigDecimal("40")));
-		organizations.update(organizations.findById(org)
-			.orElseThrow()
-			.withPreferences("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("50")));
+		organizations.updatePreferences(org,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("50")));
 		mvc.perform(get("/api/v1/work-orders/" + id).with(user(principal)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.pricing.hourlyRate").value(30))

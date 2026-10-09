@@ -220,9 +220,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(new BigDecimal("50.00"), frozen.assignments().values().getFirst().allocatedAmount().value());
 		people.save(account,
 				people.findById(account, first).orElseThrow().update("First", null, new BigDecimal("100")));
-		accounts.update(accounts.findById(account)
-			.orElseThrow()
-			.withPreferences("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("99")));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.COMPLETED, new BigDecimal("99")));
 		setTime("2026-11-12T12:00:00Z");
 		assertTrue(generate.execute(context, series.getId()).created() > 0);
 		for (var work : all()) {
@@ -256,7 +255,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Test
 	void shouldCreateIndependentAssignmentsAndFreezeDefaultWithoutRecordingMoney() {
-		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.COMPLETED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.COMPLETED));
 		var series = create.execute(context, input(today, null, null));
 		assertEquals(5, all().size());
 		assertEquals(List.of(second, first), find.execute(context, series.getId()).getTemplate().participants().ids());
@@ -276,7 +276,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 				new RecordCollaboratorPayment.Input(future.id(), second, BigDecimal.ONE, today, "future", actor)));
 		var balances = summary.execute(context, second);
 		assertEquals(1, balances.workOrders().stream().filter(b -> b.requiresAttention()).count());
-		accounts.update(accounts.findById(account).orElseThrow().withPreferences("UTC", DefaultWorkStatus.SCHEDULED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("UTC", DefaultWorkStatus.SCHEDULED));
 		setTime("2026-10-10T12:00:00Z");
 		assertEquals(1, generate.execute(context, series.getId()).created());
 		assertTrue(all().stream().allMatch(w -> w.status() == WorkOrderStatus.COMPLETED));
@@ -303,8 +304,8 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Test
 	void shouldGenerateOnlyCurrentWindowAfterLongOutageAndUseAccountTimezone() {
-		accounts.update(
-				accounts.findById(account).orElseThrow().withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
+		accounts.updatePreferences(account,
+				organization -> organization.withPreferences("Europe/London", DefaultWorkStatus.SCHEDULED));
 		setTime("2026-09-30T23:30:00Z");
 		var series = create.execute(context, input(LocalDate.of(2026, 10, 1), null, null));
 		assertEquals(LocalDate.of(2026, 10, 1), all().getFirst().serviceDate());
