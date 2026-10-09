@@ -31,6 +31,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.klaus.moply.accounts.domain.entities.AppUser;
 import com.klaus.moply.accounts.domain.vo.LoginEmail;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
+import com.klaus.moply.auth.infra.security.AuthRateLimitStore;
+import java.time.Clock;
 import com.klaus.moply.auth.infra.security.JwtCookieService;
 import com.klaus.moply.auth.infra.web.AuthController;
 
@@ -44,6 +46,9 @@ class SecurityConfigTest {
 
 	@MockitoBean
 	JwtCookieService jwt;
+
+	@MockitoBean
+	AuthRateLimitStore rateLimits;
 
 	@MockitoBean
 	UserDetailsService users;
@@ -132,6 +137,27 @@ class SecurityConfigTest {
 			.andExpect(cookie().maxAge(JwtCookieService.COOKIE, 0));
 	}
 
+	@Test
+	void shouldNotReportLogoutSuccessWhenRevocationStorageFails() throws Exception {
+		org.mockito.Mockito.doThrow(new org.springframework.dao.DataAccessResourceFailureException("offline"))
+			.when(jwt)
+			.revoke("copied-token");
+		mvc.perform(postWithCsrf("/api/v1/auth/logout")
+			.cookie(new jakarta.servlet.http.Cookie(JwtCookieService.COOKIE, "copied-token")))
+			.andExpect(status().isServiceUnavailable())
+			.andExpect(jsonPath("$.code").value("AUTH_STORAGE_UNAVAILABLE"));
+	}
+
+	@Test
+	void shouldRejectAmbiguousLogoutCookiesWithoutRevokingEitherToken() throws Exception {
+		mvc.perform(postWithCsrf("/api/v1/auth/logout").cookie(
+				new jakarta.servlet.http.Cookie(JwtCookieService.COOKIE, "first"),
+				new jakarta.servlet.http.Cookie(JwtCookieService.COOKIE, "second")))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("INVALID_AUTH_COOKIE"));
+		org.mockito.Mockito.verify(jwt, org.mockito.Mockito.never()).revoke(org.mockito.ArgumentMatchers.anyString());
+	}
+
 	private MockHttpServletRequestBuilder postWithCsrf(String path) throws Exception {
 		var response = mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk()).andReturn().getResponse();
 		return post(path).cookie(response.getCookie("XSRF-TOKEN"))
@@ -142,6 +168,11 @@ class SecurityConfigTest {
 	@TestConfiguration
 	@EnableWebSecurity
 	static class WebSecurity {
+
+		@org.springframework.context.annotation.Bean
+		Clock clock() {
+			return Clock.systemUTC();
+		}
 
 	}
 

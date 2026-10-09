@@ -15,8 +15,11 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
 	private final JwtCookieService jwt;
 
-	public JwtCookieFilter(JwtCookieService jwt) {
+	private final tools.jackson.databind.ObjectMapper mapper;
+
+	public JwtCookieFilter(JwtCookieService jwt, tools.jackson.databind.ObjectMapper mapper) {
 		this.jwt = jwt;
+		this.mapper = mapper;
 	}
 
 	@Override
@@ -42,6 +45,13 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 			}
 			catch (org.springframework.security.oauth2.jwt.JwtException | IllegalArgumentException exception) {
 				SecurityContextHolder.clearContext();
+			}
+			catch (org.springframework.dao.DataAccessException
+					| org.springframework.transaction.TransactionException exception) {
+				SecurityContextHolder.clearContext();
+				SecurityProblemWriter.write(response, org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+						"Autenticação indisponível. Tente novamente.", "AUTH_STORAGE_UNAVAILABLE", mapper);
+				return;
 			}
 		}
 		chain.doFilter(request, response);

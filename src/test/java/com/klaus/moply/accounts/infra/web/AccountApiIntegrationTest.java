@@ -72,6 +72,8 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@AfterEach
 	void cleanUp() {
+		jdbc.update("DELETE FROM tb_auth_rate_bucket");
+		jdbc.update("DELETE FROM tb_revoked_token");
 		jdbc.update("DELETE FROM tb_work_assignment");
 		jdbc.update("DELETE FROM tb_order_service");
 		jdbc.update("DELETE FROM tb_customer_location");
@@ -122,9 +124,39 @@ class AccountApiIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(0, logout.getResponse().getCookie(JwtCookieService.COOKIE).getMaxAge());
 		assertEquals(0, logout.getResponse().getCookie("XSRF-TOKEN").getMaxAge());
 		mvc.perform(get("/api/v1/auth/me")).andExpect(status().isUnauthorized());
-		// No server-side revocation was requested: a copied credential still
-		// authenticates.
-		mvc.perform(get("/api/v1/auth/me").cookie(auth)).andExpect(status().isOk());
+		// Logout revokes copied credentials across server instances.
+		mvc.perform(get("/api/v1/auth/me").cookie(auth)).andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void shouldThrottleLoginInTheActualSecurityChainBeforePasswordVerification() throws Exception {
+		var token = csrf(null);
+		for (int i = 0; i < 5; i++) {
+			mvc.perform(post("/api/v1/auth/login").cookie(token.cookie())
+				.header(token.header(), token.value())
+				.param("email", i % 2 == 0 ? " throttle@example.invalid " : "THROTTLE@EXAMPLE.INVALID")
+				.param("password", "invalid")
+				.header("X-Forwarded-For", "192.0.2." + i)).andExpect(status().isUnauthorized());
+		}
+		mvc.perform(post("/api/v1/auth/login").cookie(token.cookie())
+			.header(token.header(), token.value())
+			.param("email", "throttle@example.invalid")
+			.param("password", "invalid"))
+			.andExpect(status().isTooManyRequests())
+			.andExpect(header().exists("Retry-After"))
+			.andExpect(header().string("Cache-Control", "no-store"))
+			.andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"));
+		mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk());
+	}
+
+	@Test
+	void shouldThrottlePublicRegistrationWithItsOwnBudget() throws Exception {
+		var token = csrf(null);
+		for (int i = 0; i < 3; i++)
+			register(token, "bad-email").andExpect(status().isBadRequest());
+		register(token, "bad-email").andExpect(status().isTooManyRequests())
+			.andExpect(header().exists("Retry-After"))
+			.andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"));
 	}
 
 	@Test

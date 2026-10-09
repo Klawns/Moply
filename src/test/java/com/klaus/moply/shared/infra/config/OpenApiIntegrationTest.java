@@ -30,10 +30,23 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.Cookie;
 
-@SpringBootTest(properties = { "springdoc.api-docs.enabled=true", "springdoc.swagger-ui.enabled=true" })
+@SpringBootTest(properties = { "springdoc.api-docs.enabled=true", "springdoc.swagger-ui.enabled=true",
+		"spring.flyway.enabled=true", "spring.jpa.hibernate.ddl-auto=validate" })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class OpenApiIntegrationTest {
+
+	@org.springframework.test.context.DynamicPropertySource
+	static void postgres(org.springframework.test.context.DynamicPropertyRegistry properties) {
+		var postgres = com.klaus.moply.factory.PostgresTestDatabase.POSTGRES;
+		properties.add("spring.datasource.url", () -> postgres.getJdbcUrl()
+				+ (postgres.getJdbcUrl().contains("?") ? "&" : "?") + "currentSchema=openapi_security");
+		properties.add("spring.datasource.username", postgres::getUsername);
+		properties.add("spring.datasource.password", postgres::getPassword);
+		properties.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+		properties.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
+		properties.add("spring.flyway.schemas", () -> "openapi_security");
+	}
 
 	@Autowired
 	MockMvc mvc;

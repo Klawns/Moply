@@ -1,17 +1,20 @@
 package com.klaus.moply.auth.infra.config;
 
-import java.io.IOException;
-import java.util.UUID;
+import java.time.Clock;
 
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.security.web.csrf.CsrfFilter;
+import com.klaus.moply.auth.infra.security.AuthRateLimitFilter;
+import com.klaus.moply.auth.infra.security.AuthRateLimitStore;
+import com.klaus.moply.auth.infra.security.SecurityProblemWriter;
+import org.springframework.dao.DataAccessException;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -23,13 +26,12 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import com.klaus.moply.auth.infra.security.AccountPrincipal;
 import com.klaus.moply.auth.infra.security.JwtCookieFilter;
 import com.klaus.moply.auth.infra.security.JwtCookieService;
-import com.klaus.moply.shared.exception.ErrorCategory;
-import com.klaus.moply.shared.infra.web.ApiProblemDetails;
 
 import jakarta.servlet.DispatcherType;
-import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
+@EnableConfigurationProperties(AuthRateLimitProperties.class)
+@org.springframework.scheduling.annotation.EnableScheduling
 public class SecurityConfig {
 
 	@Value("${springdoc.api-docs.enabled:false}")
@@ -42,16 +44,20 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtCookieService jwt,
-			@Value("${moply.auth.cookie.secure:false}") boolean secure, ObjectMapper objectMapper) throws Exception {
+			@Value("${moply.auth.cookie.secure:false}") boolean secure, ObjectMapper objectMapper,
+			AuthRateLimitStore rateLimits, AuthRateLimitProperties ratePolicy, Clock clock) throws Exception {
+		http.headers(headers -> headers.referrerPolicy(referrer -> referrer.policy(
+				org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)));
 		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.securityContext(context -> context.securityContextRepository(new NullSecurityContextRepository()))
 			.requestCache(AbstractHttpConfigurer::disable)
 			.csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository(secure)))
-			.addFilterBefore(new JwtCookieFilter(jwt), UsernamePasswordAuthenticationFilter.class);
+			.addFilterAfter(new AuthRateLimitFilter(rateLimits, ratePolicy, clock, objectMapper), CsrfFilter.class)
+			.addFilterBefore(new JwtCookieFilter(jwt, objectMapper), UsernamePasswordAuthenticationFilter.class);
 
 		configureAuthorization(http);
 		configureLogin(http, jwt, objectMapper);
-		configureLogout(http, jwt);
+		configureLogout(http, jwt, objectMapper);
 		configureExceptionHandling(http, objectMapper);
 
 		return http.build();
@@ -100,37 +106,47 @@ public class SecurityConfig {
 				response.addHeader(HttpHeaders.SET_COOKIE, jwt.cookie(jwt.issue(principal)).toString());
 				response.setStatus(HttpStatus.NO_CONTENT.value());
 			})
-			.failureHandler((request, response, exception) -> writeProblem(response, HttpStatus.UNAUTHORIZED,
-					"Credenciais inválidas.", "INVALID_CREDENTIALS", objectMapper)));
+			.failureHandler((request, response, exception) -> SecurityProblemWriter.write(response,
+					HttpStatus.UNAUTHORIZED, "Credenciais inválidas.", "INVALID_CREDENTIALS", objectMapper)));
 	}
 
-	private void configureLogout(HttpSecurity http, JwtCookieService jwt) {
+	private void configureLogout(HttpSecurity http, JwtCookieService jwt, ObjectMapper mapper) {
 		http.logout(logout -> logout.logoutUrl("/api/v1/auth/logout")
-			.addLogoutHandler((request, response, authentication) -> response.addHeader(HttpHeaders.SET_COOKIE,
-					jwt.cookie("").toString()))
-			.logoutSuccessHandler(
-					(request, response, authentication) -> response.setStatus(HttpStatus.NO_CONTENT.value())));
+			.logoutSuccessHandler((request, response, authentication) -> {
+				try {
+					String token = null;
+					boolean duplicate = false;
+					if (request.getCookies() != null)
+						for (var cookie : request.getCookies()) {
+							if (JwtCookieService.COOKIE.equals(cookie.getName())) {
+								if (token != null)
+									duplicate = true;
+								token = cookie.getValue();
+							}
+						}
+					if (duplicate) {
+						SecurityProblemWriter.write(response, HttpStatus.BAD_REQUEST, "Cookie de autenticação ambíguo.",
+								"INVALID_AUTH_COOKIE", mapper);
+						return;
+					}
+					if (token != null)
+						jwt.revoke(token);
+					response.addHeader(HttpHeaders.SET_COOKIE, jwt.cookie("").toString());
+					response.setStatus(HttpStatus.NO_CONTENT.value());
+				}
+				catch (DataAccessException | org.springframework.transaction.TransactionException exception) {
+					SecurityProblemWriter.write(response, HttpStatus.SERVICE_UNAVAILABLE,
+							"Não foi possível encerrar a sessão. Tente novamente.", "AUTH_STORAGE_UNAVAILABLE", mapper);
+				}
+			}));
 	}
 
 	private void configureExceptionHandling(HttpSecurity http, ObjectMapper objectMapper) {
 		http.exceptionHandling(errors -> errors
-			.authenticationEntryPoint((request, response, exception) -> writeProblem(response, HttpStatus.UNAUTHORIZED,
-					"Autenticação necessária.", "AUTHENTICATION_REQUIRED", objectMapper))
-			.accessDeniedHandler((request, response, exception) -> writeProblem(response, HttpStatus.FORBIDDEN,
-					"Acesso negado.", "ACCESS_DENIED", objectMapper)));
-	}
-
-	private static void writeProblem(HttpServletResponse response, HttpStatus status, String title, String code,
-			ObjectMapper objectMapper) throws IOException {
-		String requestId = UUID.randomUUID().toString();
-		ProblemDetail problem = ProblemDetail.forStatus(status);
-		problem.setTitle(title);
-		ApiProblemDetails.withCode(problem, ErrorCategory.SECURITY_ERROR, code);
-		problem.setProperty("requestId", requestId);
-		response.setStatus(status.value());
-		response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-		response.setHeader("X-Request-ID", requestId);
-		objectMapper.writeValue(response.getOutputStream(), problem);
+			.authenticationEntryPoint((request, response, exception) -> SecurityProblemWriter.write(response,
+					HttpStatus.UNAUTHORIZED, "Autenticação necessária.", "AUTHENTICATION_REQUIRED", objectMapper))
+			.accessDeniedHandler((request, response, exception) -> SecurityProblemWriter.write(response,
+					HttpStatus.FORBIDDEN, "Acesso negado.", "ACCESS_DENIED", objectMapper)));
 	}
 
 }

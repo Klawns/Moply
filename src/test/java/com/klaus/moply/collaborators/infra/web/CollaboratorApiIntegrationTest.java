@@ -73,6 +73,8 @@ class CollaboratorApiIntegrationTest extends PostgresSpringIntegrationTest {
 	@BeforeEach
 	void cleanUp() {
 		jdbc.update("DELETE FROM tb_collaborator");
+		jdbc.update("DELETE FROM tb_auth_rate_bucket");
+		jdbc.update("DELETE FROM tb_revoked_token");
 		jdbc.update("DELETE FROM tb_app_user");
 		jdbc.update("DELETE FROM tb_organization");
 	}

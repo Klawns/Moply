@@ -45,6 +45,8 @@ public class JwtCookieService {
 
 	private final AppUserRepository users;
 
+	private final TokenRevocations revocations;
+
 	private final boolean secure;
 
 	private final String issuer;
@@ -54,7 +56,8 @@ public class JwtCookieService {
 	public JwtCookieService(@Value("${moply.auth.jwt.secret}") String secret,
 			@Value("${moply.auth.cookie.secure:false}") boolean secure,
 			@Value("${moply.auth.jwt.issuer:moply}") String issuer,
-			@Value("${moply.auth.jwt.audience:moply-api}") String audience, Clock clock, AppUserRepository users) {
+			@Value("${moply.auth.jwt.audience:moply-api}") String audience, Clock clock, AppUserRepository users,
+			TokenRevocations revocations) {
 		byte[] bytes = Base64.getDecoder().decode(secret);
 		if (bytes.length < 32) {
 			throw new IllegalArgumentException("JWT secret must contain at least 256 bits");
@@ -68,6 +71,7 @@ public class JwtCookieService {
 		this.decoder = decoder;
 		this.clock = clock;
 		this.users = users;
+		this.revocations = revocations;
 		this.secure = secure;
 		this.issuer = issuer;
 		this.audience = audience;
@@ -79,6 +83,7 @@ public class JwtCookieService {
 			.issuer(issuer)
 			.audience(List.of(audience))
 			.subject(principal.getUserId().toString())
+			.id(UUID.randomUUID().toString())
 			.claim(ORGANIZATION_ID_CLAIM, principal.getOrganizationId().toString())
 			.issuedAt(now)
 			.expiresAt(now.plus(TOKEN_LIFETIME))
@@ -90,6 +95,8 @@ public class JwtCookieService {
 	public AccountPrincipal authenticate(String token) {
 		var jwt = decoder.decode(token);
 		validateClaims(jwt);
+		if (revocations.contains(tokenId(jwt)))
+			throw new BadJwtException("Revoked token");
 
 		var subject = jwt.getSubject();
 		var organizationId = jwt.getClaimAsString(ORGANIZATION_ID_CLAIM);
@@ -101,6 +108,26 @@ public class JwtCookieService {
 			throw new BadJwtException("Invalid account");
 		}
 		return new AccountPrincipal(user);
+	}
+
+	public void revoke(String token) {
+		Jwt jwt;
+		UUID id;
+		try {
+			jwt = decoder.decode(token);
+			validateClaims(jwt);
+			id = tokenId(jwt);
+		}
+		catch (org.springframework.security.oauth2.jwt.JwtException | IllegalArgumentException exception) {
+			return;
+		}
+		revocations.revoke(id, jwt.getExpiresAt());
+	}
+
+	private UUID tokenId(Jwt jwt) {
+		if (jwt.getId() == null)
+			throw new BadJwtException("Missing token identity");
+		return UUID.fromString(jwt.getId());
 	}
 
 	private void validateClaims(Jwt jwt) {
