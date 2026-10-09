@@ -11,9 +11,10 @@ public record CustomerPaymentsReportResponse(ReportPeriodResponse period, Report
 		return new CustomerPaymentsReportResponse(new ReportPeriodResponse(report.from(), report.to()),
 				new ReportContextResponse(report.timezone(), report.currencyCode(), null),
 				new CustomerPaymentsReportSummaryResponse(report.totalAmount()),
-				PageResponse.from(report.payments(), p -> new CustomerPaymentsReportPaymentResponse(p.paymentId(),
-						p.workOrderId(), new CustomerReferenceResponse(p.customerId(), p.customerName()), p.paidOn(),
-						p.amount())));
+				PageResponse.from(report.payments(),
+						p -> new CustomerPaymentsReportPaymentResponse(p.paymentId(), p.workOrderId(),
+								new CustomerReferenceResponse(p.customerId(), p.customerName()), p.paidOn(),
+								p.amount())));
 	}
 
 }

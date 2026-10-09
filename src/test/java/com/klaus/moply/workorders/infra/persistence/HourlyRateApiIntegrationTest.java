@@ -122,10 +122,9 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 			acceptance = extra.substring(marker);
 			extra = extra.substring(0, marker);
 		}
-		return "{\"serviceDate\":\"" + LocalDate.now(java.time.ZoneOffset.UTC)
-				+ "\",\"conditions\":{\"customerId\":\"" + customer
-				+ "\",\"contractedHours\":4,\"participantIds\":[\"" + ana + "\",\"" + bruno + "\"]"
-				+ extra + "}" + acceptance + "}";
+		return "{\"serviceDate\":\"" + LocalDate.now(java.time.ZoneOffset.UTC) + "\",\"conditions\":{\"customerId\":\""
+				+ customer + "\",\"contractedHours\":4,\"participantIds\":[\"" + ana + "\",\"" + bruno + "\"]" + extra
+				+ "}" + acceptance + "}";
 	}
 
 	String preview(String extra) throws Exception {

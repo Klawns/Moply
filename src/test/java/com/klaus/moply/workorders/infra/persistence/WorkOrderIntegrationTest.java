@@ -214,8 +214,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 	}
 
 	String body(UUID customerId, UUID locationId, List<UUID> participants, String extras) {
-		return "{\"serviceDate\":\"2026-09-28\",\"conditions\":{\"customerId\":\"" + customerId + "\",\"customerLocationId\":"
-				+ (locationId == null ? "null" : "\"" + locationId + "\"")
+		return "{\"serviceDate\":\"2026-09-28\",\"conditions\":{\"customerId\":\"" + customerId
+				+ "\",\"customerLocationId\":" + (locationId == null ? "null" : "\"" + locationId + "\"")
 				+ ",\"contractedHours\":3,\"hourlyRate\":11.50,\"participantIds\":"
 				+ participants.stream()
 					.map(id -> "\"" + id + "\"")
@@ -784,8 +784,8 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(race);
 				try {
 					recordPayment.execute(new Context(account),
-							new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(another.id(),
-									LocalDate.of(2026, 9, 30), principal.getUserId()));
+							new com.klaus.moply.payments.application.usecase.dto.RecordWorkOrderPaymentInput(
+									another.id(), LocalDate.of(2026, 9, 30), principal.getUserId()));
 				}
 				catch (RuntimeException ignored) {
 				}
@@ -926,9 +926,9 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(gate);
 				try {
 					recordCollaboratorPayment.execute(context,
-							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(saved.id(),
-									person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30), "concurrent-1",
-									principal.getUserId()));
+							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(
+									saved.id(), person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30),
+									"concurrent-1", principal.getUserId()));
 					return true;
 				}
 				catch (com.klaus.moply.payments.application.usecase.exception.PaymentConflictException rejected) {
@@ -939,9 +939,9 @@ class WorkOrderIntegrationTest extends PostgresSpringIntegrationTest {
 				await(gate);
 				try {
 					recordCollaboratorPayment.execute(context,
-							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(saved.id(),
-									person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30), "concurrent-2",
-									principal.getUserId()));
+							new com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput(
+									saved.id(), person, new BigDecimal("10.00"), LocalDate.of(2026, 9, 30),
+									"concurrent-2", principal.getUserId()));
 					return true;
 				}
 				catch (com.klaus.moply.payments.application.usecase.exception.PaymentConflictException expected) {

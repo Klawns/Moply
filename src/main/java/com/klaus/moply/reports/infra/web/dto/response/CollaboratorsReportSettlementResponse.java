@@ -8,6 +8,6 @@ import com.klaus.moply.shared.infra.web.dto.response.CollaboratorReferenceRespon
 import com.klaus.moply.shared.infra.web.dto.response.CustomerReferenceResponse;
 
 public record CollaboratorsReportSettlementResponse(UUID paymentId, UUID workOrderId,
-		CustomerReferenceResponse customer,
-		LocalDate serviceDate, CollaboratorReferenceResponse collaborator, LocalDate paidOn, BigDecimal amount) {
+		CustomerReferenceResponse customer, LocalDate serviceDate, CollaboratorReferenceResponse collaborator,
+		LocalDate paidOn, BigDecimal amount) {
 }

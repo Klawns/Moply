@@ -98,7 +98,8 @@ public class WorkOrderController implements WorkOrderApi {
 	public ResponseEntity<WorkOrderResponse> create(@AuthenticationPrincipal AccountPrincipal principal,
 			@Valid @RequestBody CreateWorkOrderRequest request) {
 		var output = create.execute(new Context(principal.getOrganizationId()), request.toInput());
-		return ResponseEntity.created(URI.create("/api/v1/work-orders/" + output.id())).body(WorkOrderResponse.from(output));
+		return ResponseEntity.created(URI.create("/api/v1/work-orders/" + output.id()))
+			.body(WorkOrderResponse.from(output));
 	}
 
 	@GetMapping("/{id}")
@@ -114,9 +115,9 @@ public class WorkOrderController implements WorkOrderApi {
 			@RequestParam(required = false) UUID customerId, @RequestParam(required = false) WorkOrderStatus status,
 			@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
 			@RequestParam(required = false) String sort, @RequestParam(required = false) String direction) {
-		return PageResponse
-			.from(find.execute(new Context(principal.getOrganizationId()), new FindWorkOrdersFilter(from, to,
-					customerId, status, PageQueryRequest.toQuery(page, size, sort, direction))), WorkOrderResponse::from);
+		return PageResponse.from(find.execute(new Context(principal.getOrganizationId()), new FindWorkOrdersFilter(from,
+				to, customerId, status, PageQueryRequest.toQuery(page, size, sort, direction))),
+				WorkOrderResponse::from);
 	}
 
 }

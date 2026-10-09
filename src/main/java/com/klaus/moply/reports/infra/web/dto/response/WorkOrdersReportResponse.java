@@ -12,11 +12,9 @@ public record WorkOrdersReportResponse(ReportPeriodResponse period, ReportContex
 				new ReportContextResponse(report.timezone(), report.currencyCode(), report.referenceDate()),
 				new WorkOrdersReportSummaryResponse(report.realizedAmount(), report.realizedPendingAmount(),
 						report.workProjectionAmount()),
-				PageResponse.from(report.works(),
-						w -> new WorkOrdersReportWorkResponse(w.workOrderId(),
-								new CustomerReferenceResponse(w.customerId(), w.customerName()), w.serviceDate(),
-								w.status(),
-								w.totalAmount(), w.realized(), w.hasActivePayment(), w.pendingFromCustomer())));
+				PageResponse.from(report.works(), w -> new WorkOrdersReportWorkResponse(w.workOrderId(),
+						new CustomerReferenceResponse(w.customerId(), w.customerName()), w.serviceDate(), w.status(),
+						w.totalAmount(), w.realized(), w.hasActivePayment(), w.pendingFromCustomer())));
 	}
 
 }

@@ -8,7 +8,6 @@ import com.klaus.moply.shared.infra.web.dto.response.CollaboratorReferenceRespon
 import com.klaus.moply.shared.infra.web.dto.response.CustomerReferenceResponse;
 
 public record CollaboratorsReportAssignmentResponse(UUID workOrderId, CustomerReferenceResponse customer,
-		LocalDate serviceDate,
-		String workStatus, CollaboratorReferenceResponse collaborator, BigDecimal allocatedAmount,
-		BigDecimal activeSettlements, BigDecimal pendingAmount, boolean realized) {
+		LocalDate serviceDate, String workStatus, CollaboratorReferenceResponse collaborator,
+		BigDecimal allocatedAmount, BigDecimal activeSettlements, BigDecimal pendingAmount, boolean realized) {
 }

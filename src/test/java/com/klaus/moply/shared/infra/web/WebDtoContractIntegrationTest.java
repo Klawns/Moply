@@ -115,62 +115,63 @@ class WebDtoContractIntegrationTest {
 	@Test
 	void shouldUseTheSameWorkContractForCreationDetailAndPagination() throws Exception {
 		var created = write("/api/v1/work-orders", workRequest()).andExpect(status().isCreated())
-				.andExpect(jsonPath("$.customer.id").value(customerId.toString()))
-				.andExpect(jsonPath("$.customer.name").value("Client"))
-				.andExpect(jsonPath("$.schedule.serviceDate").value(today.toString()))
-				.andExpect(jsonPath("$.pricing.hourlyRate").value(30))
-				.andExpect(jsonPath("$.pricing.totalAmount").value(120))
-				.andExpect(jsonPath("$.status").value("SCHEDULED"))
-				.andExpect(jsonPath("$.assignments[0].collaboratorId").value(second.toString()))
-				.andExpect(jsonPath("$.assignments[1].collaboratorId").value(first.toString()))
-				.andExpect(jsonPath("$.customerId").doesNotExist())
-				.andExpect(jsonPath("$.totalAmount").doesNotExist())
-				.andExpect(jsonPath("$.recurrence").value(org.hamcrest.Matchers.nullValue()));
+			.andExpect(jsonPath("$.customer.id").value(customerId.toString()))
+			.andExpect(jsonPath("$.customer.name").value("Client"))
+			.andExpect(jsonPath("$.schedule.serviceDate").value(today.toString()))
+			.andExpect(jsonPath("$.pricing.hourlyRate").value(30))
+			.andExpect(jsonPath("$.pricing.totalAmount").value(120))
+			.andExpect(jsonPath("$.status").value("SCHEDULED"))
+			.andExpect(jsonPath("$.assignments[0].collaboratorId").value(second.toString()))
+			.andExpect(jsonPath("$.assignments[1].collaboratorId").value(first.toString()))
+			.andExpect(jsonPath("$.customerId").doesNotExist())
+			.andExpect(jsonPath("$.totalAmount").doesNotExist())
+			.andExpect(jsonPath("$.recurrence").value(org.hamcrest.Matchers.nullValue()));
 		String workId = id(created);
 		String detail = mvc.perform(get("/api/v1/work-orders/" + workId).with(user(principal)))
-				.andExpect(status().isOk())
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
+			.andExpect(status().isOk())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 		assertThat((Object) JsonPath.read(detail, "$"))
-				.isEqualTo(JsonPath.read(created.andReturn().getResponse().getContentAsString(), "$"));
+			.isEqualTo(JsonPath.read(created.andReturn().getResponse().getContentAsString(), "$"));
 		mvc.perform(get("/api/v1/work-orders").param("customerId", customerId.toString()).with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.content[0].id").value(workId))
-				.andExpect(jsonPath("$.content[0].pricing.totalAmount").value(120))
-				.andExpect(jsonPath("$.totalElements").value(1));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].id").value(workId))
+			.andExpect(jsonPath("$.content[0].pricing.totalAmount").value(120))
+			.andExpect(jsonPath("$.totalElements").value(1));
 	}
 
 	@Test
 	void shouldReturnTheSamePreviewInPricingErrorsAndPreserveAcceptance() throws Exception {
-		collaborators.save(organizationId, collaborators.findById(organizationId, second)
-				.orElseThrow()
-				.update("Second", null, new BigDecimal("20")));
+		collaborators.save(organizationId,
+				collaborators.findById(organizationId, second)
+					.orElseThrow()
+					.update("Second", null, new BigDecimal("20")));
 		String preview = write("/api/v1/work-orders/pricing-preview", workRequest()).andExpect(status().isOk())
-				.andExpect(jsonPath("$.pricing.totalAmount").value(120))
-				.andExpect(jsonPath("$.summary.baseTotal").value(100))
-				.andExpect(jsonPath("$.summary.surplusAmount").value(20))
-				.andExpect(jsonPath("$.participants[0].collaboratorId").value(second.toString()))
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
+			.andExpect(jsonPath("$.pricing.totalAmount").value(120))
+			.andExpect(jsonPath("$.summary.baseTotal").value(100))
+			.andExpect(jsonPath("$.summary.surplusAmount").value(20))
+			.andExpect(jsonPath("$.participants[0].collaboratorId").value(second.toString()))
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 		String problem = write("/api/v1/work-orders", workRequest()).andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("PRICING_ACCEPTANCE_REQUIRED"))
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
+			.andExpect(jsonPath("$.code").value("PRICING_ACCEPTANCE_REQUIRED"))
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 		assertThat((Object) JsonPath.read(problem, "$.pricingPreview")).isEqualTo(JsonPath.read(preview, "$"));
 		String fingerprint = JsonPath.read(preview, "$.pricingFingerprint");
-		String accepted = workRequest().substring(0, workRequest().length() - 1)
-				+ ",\"acceptedPricingFingerprint\":\"" + fingerprint + "\"}";
+		String accepted = workRequest().substring(0, workRequest().length() - 1) + ",\"acceptedPricingFingerprint\":\""
+				+ fingerprint + "\"}";
 		write("/api/v1/work-orders", accepted).andExpect(status().isCreated())
-				.andExpect(jsonPath("$.assignments[0].allocatedAmount").value(50));
-		collaborators.save(organizationId, collaborators.findById(organizationId, second)
-				.orElseThrow()
-				.update("Second", null, new BigDecimal("100")));
-		write("/api/v1/work-orders", workRequest())
-				.andExpect(status().isUnprocessableEntity())
-				.andExpect(jsonPath("$.pricingPreview.summary.excessAmount").value(140));
+			.andExpect(jsonPath("$.assignments[0].allocatedAmount").value(50));
+		collaborators.save(organizationId,
+				collaborators.findById(organizationId, second)
+					.orElseThrow()
+					.update("Second", null, new BigDecimal("100")));
+		write("/api/v1/work-orders", workRequest()).andExpect(status().isUnprocessableEntity())
+			.andExpect(jsonPath("$.pricingPreview.summary.excessAmount").value(140));
 	}
 
 	@Test
@@ -181,45 +182,44 @@ class WebDtoContractIntegrationTest {
 			write("/api/v1/work-orders", invalid).andExpect(status().isBadRequest());
 		}
 		write("/api/v1/recurrence-series", "{\"frequency\":\"WEEKLY\",\"conditions\":" + conditions() + "}")
-				.andExpect(status().isBadRequest());
+			.andExpect(status().isBadRequest());
 		write("/api/v1/recurrence-series",
 				"{\"frequency\":\"WEEKLY\",\"period\":{},\"conditions\":" + conditions() + "}")
-				.andExpect(status().isBadRequest());
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	void shouldGroupSeriesPricingLineageAndOccurrenceHistory() throws Exception {
-		String body = "{\"frequency\":\"WEEKLY\",\"period\":{\"startsOn\":\"" + today
-				+ "\",\"endsOn\":\"" + today + "\"},\"conditions\":" + conditions() + "}";
+		String body = "{\"frequency\":\"WEEKLY\",\"period\":{\"startsOn\":\"" + today + "\",\"endsOn\":\"" + today
+				+ "\"},\"conditions\":" + conditions() + "}";
 		var created = write("/api/v1/recurrence-series", body).andExpect(status().isCreated())
-				.andExpect(jsonPath("$.period.startsOn").value(today.toString()))
-				.andExpect(jsonPath("$.conditions.pricing.hourlyRate").value(30))
-				.andExpect(
-						jsonPath("$.conditions.frozenPricing.assignments[0].collaboratorId").value(second.toString()))
-				.andExpect(jsonPath("$.lineage.firstPosition").value(0))
-				.andExpect(jsonPath("$.familyId").doesNotExist());
+			.andExpect(jsonPath("$.period.startsOn").value(today.toString()))
+			.andExpect(jsonPath("$.conditions.pricing.hourlyRate").value(30))
+			.andExpect(jsonPath("$.conditions.frozenPricing.assignments[0].collaboratorId").value(second.toString()))
+			.andExpect(jsonPath("$.lineage.firstPosition").value(0))
+			.andExpect(jsonPath("$.familyId").doesNotExist());
 		String seriesId = id(created);
 		mvc.perform(get("/api/v1/recurrence-series/" + seriesId).with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.lineage.familyId").value(seriesId));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.lineage.familyId").value(seriesId));
 		String works = mvc
-				.perform(get("/api/v1/work-orders").param("customerId", customerId.toString()).with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.content[0].recurrence.seriesId").value(seriesId))
-				.andExpect(jsonPath("$.content[0].recurrence.occurrenceDate").value(today.toString()))
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
+			.perform(get("/api/v1/work-orders").param("customerId", customerId.toString()).with(user(principal)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].recurrence.seriesId").value(seriesId))
+			.andExpect(jsonPath("$.content[0].recurrence.occurrenceDate").value(today.toString()))
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 		String workId = JsonPath.read(works, "$.content[0].id");
 		write("/api/v1/work-orders/" + workId + "/reschedule",
 				"{\"serviceDate\":\"" + today.plusDays(1)
 						+ "\",\"scope\":\"THIS_OCCURRENCE\",\"idempotencyKey\":\"dto-reschedule\"}")
-				.andExpect(status().isNoContent());
+			.andExpect(status().isNoContent());
 		mvc.perform(get("/api/v1/work-orders/" + workId + "/recurrence-history").with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.content[0].target.position").value(0))
-				.andExpect(jsonPath("$.content[0].serviceDateChange.before").value(today.toString()))
-				.andExpect(jsonPath("$.content[0].serviceDateChange.after").value(today.plusDays(1).toString()));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].target.position").value(0))
+			.andExpect(jsonPath("$.content[0].serviceDateChange.before").value(today.toString()))
+			.andExpect(jsonPath("$.content[0].serviceDateChange.after").value(today.plusDays(1).toString()));
 	}
 
 	@Test
@@ -228,21 +228,21 @@ class WebDtoContractIntegrationTest {
 		write("/api/v1/work-orders/" + workId + "/complete", "").andExpect(status().isNoContent());
 		String payments = "/api/v1/work-orders/" + workId + "/payments";
 		String paymentId = id(write(payments, "{\"paidOn\":\"" + today + "\"}").andExpect(status().isCreated())
-				.andExpect(jsonPath("$.recording.by").value(actor.toString()))
-				.andExpect(jsonPath("$.recording.at").isNotEmpty())
-				.andExpect(jsonPath("$.reversal").value(org.hamcrest.Matchers.nullValue())));
+			.andExpect(jsonPath("$.recording.by").value(actor.toString()))
+			.andExpect(jsonPath("$.recording.at").isNotEmpty())
+			.andExpect(jsonPath("$.reversal").value(org.hamcrest.Matchers.nullValue())));
 		mvc.perform(get(payments).with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.content[0].recording.by").value(actor.toString()));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].recording.by").value(actor.toString()));
 		write("/api/v1/payments/" + paymentId + "/reversal", "{\"confirmNoMoneyReceived\":true,\"reason\":\"Mistake\"}")
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.reversal.by").value(actor.toString()))
-				.andExpect(jsonPath("$.reversal.reason").value("Mistake"));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.reversal.by").value(actor.toString()))
+			.andExpect(jsonPath("$.reversal.reason").value("Mistake"));
 		mvc.perform(get("/api/v1/collaborators/" + second + "/payments/summary").with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.balance.allocatedAmount").value(60))
-				.andExpect(jsonPath("$.balance.recordedAmount").value(0))
-				.andExpect(jsonPath("$.workOrders[0].balance.remainingAmount").value(60));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.balance.allocatedAmount").value(60))
+			.andExpect(jsonPath("$.balance.recordedAmount").value(0))
+			.andExpect(jsonPath("$.workOrders[0].balance.remainingAmount").value(60));
 	}
 
 	@Test
@@ -254,55 +254,47 @@ class WebDtoContractIntegrationTest {
 		BigDecimal paid = new BigDecimal("20");
 		BigDecimal zero = BigDecimal.ZERO;
 		when(workOrdersReport.execute(any(), any())).thenReturn(new WorkOrdersReport(today, today, today, "UTC", "GBP",
-				total, zero, zero,
-				new PageResult<>(List.of(new WorkOrdersReport.Work(workId, customerId, "Client", today,
-						"COMPLETED", total, true, true, false)), 0, 20, 1, 1)));
-		when(customerPaymentsReport.execute(any(), any())).thenReturn(new CustomerPaymentsReport(today, today, "UTC",
-				"GBP",
-				total,
-				new PageResult<>(
-						List.of(new CustomerPaymentsReport.Payment(paymentId, workId, customerId, "Client", today,
-								total)),
-						0, 20, 1, 1)));
+				total, zero, zero, new PageResult<>(List.of(new WorkOrdersReport.Work(workId, customerId, "Client",
+						today, "COMPLETED", total, true, true, false)), 0, 20, 1, 1)));
+		when(customerPaymentsReport.execute(any(), any()))
+			.thenReturn(new CustomerPaymentsReport(today, today, "UTC", "GBP", total,
+					new PageResult<>(List
+						.of(new CustomerPaymentsReport.Payment(paymentId, workId, customerId, "Client", today, total)),
+							0, 20, 1, 1)));
 		when(collaboratorsReport.execute(any(), any())).thenReturn(new CollaboratorsReport(today, today, today, "UTC",
-				"GBP",
-				allocated, allocated, zero, allocated.subtract(paid), allocated.subtract(paid), zero, paid,
-				new PageResult<>(List
-						.of(new CollaboratorsReport.Assignment(workId, customerId, "Client", today, "COMPLETED", second,
-								"Second", allocated, paid, allocated.subtract(paid), true)),
-						0, 20, 1, 1),
-				new PageResult<>(List
-						.of(new CollaboratorsReport.Settlement(paymentId, workId, customerId, "Client", today, second,
-								"Second", today, paid)),
-						0, 20, 1, 1)));
+				"GBP", allocated, allocated, zero, allocated.subtract(paid), allocated.subtract(paid), zero, paid,
+				new PageResult<>(List.of(new CollaboratorsReport.Assignment(workId, customerId, "Client", today,
+						"COMPLETED", second, "Second", allocated, paid, allocated.subtract(paid), true)), 0, 20, 1, 1),
+				new PageResult<>(List.of(new CollaboratorsReport.Settlement(paymentId, workId, customerId, "Client",
+						today, second, "Second", today, paid)), 0, 20, 1, 1)));
 		String filters = "?from=" + today + "&to=" + today + "&customerId=" + customerId;
 		mvc.perform(get("/api/v1/reports/work-orders" + filters).with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.period.from").value(today.toString()))
-				.andExpect(jsonPath("$.context.currencyCode").value("GBP"))
-				.andExpect(jsonPath("$.summary.realizedAmount").value(120))
-				.andExpect(jsonPath("$.works.content[0].customer.id").value(customerId.toString()))
-				.andExpect(jsonPath("$.works.content[0].customer.name").value("Client"))
-				.andExpect(jsonPath("$.realizedAmount").doesNotExist());
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.period.from").value(today.toString()))
+			.andExpect(jsonPath("$.context.currencyCode").value("GBP"))
+			.andExpect(jsonPath("$.summary.realizedAmount").value(120))
+			.andExpect(jsonPath("$.works.content[0].customer.id").value(customerId.toString()))
+			.andExpect(jsonPath("$.works.content[0].customer.name").value("Client"))
+			.andExpect(jsonPath("$.realizedAmount").doesNotExist());
 		mvc.perform(get("/api/v1/reports/customer-payments" + filters).with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.summary.totalAmount").value(120))
-				.andExpect(jsonPath("$.context.referenceDate").value(org.hamcrest.Matchers.nullValue()))
-				.andExpect(jsonPath("$.payments.content[0].customer.id").value(customerId.toString()));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.summary.totalAmount").value(120))
+			.andExpect(jsonPath("$.context.referenceDate").value(org.hamcrest.Matchers.nullValue()))
+			.andExpect(jsonPath("$.payments.content[0].customer.id").value(customerId.toString()));
 		mvc.perform(get("/api/v1/reports/collaborators" + filters + "&collaboratorId=" + second).with(user(principal)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.summary.allocatedTotal").value(60))
-				.andExpect(jsonPath("$.summary.settlementsOnPeriodTotal").value(20))
-				.andExpect(jsonPath("$.assignments.content[0].collaborator.id").value(second.toString()))
-				.andExpect(jsonPath("$.settlements.content[0].customer.name").value("Client"));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.summary.allocatedTotal").value(60))
+			.andExpect(jsonPath("$.summary.settlementsOnPeriodTotal").value(20))
+			.andExpect(jsonPath("$.assignments.content[0].collaborator.id").value(second.toString()))
+			.andExpect(jsonPath("$.settlements.content[0].customer.name").value("Client"));
 		verify(workOrdersReport).execute(argThat(context -> context.organizationId().equals(organizationId)),
 				argThat(period -> period.from().equals(today) && period.to().equals(today)
 						&& period.customerId().equals(customerId)));
 		verify(customerPaymentsReport).execute(argThat(context -> context.organizationId().equals(organizationId)),
 				argThat(period -> period.customerId().equals(customerId)));
-		verify(collaboratorsReport).execute(argThat(context -> context.organizationId().equals(organizationId)),
-				argThat(input -> input.period().customerId().equals(customerId)
-						&& input.collaboratorId().equals(second)));
+		verify(collaboratorsReport)
+			.execute(argThat(context -> context.organizationId().equals(organizationId)), argThat(
+					input -> input.period().customerId().equals(customerId) && input.collaboratorId().equals(second)));
 
 	}
 
