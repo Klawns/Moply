@@ -1,6 +1,8 @@
 package com.klaus.moply.workorders.infra.persistence;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -17,6 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import com.klaus.moply.workorders.application.service.WorkOrderPreparation;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import com.klaus.moply.payments.application.usecase.dto.RecordCollaboratorPaymentInput;
@@ -57,6 +62,9 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Autowired
 	OrganizationRepository organizations;
+
+	@MockitoSpyBean
+	WorkOrderPreparation preparation;
 
 	@Autowired
 	WorkOrderRepository orders;
@@ -144,6 +152,20 @@ class HourlyRateApiIntegrationTest extends PostgresSpringIntegrationTest {
 
 	@Test
 	void shouldPreviewRequireConfirmationAndPersistAcceptedFinancialBreakdown() throws Exception {
+		doAnswer(invocation -> {
+			assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+			assertTrue(TransactionSynchronizationManager.isCurrentTransactionReadOnly());
+			assertEquals(java.sql.Connection.TRANSACTION_REPEATABLE_READ,
+					TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
+			return invocation.callRealMethod();
+		}).when(preparation).preview(any(), any());
+		doAnswer(invocation -> {
+			assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+			assertFalse(TransactionSynchronizationManager.isCurrentTransactionReadOnly());
+			assertEquals(java.sql.Connection.TRANSACTION_REPEATABLE_READ,
+					TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
+			return invocation.callRealMethod();
+		}).when(preparation).prepare(any(), any());
 		var result = mvc.perform(request("/api/v1/work-orders/pricing-preview", input("")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.requiresConfirmation").value(true))

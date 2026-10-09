@@ -16,6 +16,7 @@ import com.klaus.moply.customers.domain.entities.Customer;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
+import com.klaus.moply.workorders.application.service.WorkOrderPreparation;
 import com.klaus.moply.workorders.application.usecase.*;
 import com.klaus.moply.workorders.application.usecase.dto.*;
 import com.klaus.moply.workorders.application.usecase.exception.PricingAcceptanceException;
@@ -35,7 +36,9 @@ class PricingPreviewTest {
 
 	final OrganizationRepository organizations = mock(OrganizationRepository.class);
 
-	final CreateWorkOrder create = new CreateWorkOrder(orders, customers, people, organizations);
+	final WorkOrderPreparation preparation = new WorkOrderPreparation(customers, people, organizations);
+
+	final CreateWorkOrder create = new CreateWorkOrder(orders, customers, preparation);
 
 	@BeforeEach
 	void setup() {
@@ -56,7 +59,7 @@ class PricingPreviewTest {
 
 	@Test
 	void shouldPreviewWithoutSavingAndRequireAcceptance() {
-		var preview = new PreviewWorkOrderPricing(create).execute(context, input(null, null));
+		var preview = new PreviewWorkOrderPricing(preparation).execute(context, input(null, null));
 		assertEquals(new BigDecimal("30.00"), preview.hourlyRate());
 		assertEquals(new BigDecimal("50.00"), preview.participants().getFirst().allocatedAmount());
 		verifyNoInteractions(orders);
@@ -68,7 +71,7 @@ class PricingPreviewTest {
 
 	@Test
 	void shouldRejectAcceptanceAfterRateChanges() {
-		var preview = new PreviewWorkOrderPricing(create).execute(context, input(null, null));
+		var preview = new PreviewWorkOrderPricing(preparation).execute(context, input(null, null));
 		when(people.findById(org, ana))
 			.thenReturn(Optional.of(Collaborator.restore(ana, org, "Ana", null, true, 1, new BigDecimal("25"))));
 		assertThrows(PricingAcceptanceException.class,
@@ -78,7 +81,7 @@ class PricingPreviewTest {
 
 	@Test
 	void shouldUseExplicitRateAndBlockExcessEvenWithAcceptance() {
-		var preview = new PreviewWorkOrderPricing(create).execute(context, input(BigDecimal.TEN, null));
+		var preview = new PreviewWorkOrderPricing(preparation).execute(context, input(BigDecimal.TEN, null));
 		assertFalse(preview.canCreate());
 		assertEquals(new BigDecimal("20.00"), preview.excessAmount());
 		assertThrows(PricingAcceptanceException.class,
@@ -91,12 +94,12 @@ class PricingPreviewTest {
 		when(organizations.findById(org))
 			.thenReturn(Optional.of(new Organization(org, "Test", "UTC", DefaultWorkStatus.SCHEDULED)));
 		assertThrows(DomainException.class,
-				() -> new PreviewWorkOrderPricing(create).execute(context, input(null, null)));
+				() -> new PreviewWorkOrderPricing(preparation).execute(context, input(null, null)));
 	}
 
 	@Test
 	void shouldInvalidateAcceptanceWhenParticipantOrderOrCreationDataChanges() {
-		var preview = new PreviewWorkOrderPricing(create).execute(context, input(null, null));
+		var preview = new PreviewWorkOrderPricing(preparation).execute(context, input(null, null));
 		var changed = new CreateWorkOrderInput(customer, null, LocalDate.of(2026, 10, 6), null, null,
 				new BigDecimal("4"), null, List.of(ana, bruno), null, preview.pricingFingerprint());
 		assertThrows(PricingAcceptanceException.class, () -> create.execute(context, changed));

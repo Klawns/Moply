@@ -14,14 +14,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.klaus.moply.recurrence.domain.RecurrenceSeries;
-import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
+import com.klaus.moply.workorders.application.service.WorkOrderPreparation;
 import com.klaus.moply.shared.application.usecase.Usecase;
 
 @Service
 public class TransactionalCreateSeries extends CreateSeries {
 
-	public TransactionalCreateSeries(RecurrenceRepository repo, CreateWorkOrder create, GenerateSeries generate) {
-		super(repo, create, generate);
+	public TransactionalCreateSeries(RecurrenceRepository repo, WorkOrderPreparation preparation,
+			GenerateSeries generate) {
+		super(repo, preparation, generate);
 	}
 
 	@Override

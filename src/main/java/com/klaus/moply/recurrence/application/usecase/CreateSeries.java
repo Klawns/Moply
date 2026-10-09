@@ -10,7 +10,7 @@ import com.klaus.moply.recurrence.domain.vo.RecurrenceParticipants;
 import com.klaus.moply.recurrence.domain.vo.RecurrencePeriod;
 import com.klaus.moply.shared.application.usecase.Usecase;
 import com.klaus.moply.shared.domain.exception.DomainException;
-import com.klaus.moply.workorders.application.usecase.CreateWorkOrder;
+import com.klaus.moply.workorders.application.service.WorkOrderPreparation;
 import com.klaus.moply.workorders.application.usecase.dto.CreateWorkOrderInput;
 import com.klaus.moply.workorders.domain.entity.WorkAssignment;
 import com.klaus.moply.workorders.domain.entity.WorkOrder;
@@ -22,7 +22,7 @@ public class CreateSeries implements Usecase.Contextual<CreateSeriesInput, Recur
 
 	private final RecurrenceRepository repository;
 
-	private final CreateWorkOrder createWork;
+	private final WorkOrderPreparation preparation;
 
 	private final GenerateSeries generate;
 
@@ -50,7 +50,7 @@ public class CreateSeries implements Usecase.Contextual<CreateSeriesInput, Recur
 
 	private WorkOrder prepareWork(Usecase.Context context, CreateSeriesInput input) {
 		var work = input.work();
-		return createWork.prepare(context,
+		return preparation.prepare(context,
 				new CreateWorkOrderInput(work.customerId(), work.customerLocationId(), input.startsOn(),
 						work.startTime(), work.description(), work.contractedHours(), work.hourlyRate(),
 						work.participantIds(), work.initialStatus(), work.acceptedPricingFingerprint()));

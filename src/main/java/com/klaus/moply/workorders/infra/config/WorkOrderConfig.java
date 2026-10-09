@@ -4,6 +4,9 @@ import com.klaus.moply.workorders.infra.transaction.TransactionalCreateWorkOrder
 
 import com.klaus.moply.workorders.application.usecase.PreviewWorkOrderPricing;
 
+import com.klaus.moply.workorders.application.service.WorkOrderPreparation;
+import com.klaus.moply.workorders.infra.transaction.TransactionalPreviewWorkOrderPricing;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,14 +31,20 @@ public class WorkOrderConfig {
 	}
 
 	@Bean
-	CreateWorkOrder createWorkOrder(WorkOrderRepository repository, CustomerRepository customers,
-			CollaboratorRepository collaborators, OrganizationRepository organizations) {
-		return new TransactionalCreateWorkOrder(repository, customers, collaborators, organizations);
+	WorkOrderPreparation workOrderPreparation(CustomerRepository customers, CollaboratorRepository collaborators,
+			OrganizationRepository organizations) {
+		return new WorkOrderPreparation(customers, collaborators, organizations);
 	}
 
 	@Bean
-	PreviewWorkOrderPricing previewWorkOrderPricing(CreateWorkOrder create) {
-		return new PreviewWorkOrderPricing(create);
+	CreateWorkOrder createWorkOrder(WorkOrderRepository repository, CustomerRepository customers,
+			WorkOrderPreparation preparation) {
+		return new TransactionalCreateWorkOrder(repository, customers, preparation);
+	}
+
+	@Bean
+	PreviewWorkOrderPricing previewWorkOrderPricing(WorkOrderPreparation preparation) {
+		return new TransactionalPreviewWorkOrderPricing(preparation);
 	}
 
 	@Bean

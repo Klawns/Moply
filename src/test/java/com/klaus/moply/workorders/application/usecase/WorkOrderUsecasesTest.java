@@ -24,6 +24,7 @@ import com.klaus.moply.customers.domain.exception.CustomerLocationNotFoundExcept
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.application.ports.WorkOrderRepository;
+import com.klaus.moply.workorders.application.service.WorkOrderPreparation;
 import com.klaus.moply.workorders.application.usecase.*;
 import com.klaus.moply.workorders.application.usecase.dto.*;
 import com.klaus.moply.workorders.application.usecase.exception.WorkOrderNotFoundException;
@@ -48,7 +49,9 @@ class WorkOrderUsecasesTest {
 
 	final OrganizationRepository accounts = mock(OrganizationRepository.class);
 
-	final CreateWorkOrder create = new CreateWorkOrder(orders, customers, people, accounts);
+	final WorkOrderPreparation preparation = new WorkOrderPreparation(customers, people, accounts);
+
+	final CreateWorkOrder create = new CreateWorkOrder(orders, customers, preparation);
 
 	CreateWorkOrderInput input(UUID location, WorkOrderStatus status) {
 		return new CreateWorkOrderInput(customer, location, LocalDate.of(2026, 9, 28), LocalTime.of(10, 30),

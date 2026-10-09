@@ -89,6 +89,9 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 	RecurrenceChanges changes;
 
 	@Autowired
+	com.klaus.moply.workorders.application.usecase.PreviewWorkOrderPricing pricingPreview;
+
+	@Autowired
 	CreateSeries create;
 
 	@Autowired
@@ -215,7 +218,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		people.save(account, people.findById(account, first).orElseThrow().update("First", null, new BigDecimal("20")));
 		var request = new CreateWorkOrderInput(customer, null, today, LocalTime.NOON, "Mixed", new BigDecimal("4"),
 				new BigDecimal("30"), List.of(first, second), null);
-		var preview = createWork.preview(context, request);
+		var preview = pricingPreview.execute(context, request);
 		var accepted = new CreateWorkOrderInput(customer, null, today, LocalTime.NOON, "Mixed", new BigDecimal("4"),
 				new BigDecimal("30"), List.of(first, second), null, preview.pricingFingerprint());
 		assertThrows(com.klaus.moply.workorders.application.usecase.exception.PricingAcceptanceException.class,
