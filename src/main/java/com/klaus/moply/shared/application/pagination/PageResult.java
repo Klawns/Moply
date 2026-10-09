@@ -20,10 +20,6 @@ public record PageResult<T>(List<T> content, int page, int size, long totalEleme
 		return content.stream();
 	}
 
-	public int size() {
-		return content.size();
-	}
-
 	public boolean isEmpty() {
 		return content.isEmpty();
 	}

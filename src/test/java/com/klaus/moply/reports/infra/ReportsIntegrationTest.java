@@ -177,10 +177,10 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(new BigDecimal("80.00"), workReportResult.realizedAmount());
 		assertEquals(new BigDecimal("40.00"), workReportResult.realizedPendingAmount());
 		assertEquals(new BigDecimal("80.00"), workReportResult.workProjectionAmount());
-		assertEquals(2, workReportResult.works().size());
+		assertEquals(2, workReportResult.works().content().size());
 		var workPage = workReport.execute(context,
 				new ReportPeriod(today.minusDays(5), today.minusDays(5), null, new PageQuery(1, 1, null)));
-		assertEquals(1, workPage.works().size());
+		assertEquals(1, workPage.works().content().size());
 		assertEquals(2, workPage.works().totalElements());
 		assertEquals(workReportResult.realizedAmount(), workPage.realizedAmount());
 
@@ -206,10 +206,10 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 		assertEquals(new BigDecimal("80.00"), collaboratorsResult.allocatedTotal());
 		assertEquals(new BigDecimal("80.00"), collaboratorsResult.realizedAllocatedTotal());
 		assertEquals(BigDecimal.ZERO, collaboratorsResult.settlementsOnPeriodTotal());
-		assertEquals(4, collaboratorsResult.assignments().size());
+		assertEquals(4, collaboratorsResult.assignments().content().size());
 		var assignmentPage = collaboratorReport.execute(context, new CollaboratorsReportInput(
 				new ReportPeriod(today.minusDays(5), today.minusDays(5), null, new PageQuery(1, 1, null)), null));
-		assertEquals(1, assignmentPage.assignments().size());
+		assertEquals(1, assignmentPage.assignments().content().size());
 		assertEquals(4, assignmentPage.assignments().totalElements());
 		assertEquals(collaboratorsResult.allocatedTotal(), assignmentPage.allocatedTotal());
 		var principal = new AccountPrincipal(
@@ -240,14 +240,14 @@ class ReportsIntegrationTest extends PostgresSpringIntegrationTest {
 		var settlementsElsewhere = collaboratorReport.execute(context,
 				new CollaboratorsReportInput(new ReportPeriod(today, today, null), first));
 		assertEquals(new BigDecimal("5.00"), settlementsElsewhere.settlementsOnPeriodTotal());
-		assertEquals(2, settlementsElsewhere.settlements().size());
+		assertEquals(2, settlementsElsewhere.settlements().content().size());
 		assertTrue(futureResult.works().stream().anyMatch(w -> w.workOrderId().equals(scheduled.id())));
 		jdbc.update("UPDATE tb_order_service SET status='CANCELLED' WHERE organization_id=? AND id=?", account,
 				scheduled.id());
 		var afterCancellation = workReport.execute(context,
 				new ReportPeriod(today.plusDays(2), today.plusDays(3), null));
 		assertEquals(new BigDecimal("40.00"), afterCancellation.workProjectionAmount());
-		assertEquals(1, afterCancellation.works().size());
+		assertEquals(1, afterCancellation.works().content().size());
 	}
 
 	@Test

@@ -903,7 +903,7 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 		var future = all().get(1).id();
 		move(future, ChangeScope.THIS_OCCURRENCE, "repeat-single", today.plusDays(10));
 		move(future, ChangeScope.THIS_OCCURRENCE, "repeat-single", today.plusDays(10));
-		assertEquals(1, history.execute(context, historyFilter(future)).size());
+		assertEquals(1, history.execute(context, historyFilter(future)).content().size());
 		assertEquals(today.plusDays(7), history.execute(context, historyFilter(future)).getFirst().serviceDateBefore());
 		assertEquals(today.plusDays(10), history.execute(context, historyFilter(future)).getFirst().serviceDateAfter());
 	}
