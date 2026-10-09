@@ -9,6 +9,10 @@ on:
     branches:
       - main
 
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
 permissions:
   contents: read
 
@@ -42,6 +46,30 @@ jobs:
 
       - name: Run Maven verification
         run: ./mvnw clean verify
+
+      - name: Prepare runtime dependency scan
+        run: |
+          mkdir -p target/security-input
+          cp target/moply-0.0.1-SNAPSHOT.jar target/security-input/application.jar
+
+      - name: Scan packaged transitive dependencies
+        uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7
+        with:
+          path: target/security-input
+          grype-version: v0.120.1
+          severity-cutoff: high
+          fail-build: true
+          only-fixed: false
+          output-format: json
+          output-file: target/security-scan.json
+
+      - name: Upload dependency vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-report
+          path: target/security-scan.json
+          if-no-files-found: warn
 
       - name: Upload test reports
         if: failure()
