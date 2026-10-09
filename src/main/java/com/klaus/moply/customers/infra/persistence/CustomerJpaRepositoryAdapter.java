@@ -55,7 +55,7 @@ public class CustomerJpaRepositoryAdapter implements CustomerRepository {
 		}
 		entity.update(customer);
 		if (customer.getId() == null) {
-			entityManager.persist(entity);
+			entity = repo.save(entity);
 		}
 		repo.flush();
 		return entity.toDomain();
