@@ -1,5 +1,7 @@
 package com.klaus.moply.workorders.infra.web.controller;
 
+import java.util.UUID;
+
 import com.klaus.moply.workorders.application.usecase.exception.PricingAcceptanceException;
 
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -23,6 +25,9 @@ import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workorders.application.usecase.exception.WorkOrderNotFoundException;
 import com.klaus.moply.workorders.domain.exception.WorkOrderStateException;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @ControllerAdvice
 public class ControllerExceptionHandler {
 
@@ -98,10 +103,14 @@ public class ControllerExceptionHandler {
 
 	@ExceptionHandler(Exception.class)
 	private ResponseEntity<ProblemDetail> handleException(Exception e) {
-
+		String requestId = UUID.randomUUID().toString();
+		log.error("Erro interno na API. requestId={}", requestId, e);
 		ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
 		problemDetail.setTitle("Ocorreu um erro interno.");
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+		problemDetail.setProperty("requestId", requestId);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.header("X-Request-ID", requestId)
+			.body(problemDetail);
 	}
 
 }
