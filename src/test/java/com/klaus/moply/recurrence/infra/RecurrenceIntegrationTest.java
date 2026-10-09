@@ -6,6 +6,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -43,6 +45,7 @@ import com.klaus.moply.recurrence.application.usecase.dto.CreateSeriesInput;
 import com.klaus.moply.recurrence.application.usecase.exception.SeriesNotFoundException;
 import com.klaus.moply.recurrence.domain.*;
 import com.klaus.moply.recurrence.infra.scheduler.RecurrenceScheduler;
+import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.usecase.Usecase.Context;
 import com.klaus.moply.shared.domain.exception.DomainException;
 import com.klaus.moply.workflows.application.usecase.*;
@@ -734,6 +737,43 @@ class RecurrenceIntegrationTest extends PostgresSpringIntegrationTest {
 			.andExpect(jsonPath("$.totalElements").value(1));
 		mvc.perform(get("/api/v1/work-orders/" + id + "/recurrence-history").with(user(foreign)))
 			.andExpect(status().isNotFound());
+	}
+
+	@ParameterizedTest
+	@CsvSource({ "0,1,200", "1,1,200", "0,100,200", "2147483647,1,200", "1073741823,2,200", "21474836,100,200",
+			"1073741824,4,400", "2147483647,100,400", "1073741824,2,400", "21474837,100,400" })
+	void shouldValidateHistoryOffsetWithoutOverflowAndPreservePageMetadata(int page, int size, int httpStatus)
+			throws Exception {
+		create.execute(context, input(today, null, null));
+		var id = all().getFirst().id();
+		move(id, ChangeScope.THIS_OCCURRENCE, "offset", today.plusDays(1));
+		var query = new PageQuery(page, size, null);
+		var response = mvc
+			.perform(get("/api/v1/work-orders/" + id + "/recurrence-history").with(user(principal()))
+				.param("page", Integer.toString(page))
+				.param("size", Integer.toString(size)))
+			.andExpect(status().is(httpStatus));
+		if (httpStatus == 400) {
+			var message = "Offset do histórico deve ser menor ou igual a 2147483647.";
+			response.andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+				.andExpect(jsonPath("$.title").value(message));
+			assertEquals(message,
+					assertThrows(DomainException.class, () -> changes.history(account, id, query)).getMessage());
+		}
+		else {
+			var expectedCount = page == 0 ? 1 : 0;
+			response.andExpect(jsonPath("$.content.length()").value(expectedCount))
+				.andExpect(jsonPath("$.page").value(page))
+				.andExpect(jsonPath("$.size").value(size))
+				.andExpect(jsonPath("$.totalElements").value(1))
+				.andExpect(jsonPath("$.totalPages").value(1));
+			var stored = changes.history(account, id, query);
+			assertEquals(expectedCount, stored.content().size());
+			assertEquals(page, stored.page());
+			assertEquals(size, stored.size());
+			assertEquals(1, stored.totalElements());
+			assertEquals(1, stored.totalPages());
+		}
 	}
 
 	@Test

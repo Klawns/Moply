@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Histórico de recorrência")
 @SecurityRequirement(name = "cookieAuth")
 @ApiResponses({
-		@ApiResponse(responseCode = "400", description = "Dados inválidos.",
+		@ApiResponse(responseCode = "400", description = "Dados inválidos ou page × size maior que 2147483647.",
 				content = @Content(mediaType = "application/problem+json",
 						schema = @Schema(implementation = ProblemDetail.class))),
 		@ApiResponse(responseCode = "401", description = "Autenticação necessária.",
@@ -41,8 +41,9 @@ public interface WorkOrderRecurrenceHistoryApi {
 					schema = @Schema(implementation = ProblemDetail.class)))
 	PageResponse<OccurrenceHistoryResponse> history(@Parameter(hidden = true) AccountPrincipal principal,
 			@Parameter(description = "Identificador do recurso.") UUID id,
-			@Parameter(description = "Página, começando em zero.",
-					schema = @Schema(type = "integer", defaultValue = "0", minimum = "0")) Integer page,
+			@Parameter(description = "Página, começando em zero. page × size deve ser menor ou igual a 2147483647.",
+					schema = @Schema(type = "integer", defaultValue = "0", minimum = "0",
+							maximum = "2147483647")) Integer page,
 			@Parameter(description = "Quantidade de itens por página.",
 					schema = @Schema(type = "integer", defaultValue = "20", minimum = "1",
 							maximum = "100")) Integer size,

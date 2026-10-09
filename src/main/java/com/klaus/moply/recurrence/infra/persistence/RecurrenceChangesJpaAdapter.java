@@ -87,6 +87,9 @@ public class RecurrenceChangesJpaAdapter implements RecurrenceChanges {
 		String field = sort == null ? "at" : sort.field();
 		if (!Set.of("at", "id").contains(field))
 			throw new DomainException("Campo de ordenação não permitido.");
+		long offset = (long) page.page() * page.size();
+		if (offset > Integer.MAX_VALUE)
+			throw new DomainException("Offset do histórico deve ser menor ou igual a 2147483647.");
 		String direction = sort == null || sort.direction() == SortQuery.Direction.ASC ? "asc" : "desc";
 		String order = field.equals("at") ? "c.recordedAt " + direction + ", c.id asc, i.id asc" : "i.id " + direction;
 		var rows = entityManager
@@ -95,7 +98,7 @@ public class RecurrenceChangesJpaAdapter implements RecurrenceChanges {
 					+ "and c.id=i.commandId order by " + order, RecurrenceChangeItemEntity.class)
 			.setParameter("account", account)
 			.setParameter("work", work)
-			.setFirstResult(page.page() * page.size())
+			.setFirstResult((int) offset)
 			.setMaxResults(page.size())
 			.getResultList()
 			.stream()
