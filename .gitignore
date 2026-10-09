@@ -36,6 +36,21 @@ build/
 
 src/docs/
 
-AGENTS.md
-
 /PLAN.md
+
+# Configurações locais de agentes e IA
+.agents/
+.codex/
+.claude/
+.cursor/
+.gemini/
+AGENTS.md
+AGENTS.override.md
+CLAUDE.md
+GEMINI.md
+skills-lock.json
+.mcp.json
+.vscode/mcp.json
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
