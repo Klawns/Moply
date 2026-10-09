@@ -9,7 +9,7 @@ import com.klaus.moply.shared.application.pagination.PageQuery;
 import com.klaus.moply.shared.application.pagination.PageResult;
 import com.klaus.moply.shared.application.pagination.SortQuery;
 import com.klaus.moply.shared.domain.exception.DomainException;
-import jakarta.persistence.EntityManager;
+import org.springframework.data.domain.PageRequest;
 
 @Repository
 @RequiredArgsConstructor
@@ -21,8 +21,6 @@ public class RecurrenceChangesJpaAdapter implements RecurrenceChanges {
 	private final RecurrenceChangeItemJpaRepository items;
 
 	private final RecurrenceExclusionJpaRepository exclusions;
-
-	private final EntityManager entityManager;
 
 	public Optional<Command> find(UUID account, UUID family, String key) {
 		return commands.findByOrganizationIdAndFamilyIdAndCommandKey(account, family, key)
@@ -91,26 +89,19 @@ public class RecurrenceChangesJpaAdapter implements RecurrenceChanges {
 		if (offset > Integer.MAX_VALUE)
 			throw new DomainException("Offset do histórico deve ser menor ou igual a 2147483647.");
 		String direction = sort == null || sort.direction() == SortQuery.Direction.ASC ? "asc" : "desc";
-		String order = field.equals("at") ? "c.recordedAt " + direction + ", c.id asc, i.id asc" : "i.id " + direction;
-		var rows = entityManager
-			.createQuery("select i from RecurrenceChangeItemEntity i, RecurrenceCommandEntity c "
-					+ "where i.organizationId=:account and i.workId=:work and c.organizationId=i.organizationId "
-					+ "and c.id=i.commandId order by " + order, RecurrenceChangeItemEntity.class)
-			.setParameter("account", account)
-			.setParameter("work", work)
-			.setFirstResult((int) offset)
-			.setMaxResults(page.size())
-			.getResultList()
-			.stream()
+		var pageable = PageRequest.of(page.page(), page.size());
+		var entities = switch (field + direction) {
+			case "atasc" -> items.findHistoryByRecordedAtAscending(account, work, pageable);
+			case "atdesc" -> items.findHistoryByRecordedAtDescending(account, work, pageable);
+			case "idasc" -> items.findHistoryByIdAscending(account, work, pageable);
+			case "iddesc" -> items.findHistoryByIdDescending(account, work, pageable);
+			default -> throw new IllegalStateException("Ordenação validada anteriormente");
+		};
+		var rows = entities.stream()
 			.map(e -> new Item(e.getId(), account, e.getCommandId(), work, e.getPosition(), e.getReason(),
 					e.getTargetSeriesId(), e.getServiceDateBefore(), e.getServiceDateAfter()))
 			.toList();
-		long total = entityManager
-			.createQuery("select count(i) from RecurrenceChangeItemEntity i "
-					+ "where i.organizationId=:account and i.workId=:work", Long.class)
-			.setParameter("account", account)
-			.setParameter("work", work)
-			.getSingleResult();
+		long total = items.countHistory(account, work);
 		int pages = total == 0 ? 0 : (int) ((total + page.size() - 1) / page.size());
 		return new PageResult<>(rows, page.page(), page.size(), total, pages);
 	}
